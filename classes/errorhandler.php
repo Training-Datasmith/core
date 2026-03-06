@@ -24,7 +24,7 @@ class PhpErrorException extends \ErrorException
 	/**
 	 * Allow the error handler from recovering from error types defined in the config
 	 */
-	public function recover()
+	public function recover(): void
 	{
 		// handle the error based on the config and the environment we're in
 		if (static::$count <= \Config::get('errors.throttle', 10))
@@ -56,7 +56,7 @@ class Errorhandler
 {
 	public static $loglevel = \Fuel::L_ERROR;
 
-	public static $levels = array(
+	public static $levels = [
 		0                   => 'Error',
 		E_ERROR             => 'Fatal Error',
 		E_WARNING           => 'Warning',
@@ -73,18 +73,16 @@ class Errorhandler
 		E_RECOVERABLE_ERROR => 'Runtime Recoverable error',
 		E_DEPRECATED        => 'Runtime Deprecated code usage',
 		E_USER_DEPRECATED   => 'User Deprecated code usage',
-	);
+	];
 
-	public static $fatal_levels = array(E_PARSE, E_ERROR, E_USER_ERROR, E_COMPILE_ERROR);
+	public static $fatal_levels = [E_PARSE, E_ERROR, E_USER_ERROR, E_COMPILE_ERROR];
 
-	public static $non_fatal_cache = array();
+	public static $non_fatal_cache = [];
 
 	/**
-	 * Native PHP shutdown handler
-	 *
-	 * @return  string
-	 */
-	public static function shutdown_handler()
+     * Native PHP shutdown handler
+     */
+    public static function shutdown_handler(): void
 	{
 		$last_error = error_get_last();
 
@@ -93,7 +91,7 @@ class Errorhandler
 		{
 			$severity = static::$levels[$last_error['type']];
 			$error = new \ErrorException($last_error['message'], $last_error['type'], 0, $last_error['file'], $last_error['line']);
-			logger(static::$loglevel, $severity.' - '.$last_error['message'].' in '.$last_error['file'].' on line '.$last_error['line'], array('exception' => $error));
+			logger(static::$loglevel, $severity.' - '.$last_error['message'].' in '.$last_error['file'].' on line '.$last_error['line'], ['exception' => $error]);
 
 			if (\Fuel::$env != \Fuel::PRODUCTION)
 			{
@@ -125,7 +123,7 @@ class Errorhandler
 			}
 
 			$severity = ( ! isset(static::$levels[$e->getCode()])) ? $e->getCode() : static::$levels[$e->getCode()];
-			logger(static::$loglevel, $severity.' - '.$e->getMessage().' in '.$e->getFile().' on line '.$e->getLine(), array('exception' => $e));
+			logger(static::$loglevel, $severity.' - '.$e->getMessage().' in '.$e->getFile().' on line '.$e->getLine(), ['exception' => $e]);
 
 			if (\Fuel::$env != \Fuel::PRODUCTION)
 			{
@@ -153,39 +151,35 @@ class Errorhandler
 	 * @param   int     $line      the line number of the error
 	 * @return  bool    whether to continue with execution
 	 */
-	public static function error_handler($severity, $message, $filepath, $line)
+	public static function error_handler($severity, $message, $filepath, $line): bool
 	{
 		// don't do anything if error reporting is disabled
 		if (error_reporting() !== 0)
 		{
-			$fatal = (bool) ( ! in_array($severity, \Config::get('errors.continue_on', array())));
+			$fatal = ! in_array($severity, \Config::get('errors.continue_on', []));
 
 			if ($fatal)
 			{
 				throw new \PhpErrorException($message, $severity, 0, $filepath, $line);
 			}
-			else
-			{
-				// non-fatal, recover from the error
-				$e = new \PhpErrorException($message, $severity, 0, $filepath, $line);
-				$e->recover();
-			}
+            // non-fatal, recover from the error
+            $e = new \PhpErrorException($message, $severity, 0, $filepath, $line);
+            $e->recover();
 		}
 
 		return true;
 	}
 
 	/**
-	 * Shows a small notice error, only when not in production or when forced.
-	 * This is used by several libraries to notify the developer of certain things.
-	 *
-	 * @param   string  $msg          the message to display
-	 * @param   bool    $always_show  whether to force display the notice or not
-	 * @return  void
-	 */
-	public static function notice($msg, $always_show = false)
+     * Shows a small notice error, only when not in production or when forced.
+     * This is used by several libraries to notify the developer of certain things.
+     *
+     * @param   string  $msg          the message to display
+     * @param   bool    $always_show  whether to force display the notice or not
+     */
+    public static function notice(string $msg, $always_show = false): void
 	{
-		$trace = array_merge(array('file' => '(unknown)', 'line' => '(unknown)'), \Arr::get(debug_backtrace(), 1));
+		$trace = array_merge(['file' => '(unknown)', 'line' => '(unknown)'], \Arr::get(debug_backtrace(), 1));
 		logger(\Fuel::L_DEBUG, 'Notice - '.$msg.' in '.$trace['file'].' on line '.$trace['line']);
 
 		if (\Fuel::$is_test or ( ! $always_show and (\Fuel::$env == \Fuel::PRODUCTION or \Config::get('errors.notices', true) === false)))
@@ -211,7 +205,7 @@ class Errorhandler
 	 */
 	protected static function show_php_error($e)
 	{
-		$fatal = (bool) ( ! in_array($e->getCode(), \Config::get('errors.continue_on', array())));
+		$fatal = ! in_array($e->getCode(), \Config::get('errors.continue_on', []));
 		$data = static::prepare_exception($e, $fatal);
 
 		if ($fatal)
@@ -221,7 +215,7 @@ class Errorhandler
 			{
 				ob_end_clean();
 			}
-			ob_start(\Config::get('ob_callback', null));
+			ob_start(\Config::get('ob_callback'));
 		}
 		else
 		{
@@ -249,7 +243,7 @@ class Errorhandler
 		{
 			if ( ! headers_sent())
 			{
-				$protocol = \Input::server('SERVER_PROTOCOL') ? \Input::server('SERVER_PROTOCOL') : 'HTTP/1.1';
+				$protocol = \Input::server('SERVER_PROTOCOL') ?: 'HTTP/1.1';
 				header($protocol.' 500 Internal Server Error');
 			}
 
@@ -259,7 +253,7 @@ class Errorhandler
 			{
 				exit(\View::forge('errors'.DS.'php_fatal_error', $data, false));
 			}
-			catch (\FuelException $view_exception)
+			catch (\FuelException)
 			{
 				exit($data['severity'].' - '.$data['message'].' in '.\Fuel::clean_path($data['filepath']).' on line '.$data['error_line']);
 			}
@@ -291,16 +285,16 @@ class Errorhandler
 
 		if ( ! headers_sent())
 		{
-			$protocol = \Input::server('SERVER_PROTOCOL') ? \Input::server('SERVER_PROTOCOL') : 'HTTP/1.1';
+			$protocol = \Input::server('SERVER_PROTOCOL') ?: 'HTTP/1.1';
 			header($protocol.' 500 Internal Server Error');
 		}
 		exit(\View::forge('errors'.DS.'production'));
 	}
 
-	protected static function prepare_exception($e, $fatal = true)
+	protected static function prepare_exception($e, $fatal = true): array
 	{
-		$data = array();
-		$data['type']		= get_class($e);
+		$data = [];
+		$data['type']		= $e::class;
 		$data['severity']	= $e->getCode();
 		$data['message']	= $e->getMessage();
 		$data['filepath']	= $e->getFile();
@@ -322,7 +316,7 @@ class Errorhandler
 			$data['soap']['faultstring'] = $e->faultstring;
 			$data['soap']['errortype'] = empty($e->detail->ExceptionDetail) ? '' : $e->detail->ExceptionDetail->Type;
 			$data['soap']['backtrace'] = empty($e->detail->ExceptionDetail) ? '' : $e->detail->ExceptionDetail->StackTrace;
-			$data['soap']['backtrace'] = explode("\n", str_replace(array("\r\n","\n\r","\r"),"\n",$data['soap']['backtrace']));
+			$data['soap']['backtrace'] = explode("\n", str_replace(["\r\n","\n\r","\r"],"\n",$data['soap']['backtrace']));
 		}
 
 		foreach ($data['backtrace'] as $key => $trace)

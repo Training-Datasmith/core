@@ -49,7 +49,7 @@ abstract class Controller
 		// Make sure the $response is a Response object
 		if ( ! $response instanceof Response)
 		{
-			$response = \Response::forge($response, $this->response_status);
+			return \Response::forge($response, $this->response_status);
 		}
 
 		return $response;

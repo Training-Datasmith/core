@@ -20,7 +20,7 @@ namespace Fuel\Core;
  * @author    Dan Horrigan
  * @link      http://docs.fuelphp.com/classes/uri.html
  */
-class Uri
+class Uri implements \Stringable
 {
 	/**
 	 * Returns the desired segment, or $default if it does not exist.
@@ -55,13 +55,12 @@ class Uri
 	}
 
 	/**
-	 * Replace all * wildcards in a URI by the current segment in that location
-	 *
-	 * @param  string  $url     The url containing the wildcards
-	 * @param  bool    $secure  To force a particular HTTP scheme
-	 * @return  string
-	 */
-	public static function segment_replace($url, $secure = null)
+     * Replace all * wildcards in a URI by the current segment in that location
+     *
+     * @param  string  $url     The url containing the wildcards
+     * @param  bool    $secure  To force a particular HTTP scheme
+     */
+    public static function segment_replace(string $url, $secure = null): string
 	{
 		// get the path from the url
 		$parts = parse_url($url);
@@ -73,7 +72,7 @@ class Uri
 		$wildcards = 0;
 		foreach ($segments as $index => &$segment)
 		{
-			if (strpos($segment, '*') !== false)
+			if (str_contains($segment, '*'))
 			{
 				$wildcards++;
 				if (($new = static::segment($index+1)) === null)
@@ -97,16 +96,11 @@ class Uri
 		if (empty($parts['host']))
 		{
 			// if a relative url was given, fake a host so we can remove it after building
-			$url = substr(http_build_url('http://__removethis__/', $parts), 22);
-		}
-		else
-		{
-			// a hostname was present, just rebuild it
-			$url = http_build_url('', $parts);
+			return substr(http_build_url('http://__removethis__/', $parts), 22);
 		}
 
 		// return the newly constructed url
-		return $url;
+		return http_build_url('', $parts);
 	}
 
 	/**
@@ -140,21 +134,20 @@ class Uri
 	}
 
 	/**
-	 * Creates a url with the given uri, including the base url
-	 *
-	 * @param   string  $uri            The uri to create the URL for
-	 * @param   array   $variables      Some variables for the URL
-	 * @param   array   $get_variables  Any GET urls to append via a query string
-	 * @param   bool    $secure         If false, force http. If true, force https
-	 * @return  string
-	 */
-	public static function create($uri = null, $variables = array(), $get_variables = array(), $secure = null)
+     * Creates a url with the given uri, including the base url
+     *
+     * @param   string  $uri            The uri to create the URL for
+     * @param   array   $variables      Some variables for the URL
+     * @param   array   $get_variables  Any GET urls to append via a query string
+     * @param   bool    $secure         If false, force http. If true, force https
+     */
+    public static function create($uri = null, $variables = [], $get_variables = [], $secure = null): string
 	{
 		$url = '';
 		is_null($uri) and $uri = static::string();
 
 		// If the given uri is not a full URL
-		if( ! preg_match("#^(http|https|ftp)://#i", $uri))
+		if( ! preg_match("#^(http|https|ftp)://#i", (string) $uri))
 		{
 			$url .= \Config::get('base_url');
 
@@ -163,13 +156,13 @@ class Uri
 				$url .= $index_file.'/';
 			}
 		}
-		$url .= ltrim($uri, '/');
+		$url .= ltrim((string) $uri, '/');
 
 		// stick a url suffix onto it if defined and needed
-		if ($url_suffix = \Config::get('url_suffix', false) and substr($url, -1) != '/')
+		if ($url_suffix = \Config::get('url_suffix', false) and !str_ends_with($url, '/'))
 		{
 			$current_suffix = strrchr($url, '.');
-			if ( ! $current_suffix or strpos($current_suffix, '/') !== false)
+			if ( ! $current_suffix or str_contains($current_suffix, '/'))
 			{
 				$url .= $url_suffix;
 			}
@@ -177,7 +170,7 @@ class Uri
 
 		if ( ! empty($get_variables))
 		{
-			$char = strpos($url, '?') === false ? '?' : '&';
+			$char = !str_contains($url, '?') ? '?' : '&';
 			if (is_string($get_variables))
 			{
 				$url .= $char.str_replace('%3A', ':', $get_variables);
@@ -190,13 +183,13 @@ class Uri
 
 		array_walk(
 			$variables,
-			function ($val, $key) use (&$url)
+			function ($val, string $key) use (&$url): void
 			{
 				$url = str_replace(':'.$key, $val, $url);
 			}
 		);
 
-		is_bool($secure) and $url = http_build_url($url, array('scheme' => $secure ? 'https' : 'http'));
+		is_bool($secure) and $url = http_build_url($url, ['scheme' => $secure ? 'https' : 'http']);
 
 		return $url;
 	}
@@ -240,22 +233,20 @@ class Uri
 	}
 
 	/**
-	 * Builds a query string by merging all array and string values passed. If
-	 * a string is passed, it will be assumed to be a switch, and converted
-	 * to "string=1".
-	 *
-	 * @param array|string Array or string to merge
-	 * @param array|string ...
-	 *
-	 * @return string
-	 */
-	public static function build_query_string()
+     * Builds a query string by merging all array and string values passed. If
+     * a string is passed, it will be assumed to be a switch, and converted
+     * to "string=1".
+     *
+     * @param array|string Array or string to merge
+     * @param array|string ...
+     */
+    public static function build_query_string(): string
 	{
-		$params = array();
+		$params = [];
 
 		foreach (func_get_args() as $arg)
 		{
-			$arg = is_array($arg) ? $arg : array($arg => '1');
+			$arg = is_array($arg) ? $arg : [$arg => '1'];
 
 			$params = array_merge($params, $arg);
 		}
@@ -272,12 +263,12 @@ class Uri
 	 *
 	 * @return string
 	 */
-	public static function update_query_string($vars = array(), $uri = null, $secure = null)
+	public static function update_query_string($vars = [], $uri = null, $secure = null)
 	{
 		// unify the input data
 		if ( ! is_array($vars))
 		{
-			$vars = array($vars => $uri);
+			$vars = [$vars => $uri];
 			$uri = null;
 		}
 
@@ -292,18 +283,18 @@ class Uri
 		}
 
 		// return the updated uri
-		return static::create($uri, array(), $vars, $secure);
+		return static::create($uri, [], $vars, $secure);
 	}
 
 	/**
 	 * @var  string  The URI string
 	 */
-	protected $uri = '';
+	protected string $uri;
 
 	/**
 	 * @var  array  The URI segments
 	 */
-	protected $segments = '';
+	protected array $segments;
 
 	/**
 	 * Construct takes a URI or detects it if none is given and generates
@@ -325,12 +316,12 @@ class Uri
 		is_null($uri) and $uri = \Input::uri();
 
 		// store the uri
-		$this->uri = trim($uri, '/');
+		$this->uri = trim((string) $uri, '/');
 
 		// determine the uri segment list
 		if (empty($uri))
 		{
-			$this->segments = array();
+			$this->segments = [];
 		}
 		else
 		{
@@ -374,20 +365,13 @@ class Uri
 	 */
 	public function get_segment($segment, $default = null)
 	{
-		if (isset($this->segments[$segment - 1]))
-		{
-			return $this->segments[$segment - 1];
-		}
-
-		return \Fuel::value($default);
+		return $this->segments[$segment - 1] ?? \Fuel::value($default);
 	}
 
 	/**
-	 * Returns the URI string
-	 *
-	 * @return  string
-	 */
-	public function __toString()
+     * Returns the URI string
+     */
+    public function __toString(): string
 	{
 		return $this->get();
 	}

@@ -362,16 +362,15 @@ class DB
 	}
 
 	/**
-	 * Set the connection character set. This is called automatically by [static::connect].
-	 *
-	 *     DB::set_charset('utf8');
-	 *
-	 * @throws  Database_Exception
-	 * @param   string   character set name
-	 * @param   string  db connection
-	 * @return  void
-	 */
-	public static function set_charset($charset, $db = null)
+     * Set the connection character set. This is called automatically by [static::connect].
+     *
+     *     DB::set_charset('utf8');
+     *
+     * @throws  Database_Exception
+     * @param   string   character set name
+     * @param   string  db connection
+     */
+    public static function set_charset($charset, $db = null): void
 	{
 		\Database_Connection::instance($db)->set_charset($charset);
 	}

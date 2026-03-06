@@ -33,60 +33,57 @@ namespace Fuel\Core;
  */
 class Unzip
 {
-	private $compressed_list = array();
+	private $compressed_list = [];
 
 	// List of files in the ZIP
-	private $central_dir_list = array();
+	private array $central_dir_list = [];
 
 	// Central dir list... It's a kind of 'extra attributes' for a set of files
-	private $end_of_central = array();
+	private array $end_of_central = [];
 
 	// End of central dir, contains ZIP Comments
-	private $info = array();
-	private $error = array();
+	private $info = [];
+	private $error = [];
 	private $_zip_file = '';
 	private $_target_dir = false;
-	private $apply_chmod = 0777;
+	private int $apply_chmod = 0777;
 	private $fh;
-	private $zip_signature = "\x50\x4b\x03\x04";
+	private string $zip_signature = "\x50\x4b\x03\x04";
 
 	// local file header signature
-	private $dir_signature = "\x50\x4b\x01\x02";
+	private string $dir_signature = "\x50\x4b\x01\x02";
 
 	// central dir header signature
-	private $central_signature_end = "\x50\x4b\x05\x06";
+	private string $central_signature_end = "\x50\x4b\x05\x06";
 
 	// ignore these directories (useless meta data)
-	private $_skip_dirs = array('__MACOSX');
+	private array $_skip_dirs = ['__MACOSX'];
 
-	private $_allow_extensions = NULL; // What is allowed out of the zip
-
-	// --------------------------------------------------------------------
-
-	/**
-	 * Unzip all files in archive.
-	 *
-	 * @param  string  $zip_file
-	 * @param  string  $target_dir
-	 * @param  string  $preserve_filepath
-	 * @return array
-	 * @throws \FuelException
-	 */
-	public function extract($zip_file, $target_dir = NULL, $preserve_filepath = TRUE)
+	private $_allow_extensions; // What is allowed out of the zip
+    // --------------------------------------------------------------------
+    /**
+     * Unzip all files in archive.
+     *
+     * @param  string  $zip_file
+     * @param  string  $target_dir
+     * @param  string  $preserve_filepath
+     * @throws \FuelException
+     */
+    public function extract($zip_file, $target_dir = NULL, $preserve_filepath = TRUE): array
 	{
 		$this->_zip_file = $zip_file;
-		$this->_target_dir = $target_dir ? $target_dir : dirname($this->_zip_file);
+		$this->_target_dir = $target_dir ?: dirname($this->_zip_file);
 
 		if ( ! $files = $this->_list_files())
 		{
 			throw new \FuelException('ZIP folder was empty.');
 		}
 
-		$file_locations = array();
+		$file_locations = [];
 		foreach ($files as $file => $trash)
 		{
-			$dirname = pathinfo($file, PATHINFO_DIRNAME);
-			$extension = pathinfo($file, PATHINFO_EXTENSION);
+			$dirname = pathinfo((string) $file, PATHINFO_DIRNAME);
+			$extension = pathinfo((string) $file, PATHINFO_EXTENSION);
 
 			$folders = explode('/', $dirname);
 			$out_dn = $this->_target_dir . '/' . $dirname;
@@ -124,13 +121,13 @@ class Unzip
 				}
 			}
 
-			if (substr($file, -1, 1) == '/')
+			if (str_ends_with((string) $file, '/'))
 			{
 				continue;
 			}
 
-			$file_location = realpath($this->_target_dir . '/' . ($preserve_filepath ? $file : basename($file)));
-			if ($file_location and strpos($file_location, $this->_target_dir) === 0)
+			$file_location = realpath($this->_target_dir . '/' . ($preserve_filepath ? $file : basename((string) $file)));
+			if ($file_location and str_starts_with($file_location, $this->_target_dir))
 			{
 				$file_locations[] = $file_location;
 				$this->_extract_file($file, $file_location);
@@ -151,35 +148,25 @@ class Unzip
 	 *
 	 * @param  string $ext
 	 */
-	public function allow($ext = NULL)
+	public function allow($ext = NULL): void
 	{
 		$this->_allow_extensions = $ext;
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * Show error messages
-	 *
-	 * @param  string $open
-	 * @param  string $close
-	 * @return string
-	 */
-	public function error_string($open = '<p>', $close = '</p>')
+    /**
+     * Show error messages
+     */
+    public function error_string(string $open = '<p>', string $close = '</p>'): string
 	{
 		return $open . implode($close . $open, $this->error) . $close;
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * Show debug messages
-	 *
-	 * @param  string $open
-	 * @param  string $close
-	 * @return string
-	 */
-	public function debug_string($open = '<p>', $close = '</p>')
+    /**
+     * Show debug messages
+     */
+    public function debug_string(string $open = '<p>', string $close = '</p>'): string
 	{
 		return $open . implode($close . $open, $this->info) . $close;
 	}
@@ -191,7 +178,7 @@ class Unzip
 	 *
 	 * @param $string
 	 */
-	function set_error($string)
+	function set_error($string): void
 	{
 		$this->error[] = $string;
 	}
@@ -203,21 +190,19 @@ class Unzip
 	 *
 	 * @param $string
 	 */
-	function set_debug($string)
+	function set_debug($string): void
 	{
 		$this->info[] = $string;
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * List all files in archive.
-	 *
-	 * @param   bool $stop_on_file
-	 * @return  array
-	 * @throws  \FuelException
-	 */
-	private function _list_files($stop_on_file = false)
+    /**
+     * List all files in archive.
+     *
+     * @return  array
+     * @throws  \FuelException
+     */
+    private function _list_files(bool $stop_on_file = false)
 	{
 		if (sizeof($this->compressed_list))
 		{
@@ -251,21 +236,19 @@ class Unzip
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * Unzip file in archive.
-	 *
-	 * @param  string      $compressed_file_name
-	 * @param  string      $target_file_name
-	 * @return int|string|bool
-	 * @throws \FuelException
-	 */
-	private function _extract_file($compressed_file_name, $target_file_name = false)
+    /**
+     * Unzip file in archive.
+     *
+     * @param  string      $target_file_name
+     * @return int|string|bool
+     * @throws \FuelException
+     */
+    private function _extract_file(string $compressed_file_name, $target_file_name = false)
 	{
 		if ( ! sizeof($this->compressed_list))
 		{
 			$this->set_debug('Trying to unzip before loading file list... Loading it!');
-			$this->_list_files(false, $compressed_file_name);
+			$this->_list_files(false);
 		}
 
 		$fdetails = &$this->compressed_list[$compressed_file_name];
@@ -275,7 +258,7 @@ class Unzip
 			throw new \FuelException('File "<strong>' . $compressed_file_name . '</strong>" is not compressed in the zip.');
 		}
 
-		if (substr($compressed_file_name, -1) == '/')
+		if (str_ends_with($compressed_file_name, '/'))
 		{
 			throw new \FuelException('Trying to unzip a folder name "<strong>' . $compressed_file_name . '</strong>".');
 		}
@@ -308,7 +291,7 @@ class Unzip
 	/**
 	 * Free the file resource.
 	 */
-	public function close()
+	public function close(): void
 	{
 		// Free the file resource
 		if ($this->fh)
@@ -322,24 +305,22 @@ class Unzip
 	/**
 	 * Free the file resource Automatic destroy.
 	 */
-	public function __destroy()
+	public function __destroy(): void
 	{
 		$this->close();
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * Uncompress file. And save it to the targetFile.
-	 *
-	 * @param  mixed   $content
-	 * @param  int     $mode
-	 * @param  int     $uncompressed_size
-	 * @param  string  $target_file_name
-	 * @return int|string|bool
-	 * @throws \FuelException
-	 */
-	private function _uncompress($content, $mode, $uncompressed_size, $target_file_name = false)
+    /**
+     * Uncompress file. And save it to the targetFile.
+     *
+     * @param  mixed   $content
+     * @param  int     $mode
+     * @param  int     $uncompressed_size
+     * @param  string  $target_file_name
+     * @throws \FuelException
+     */
+    private function _uncompress(string|bool $content, $mode, $uncompressed_size, $target_file_name = false): string|bool|int
 	{
 		switch ($mode)
 		{
@@ -377,7 +358,7 @@ class Unzip
 		}
 	}
 
-	private function _load_file_list_by_eof(&$fh, $stop_on_file = false)
+	private function _load_file_list_by_eof(&$fh, bool $stop_on_file = false): bool
 	{
 		// Check if there's a valid Central Dir signature.
 		// Let's consider a file comment smaller than 1024 characters...
@@ -401,7 +382,7 @@ class Unzip
 				$zip_comment_lenght = unpack("v", fread($fh, 2)); // zipfile comment length
 				$eodir['zipfile_comment'] = $zip_comment_lenght[1] ? fread($fh, $zip_comment_lenght[1]) : ''; // zipfile comment
 
-				$this->end_of_central = array(
+				$this->end_of_central = [
 					'disk_number_this' => $eodir['disk_number_this'][1],
 					'disk_number' => $eodir['disk_number'][1],
 					'total_entries_this' => $eodir['total_entries_this'][1],
@@ -409,7 +390,7 @@ class Unzip
 					'size_of_cd' => $eodir['size_of_cd'][1],
 					'offset_start_cd' => $eodir['offset_start_cd'][1],
 					'zipfile_comment' => $eodir['zipfile_comment'],
-				);
+				];
 
 				// Then, load file list
 				fseek($fh, $this->end_of_central['offset_start_cd']);
@@ -448,7 +429,7 @@ class Unzip
 					$last_mod_minute = bindec(substr($binary_mod_time, 5, 6));
 					$last_mod_second = bindec(substr($binary_mod_time, 11, 5));
 
-					$this->central_dir_list[$dir['file_name']] = array(
+					$this->central_dir_list[$dir['file_name']] = [
 						'version_madeby' => $dir['version_madeby'][1],
 						'version_needed' => $dir['version_needed'][1],
 						'general_bit_flag' => str_pad(decbin($dir['general_bit_flag'][1]), 8, '0', STR_PAD_LEFT),
@@ -468,7 +449,7 @@ class Unzip
 						'file_name' => $dir['file_name'],
 						'extra_field' => $dir['extra_field'],
 						'file_comment' => $dir['file_comment'],
-					);
+					];
 
 					$signature = fread($fh, 4);
 				}
@@ -491,7 +472,7 @@ class Unzip
 						$this->compressed_list[$filename]['extra_field'] = $i['extra_field'];
 						$this->compressed_list[$filename]['contents_start_offset'] = $i['contents_start_offset'];
 
-						if (strtolower($stop_on_file) == strtolower($filename))
+						if (strtolower((string) $stop_on_file) == strtolower((string) $filename))
 						{
 							break;
 						}
@@ -504,7 +485,7 @@ class Unzip
 		return false;
 	}
 
-	private function _load_files_by_signatures(&$fh, $stop_on_file = false)
+	private function _load_files_by_signatures(&$fh, bool $stop_on_file = false)
 	{
 		fseek($fh, 0);
 
@@ -530,7 +511,7 @@ class Unzip
 			$this->compressed_list[$filename] = $details;
 			$return = true;
 
-			if (strtolower($stop_on_file) == strtolower($filename))
+			if (strtolower((string) $stop_on_file) == strtolower((string) $filename))
 			{
 				break;
 			}
@@ -539,7 +520,7 @@ class Unzip
 		return $return;
 	}
 
-	private function _get_file_header(&$fh, $start_offset = false)
+	private function _get_file_header(&$fh, $start_offset = false): array|false
 	{
 		if ($start_offset !== false)
 		{
@@ -580,7 +561,7 @@ class Unzip
 			$last_mod_second = bindec(substr($binary_mod_time, 11, 5));
 
 			// Mount file table
-			$i = array(
+			$i = [
 				'file_name' => $file['file_name'],
 				'compression_method' => $file['compression_method'][1],
 				'version_needed' => $file['version_needed'][1],
@@ -594,7 +575,7 @@ class Unzip
 				'extra_field' => $file['extra_field'],
 				'general_bit_flag' => str_pad(decbin($file['general_bit_flag'][1]), 8, '0', STR_PAD_LEFT),
 				'contents_start_offset' => $file['contents_start_offset'],
-			);
+			];
 
 			return $i;
 		}

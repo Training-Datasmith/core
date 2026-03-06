@@ -23,12 +23,12 @@ class Markdown
 	/**
 	 * @var  MarkdownExtra  The Markdown Extra parser instance
 	 */
-	protected static $parser = null;
+	protected static $parser;
 
 	/**
 	 * Load Markdown and get it setup.
 	 */
-	public static function _init()
+	public static function _init(): void
 	{
 		if ( ! class_exists('Michelf\MarkdownExtra'))
 		{

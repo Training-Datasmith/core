@@ -15,28 +15,24 @@ namespace Fuel\Core;
 class Database_Schema
 {
 	/**
-	 * @var  Database_Connection  database connection instance
-	 */
-	protected $_connection;
-
-	/**
-	 * @var  string  database connection config name
-	 */
-	protected $_name;
-
-	/**
-	 * Stores the database instance to be used.
-	 *
-	 * @param  string  database connection instance
-	 */
-	public function __construct($name, $connection)
-	{
-		// Set the connection config name
-		$this->_name = $name;
-
-		// Set the connection instance
-		$this->_connection = $connection;
-	}
+     * Stores the database instance to be used.
+     *
+     * @param  string  database connection instance
+     * @param \Fuel\Core\Database_Connection $connection
+     * @param string $name
+     */
+    public function __construct(
+        /**
+         * @var  string  database connection config name
+         */
+        protected $_name,
+        /**
+         * @var  Database_Connection  database connection instance
+         */
+        protected $_connection
+    )
+    {
+    }
 
 	/**
 	 * Creates a database.  Will throw a Database_Exception if it cannot.
@@ -118,7 +114,7 @@ class Database_Schema
 	 * @param   array           $foreign_keys   an array of foreign keys
 	 * @return  int             number of affected rows.
 	 */
-	public function create_table($table, $fields, $primary_keys = array(), $if_not_exists = true, $engine = false, $charset = null, $foreign_keys = array())
+	public function create_table($table, $fields, $primary_keys = [], $if_not_exists = true, $engine = false, $charset = null, $foreign_keys = [])
 	{
 		$sql = 'CREATE TABLE';
 
@@ -160,13 +156,12 @@ class Database_Schema
 	}
 
 	/**
-	 * Generic check if a given table exists.
-	 *
-	 * @throws  \Database_Exception
-	 * @param   string  $table  Table name
-	 * @return  bool
-	 */
-	public function table_exists($table)
+     * Generic check if a given table exists.
+     *
+     * @throws  \Database_Exception
+     * @param   string  $table  Table name
+     */
+    public function table_exists($table): bool
 	{
 		$sql  = 'SELECT * FROM ';
 		$sql .= $this->_connection->quote_identifier($this->_connection->table_prefix($table));
@@ -191,22 +186,21 @@ class Database_Schema
 	}
 
 	/**
-	 * Checks if given field(s) in a given table exists.
-	 *
-	 * @throws  \Database_Exception
-	 * @param   string          $table      Table name
-	 * @param   string|array    $columns    columns to check
-	 * @return  bool
-	 */
-	public function field_exists($table, $columns)
+     * Checks if given field(s) in a given table exists.
+     *
+     * @throws  \Database_Exception
+     * @param   string          $table      Table name
+     * @param   string|array    $columns    columns to check
+     */
+    public function field_exists($table, $columns): bool
 	{
 		if ( ! is_array($columns))
 		{
-			$columns = array($columns);
+			$columns = [$columns];
 		}
 
 		$sql  = 'SELECT ';
-		$sql .= implode(', ', array_unique(array_map(array($this->_connection, 'quote_identifier'), $columns)));
+		$sql .= implode(', ', array_unique(array_map($this->_connection->quote_identifier(...), $columns)));
 		$sql .= ' FROM ';
 		$sql .= $this->_connection->quote_identifier($this->_connection->table_prefix($table));
 		$sql .= ' LIMIT 1';
@@ -242,7 +236,7 @@ class Database_Schema
 	 */
 	public function create_index($table, $index_columns, $index_name = '', $index = '')
 	{
-		static $accepted_index = array('UNIQUE', 'FULLTEXT', 'SPATIAL', 'NONCLUSTERED', 'PRIMARY');
+		static $accepted_index = ['UNIQUE', 'FULLTEXT', 'SPATIAL', 'NONCLUSTERED', 'PRIMARY'];
 
 		// make sure the index type is uppercase
 		$index !== '' and $index = strtoupper($index);
@@ -259,7 +253,7 @@ class Database_Schema
 					}
 					else
 					{
-						$index_name .= ($index_name == '' ? '' : '_').str_replace(array('(', ')', ' '), '', $key);
+						$index_name .= ($index_name == '' ? '' : '_').str_replace(['(', ')', ' '], '', $key);
 					}
 				}
 			}
@@ -368,7 +362,7 @@ class Database_Schema
 		$sql = 'ALTER TABLE ';
 		$sql .= $this->_connection->quote_identifier($this->_connection->table_prefix($table)).' ';
 		$sql .= 'ADD ';
-		$sql .= ltrim($this->process_foreign_keys(array($foreign_key), $this->_connection), ',');
+		$sql .= ltrim($this->process_foreign_keys([$foreign_key]), ',');
 
 		return $this->_connection->query(0, $sql, false);
 	}
@@ -396,14 +390,14 @@ class Database_Schema
 	 * @param   array   $foreign_keys  Array of foreign key rules
 	 * @return  string  the formatted foreign key string
 	 */
-	public function process_foreign_keys($foreign_keys)
+	public function process_foreign_keys($foreign_keys): string
 	{
 		if ( ! is_array($foreign_keys))
 		{
 			throw new \Database_Exception('Foreign keys on create_table() must be specified as an array');
 		}
 
-		$fk_list = array();
+		$fk_list = [];
 
 		foreach($foreign_keys as $definition)
 		{
@@ -454,10 +448,10 @@ class Database_Schema
 		{
 			if ( ! is_array($fields))
 			{
-				$fields = array($fields);
+				$fields = [$fields];
 			}
 
-			$drop_fields = array();
+			$drop_fields = [];
 			foreach ($fields as $field)
 			{
 				$drop_fields[] = 'DROP '.$this->_connection->quote_identifier($field);
@@ -466,7 +460,7 @@ class Database_Schema
 		}
 		else
 		{
-			$use_brackets = ! in_array($type, array('ADD', 'CHANGE', 'MODIFY'));
+			$use_brackets = ! in_array($type, ['ADD', 'CHANGE', 'MODIFY']);
 			$use_brackets and $sql .= $type.' ';
 			$use_brackets and $sql .= '(';
 			$sql .= $this->process_fields($fields, (( ! $use_brackets) ? $type.' ' : ''));
@@ -483,7 +477,7 @@ class Database_Schema
 	 * @param   string  $table  the table name
 	 * @return  bool    whether the operation has succeeded
 	 */
-	public function table_maintenance($operation, $table)
+	public function table_maintenance(string $operation, $table): bool
 	{
 		$sql = $operation.' '.$this->_connection->quote_identifier($this->_connection->table_prefix($table));
 		$result = $this->_connection->query(\DB::SELECT, $sql, false);
@@ -492,15 +486,15 @@ class Database_Schema
 		$message = $result->get('Msg_text');
 		$table = $result->get('Table');
 
-		if ($type === 'status' and in_array(strtolower($message), array('ok', 'table is already up to date')))
+		if ($type === 'status' and in_array(strtolower((string) $message), ['ok', 'table is already up to date']))
 		{
 			return true;
 		}
 
 		// make sure we have a type logger can handle
-		if (in_array($type, array('info', 'warning', 'error')))
+		if (in_array($type, ['info', 'warning', 'error']))
 		{
-			$type = strtoupper($type);
+			$type = strtoupper((string) $type);
 		}
 		else
 		{
@@ -520,21 +514,21 @@ class Database_Schema
 	 * @param    string    $collation     the collating sequence to be used
 	 * @return   string    the formatted charset sql
 	 */
-	protected function process_charset($charset = null, $is_default = false, $collation = null)
+	protected function process_charset($charset = null, $is_default = false, $collation = null): string
 	{
-		$charset or $charset = \Config::get('db.'.$this->_name.'.charset', null);
+		$charset or $charset = \Config::get('db.'.$this->_name.'.charset');
 
 		if (empty($charset))
 		{
 			return '';
 		}
 
-		$collation or $collation = \Config::get('db.'.$this->_name.'.collation', null);
+		$collation or $collation = \Config::get('db.'.$this->_name.'.collation');
 
-		if (empty($collation) and ($pos = stripos($charset, '_')) !== false)
+		if (empty($collation) and ($pos = stripos((string) $charset, '_')) !== false)
 		{
 			$collation = $charset;
-			$charset = substr($charset, 0, $pos);
+			$charset = substr((string) $charset, 0, $pos);
 		}
 
 		$charset = ' CHARACTER SET '.$charset;
@@ -559,9 +553,9 @@ class Database_Schema
 	/**
 	 *
 	 */
-	protected function process_fields($fields, $prefix = '')
+	protected function process_fields($fields, $prefix = ''): string
 	{
-		$sql_fields = array();
+		$sql_fields = [];
 
 		foreach ($fields as $field => $attr)
 		{

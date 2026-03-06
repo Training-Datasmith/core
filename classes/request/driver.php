@@ -23,50 +23,44 @@ class RequestStatusException extends \RequestException {}
  * @package   Fuel\Core
  *
  */
-abstract class Request_Driver
+abstract class Request_Driver implements \Stringable
 {
 	/**
-	 * Forge
-	 *
-	 * @param   string  $resource
-	 * @param   array   $options
-	 * @param   mixed   $method
-	 * @return  Request_Driver
-	 */
-	public static function forge($resource, array $options = array(), $method = null)
+     * Forge
+     *
+     * @param   string  $resource
+     * @param   mixed   $method
+     * @return  Request_Driver
+     */
+    public static function forge($resource, array $options = [], $method = null)
 	{
 		return new static($resource, $options, $method);
 	}
 
 	/**
-	 * @var  string  URL resource to perform requests upon
-	 */
-	protected $resource = '';
-
-	/**
 	 * @var  array  parameters to pass
 	 */
-	protected $params = array();
+	protected $params = [];
 
 	/**
 	 * @var  array  params set during object creation are handled as the defaults
 	 */
-	protected $default_params = array();
+	protected $default_params = [];
 
 	/**
 	 * @var  array  driver specific options
 	 */
-	protected $options = array();
+	protected $options = [];
 
 	/**
 	 * @var  array  options set during object creation are handled as the defaults
 	 */
-	protected $default_options = array();
+	protected array $default_options;
 
 	/**
 	 * @var  array  http headers set for the request
 	 */
-	protected $headers = array();
+	protected $headers = [];
 
 	/**
 	 * @var  Response  the response object after execute
@@ -76,7 +70,7 @@ abstract class Request_Driver
 	/**
 	 * @var  array  info about the response
 	 */
-	protected $response_info = array();
+	protected $response_info = [];
 
 	/**
 	 * @var  bool  whether to attempt auto-formatting the response
@@ -86,23 +80,23 @@ abstract class Request_Driver
 	/**
 	 * @var  string  $method  request method
 	 */
-	protected $method = null;
+	protected $method;
 
 	/**
 	 * @var  array  supported response formats
 	 */
-	protected static $supported_formats = array(
+	protected static $supported_formats = [
 		'xml' => 'application/xml',
 		'json' => 'application/json',
 		'serialize' => 'application/vnd.php.serialized',
 		'php' => 'text/plain',
 		'csv' => 'text/csv',
-	);
+	];
 
 	/**
 	 * @var  array  mimetype format autodetection
 	 */
-	protected static $auto_detect_formats = array(
+	protected static $auto_detect_formats = [
 		'application/xml' => 'xml',
 		'application/soap+xml' => 'xml',
 		'text/xml' => 'xml',
@@ -111,11 +105,16 @@ abstract class Request_Driver
 		'text/csv' => 'csv',
 		'application/csv' => 'csv',
 		'application/vnd.php.serialized' => 'serialize',
-	);
+	];
 
-	public function __construct($resource, array $options, $method = null)
+	/**
+     * @param string $resource
+     */
+    public function __construct(/**
+     * @var  string  URL resource to perform requests upon
+     */
+    protected $resource, array $options, $method = null)
 	{
-		$this->resource  = $resource;
 		$method and $this->set_method($method);
 
 		foreach ($options as $key => $value)
@@ -165,12 +164,11 @@ abstract class Request_Driver
 	}
 
 	/**
-	 * Sets options on the driver
-	 *
-	 * @param   array  $options
-	 * @return  Request_Driver
-	 */
-	public function set_options(array $options)
+     * Sets options on the driver
+     *
+     * @return  Request_Driver
+     */
+    public function set_options(array $options)
 	{
 		foreach ($options as $key => $val)
 		{
@@ -189,7 +187,7 @@ abstract class Request_Driver
 	 */
 	public function set_option($option, $value)
 	{
-		return $this->set_options(array($option => $value));
+		return $this->set_options([$option => $value]);
 	}
 
 	/**
@@ -203,7 +201,7 @@ abstract class Request_Driver
 	{
 		if ( ! is_array($param))
 		{
-			$param = array($param => $value);
+			$param = [$param => $value];
 		}
 
 		foreach ($param as $key => $val)
@@ -241,7 +239,7 @@ abstract class Request_Driver
 	 */
 	public function get_headers()
 	{
-		$headers = array();
+		$headers = [];
 		foreach ($this->headers as $key => $value)
 		{
 			$headers[] = is_int($key) ? $value : $key.': '.$value;
@@ -280,12 +278,11 @@ abstract class Request_Driver
 	}
 
 	/**
-	 * Executes the request upon the URL
-	 *
-	 * @param   array  $additional_params
-	 * @return  Response
-	 */
-	abstract public function execute(array $additional_params = array());
+     * Executes the request upon the URL
+     *
+     * @return  Response
+     */
+    abstract public function execute(array $additional_params = []);
 
 	/**
 	 * Reset before doing another request
@@ -316,7 +313,7 @@ abstract class Request_Driver
 		}
 
 		// process the accept header and get a list of accepted mimes
-		$accept_mimes = array();
+		$accept_mimes = [];
 		$accept_header = explode(',', $accept_header);
 		foreach ($accept_header as $accept_def)
 		{
@@ -352,21 +349,19 @@ abstract class Request_Driver
 	}
 
 	/**
-	 * Creates the Response and optionally attempts to auto-format the output
-	 *
-	 * @param   string  $body
-	 * @param   int     $status
-	 * @param   string  $mime
-	 * @param   array   $headers
-	 * @param   string  $accept_header
-	 * @return  Response
-	 *
-	 * @throws  \OutOfRangeException if an accept header was specified, but the mime type isn't in it
-	 */
-	public function set_response($body, $status, $mime = null, $headers = array(), $accept_header = null)
+     * Creates the Response and optionally attempts to auto-format the output
+     *
+     * @param   string  $body
+     * @param   int     $status
+     * @param   string  $mime
+     * @param   string  $accept_header
+     * @return  Response
+     * @throws  \OutOfRangeException if an accept header was specified, but the mime type isn't in it
+     */
+    public function set_response($body, $status, $mime = null, array $headers = [], $accept_header = null)
 	{
 		// Strip attribs from mime type to avoid over-specific matching
-		$mime = strstr($mime, ';', true) ?: $mime;
+		$mime = strstr((string) $mime, ';', true) ?: $mime;
 
 		// did we use an accept header? If so, validate the returned mimetype
 		if ( ! $this->mime_in_header($mime, $accept_header))
@@ -413,11 +408,9 @@ abstract class Request_Driver
 	}
 
 	/**
-	 * Returns the body as a string.
-	 *
-	 * @return  string
-	 */
-	public function __toString()
+     * Returns the body as a string.
+     */
+    public function __toString(): string
 	{
 		return (string) $this->response();
 	}

@@ -30,7 +30,7 @@ class Agent
 	/**
 	 * @var  array  information about the current browser
 	 */
-	protected static $properties = array(
+	protected static $properties = [
 		'browser'             => 'unknown',
 		'version'             => 0,
 		'majorver'            => 0,
@@ -56,12 +56,12 @@ class Agent
 		'crawler'             => false,
 		'cssversion'          => 0,
 		'aolversion'          => 0,
-	);
+	];
 
 	/**
 	 * @var  array  property to cache key mapping
 	 */
-	protected static $keys = array(
+	protected static $keys = [
 		'browser'             => 'A',
 		'version'             => 'B',
 		'majorver'            => 'C',
@@ -87,37 +87,37 @@ class Agent
 		'crawler'             => 'W',
 		'cssversion'          => 'X',
 		'aolversion'          => 'Y',
-	);
+	];
 
 	/**
 	 * @var	array	global config defaults
 	 */
-	protected static $defaults = array(
-		'browscap' => array(
+	protected static $defaults = [
+		'browscap' => [
 			'enabled' => true,
 			'url' => 'http://browscap.org/stream?q=Lite_PHP_BrowsCapINI',
 			'method' => 'wrapper',
-			 'proxy' => array(
+			 'proxy' => [
 				'host' => null,
 				'port' => null,
 				'auth' => 'none',
 				'username' => null,
 				'password' => null,
-			 ),
+			 ],
 			'file' => '',
-		),
-		'cache' => array(
+		],
+		'cache' => [
 			'driver' => '',
 			'expiry' => 604800,
 			'identifier' => 'fuel.agent',
-		),
-	);
+		],
+	];
 
 	/**
 	 * @var	array	global config items
 	 */
-	protected static $config = array(
-	);
+	protected static $config = [
+	];
 
 	/**
 	 * @var	string	detected user agent string
@@ -125,15 +125,12 @@ class Agent
 	protected static $user_agent = '';
 
 	// --------------------------------------------------------------------
-	// public static methods
-	// --------------------------------------------------------------------
-
-	/**
-	 * map the user agent string to browser specifications
-	 *
-	 * @return void
-	 */
-	public static function _init()
+    // public static methods
+    // --------------------------------------------------------------------
+    /**
+     * map the user agent string to browser specifications
+     */
+    public static function _init(): void
 	{
 		// fetch and store the user agent
 		static::$user_agent = \Input::server('http_user_agent', '');
@@ -141,7 +138,7 @@ class Agent
 		// fetch and process the configuration
 		\Config::load('agent', true);
 
-		static::$config = array_merge(static::$defaults, \Config::get('agent', array()));
+		static::$config = array_merge(static::$defaults, \Config::get('agent', []));
 
 		// validate the browscap configuration
 		if ( ! is_array(static::$config['browscap']))
@@ -169,7 +166,7 @@ class Agent
 			{
 				static::$config['browscap']['method'] = static::$defaults['browscap']['method'];
 			}
-			static::$config['browscap']['method'] = strtolower(static::$config['browscap']['method']);
+			static::$config['browscap']['method'] = strtolower((string) static::$config['browscap']['method']);
 		}
 
 		// validate the cache configuration
@@ -259,7 +256,7 @@ class Agent
 	 */
 	public static function property($property = null)
 	{
-		$property = strtolower($property);
+		$property = strtolower((string) $property);
 		return array_key_exists($property, static::$properties) ? static::$properties[$property] : null;
 	}
 
@@ -300,53 +297,43 @@ class Agent
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * check if the current browser accepts a specific language
-	 *
-	 * @param	string $language	optional ISO language code, defaults to 'en'
-	 * @return	bool
-	 */
-	public static function accepts_language($language = 'en')
+    /**
+     * check if the current browser accepts a specific language
+     *
+     * @param	string $language	optional ISO language code, defaults to 'en'
+     */
+    public static function accepts_language($language = 'en'): bool
 	{
 		return (in_array(strtolower($language), static::languages(), true)) ? true : false;
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * check if the current browser accepts a specific character set
-	 *
-	 * @param	string $charset	optional character set, defaults to 'utf-8'
-	 * @return	bool
-	 */
-	public static function accepts_charset($charset = 'utf-8')
+    /**
+     * check if the current browser accepts a specific character set
+     *
+     * @param	string $charset	optional character set, defaults to 'utf-8'
+     */
+    public static function accepts_charset($charset = 'utf-8'): bool
 	{
 		return (in_array(strtolower($charset), static::charsets(), true)) ? true : false;
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * get the list of browser accepted languages
-	 *
-	 * @return	array
-	 */
-	public static function languages()
+    /**
+     * get the list of browser accepted languages
+     */
+    public static function languages(): array
 	{
-		return explode(',', preg_replace('/(;q=[0-9\.]+)/i', '', strtolower(trim(\Input::server('http_accept_language')))));
+		return explode(',', (string) preg_replace('/(;q=[0-9\.]+)/i', '', strtolower(trim(\Input::server('http_accept_language')))));
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * get the list of browser accepted charactersets
-	 *
-	 * @return	array
-	 */
-	public static function charsets()
+    /**
+     * get the list of browser accepted charactersets
+     */
+    public static function charsets(): array
 	{
-		return explode(',', preg_replace('/(;q=.+)/i', '', strtolower(trim(\Input::server('http_accept_charset')))));
+		return explode(',', (string) preg_replace('/(;q=.+)/i', '', strtolower(trim(\Input::server('http_accept_charset')))));
 	}
 
 	// --------------------------------------------------------------------
@@ -358,7 +345,7 @@ class Agent
 	 *
 	 * @return	mixed	array if a match is found, of false if not cached yet
 	 */
-	protected static function get_from_browscap()
+	protected static function get_from_browscap(): array|false
 	{
 		$cache = \Cache::forge(static::$config['cache']['identifier'].'.browscap', static::$config['cache']['driver']);
 
@@ -368,20 +355,20 @@ class Agent
 			$browscap = $cache->get();
 		}
 		// browscap not cached
-		catch (\Exception $e)
+		catch (\Exception)
 		{
-			$browscap = static::$config['browscap']['enabled'] ? static::parse_browscap() : array();
+			$browscap = static::$config['browscap']['enabled'] ? static::parse_browscap() : [];
 		}
 
-		$search = array('\*', '\?');
-		$replace = array('.*', '.');
+		$search = ['\*', '\?'];
+		$replace = ['.*', '.'];
 
 		$result = false;
 
 		// find a match for the user agent string
 		foreach($browscap as $browser => $properties)
 		{
-			$pattern = '@^'.str_replace($search, $replace, preg_quote($browser, '@')).'$@i';
+			$pattern = '@^'.str_replace($search, $replace, preg_quote((string) $browser, '@')).'$@i';
 			if (preg_match($pattern, static::$user_agent))
 			{
 				// store the browser name
@@ -518,12 +505,12 @@ class Agent
 				$context = null;
 				if ( ! empty(static::$config['browscap']['proxy']['host']) and ! empty(static::$config['browscap']['proxy']['port']))
 				{
-					$context = array (
-						'http' => array (
+					$context =  [
+						'http' =>  [
 							'proxy' => 'tcp://'.static::$config['browscap']['proxy']['host'].':'.static::$config['browscap']['proxy']['port'],
 							'request_fulluri' => true,
-						),
-					);
+						],
+					];
 				}
 
 				// add credentials if needed
@@ -571,7 +558,7 @@ class Agent
 				// if the cached version is used, only cache the parsed result for a day
 				static::$config['cache']['expiry'] = 86400;
 			}
-			catch (\Exception $e)
+			catch (\Exception)
 			{
 				logger(\Fuel::L_ERROR, 'Failed to get the cache of browscap.ini file.', 'Agent::parse_browscap');
 			}
@@ -583,17 +570,17 @@ class Agent
 		}
 
 		// parse the downloaded data
-		$browsers = @parse_ini_string($data, true, INI_SCANNER_RAW) or $browsers = array();
+		$browsers = @parse_ini_string((string) $data, true, INI_SCANNER_RAW) or $browsers = [];
 
 		// remove the version and timestamp entry
 		array_shift($browsers);
 
-		$result = array();
+		$result = [];
 
 		// reverse sort on key string length
-		uksort($browsers, function($a, $b) { return strlen($a) < strlen($b) ? 1 : -1; } );
+		uksort($browsers, fn($a, $b) => strlen((string) $a) < strlen((string) $b) ? 1 : -1 );
 
-		$index = array();
+		$index = [];
 		$count = 0;
 
 		// reduce the array keys
@@ -623,7 +610,7 @@ class Agent
 		}
 
 		// reduce parent links to
-		foreach($result as $browser => &$properties)
+		foreach($result as &$properties)
 		{
 			if (array_key_exists('Parent', $properties))
 			{

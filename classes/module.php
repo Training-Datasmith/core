@@ -29,7 +29,7 @@ class Module
 	/**
 	 * @var  array  $modules  Holds all the loaded module information.
 	 */
-	protected static $modules = array();
+	protected static $modules = [];
 
 	/**
 	 * Loads the given module.  If a path is not given, then 'module_paths' is used.
@@ -65,7 +65,7 @@ class Module
 		// if no path is given, try to locate the module
 		if ($path === null)
 		{
-			$paths = \Config::get('module_paths', array());
+			$paths = \Config::get('module_paths', []);
 
 			if ( ! empty($paths))
 			{
@@ -95,9 +95,9 @@ class Module
 		$ns = '\\'.ucfirst($module);
 
 		// add the namespace to the autoloader
-		\Autoloader::add_namespaces(array(
+		\Autoloader::add_namespaces([
 			$ns  => $path.'classes'.DS,
-		), true);
+		], true);
 
 		// load module routes if required
 		if (\Config::get('routing.module_routes', false) and $routes = Config::load($module.'::routes', 'routes'))
@@ -112,12 +112,11 @@ class Module
 	}
 
 	/**
-	 * Unloads a module from the stack.
-	 *
-	 * @param   string  $module  The module name
-	 * @return  void
-	 */
-	public static function unload($module)
+     * Unloads a module from the stack.
+     *
+     * @param   string  $module  The module name
+     */
+    public static function unload($module): void
 	{
 		// we can only unload a loaded module
 		if (isset(static::$modules[$module]))
@@ -129,14 +128,14 @@ class Module
 				// load and add the module routes
 				$module_routes = \Fuel::load($path);
 
-				$route_names = array();
+				$route_names = [];
 				foreach($module_routes as $name => $_route)
 				{
 					if ($name === '_root_')
 					{
 						$name = $module;
 					}
-					elseif (strpos($name, $module.'/') !== 0 and $name != $module and $name !== '_404_')
+					elseif (!str_starts_with($name, $module.'/') and $name != $module and $name !== '_404_')
 					{
 						$name = $module.'/'.$name;
 					}
@@ -182,19 +181,15 @@ class Module
 		{
 			return static::$modules[$module];
 		}
-		else
-		{
-			$paths = \Config::get('module_paths', array());
-			$module = strtolower($module);
-
-			foreach ($paths as $path)
+        $paths = \Config::get('module_paths', []);
+        $module = strtolower($module);
+        foreach ($paths as $path)
 			{
 				if (is_dir($path.$module))
 				{
 					return $path.$module.DS;
 				}
 			}
-		}
 
 		return false;
 	}

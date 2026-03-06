@@ -14,10 +14,10 @@ namespace Fuel\Core;
 
 class Cache_Handler_Json implements \Cache_Handler_Driver
 {
-	public function readable($contents)
+	public function readable($contents): mixed
 	{
 		$array = false;
-		if (substr($contents, 0, 1) == 'a')
+		if (str_starts_with($contents, 'a'))
 		{
 			$contents = substr($contents, 1);
 			$array = true;
@@ -26,7 +26,7 @@ class Cache_Handler_Json implements \Cache_Handler_Driver
 		return json_decode($contents, $array);
 	}
 
-	public function writable($contents)
+	public function writable($contents): string
 	{
 		$array = '';
 		if (is_array($contents))

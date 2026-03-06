@@ -86,12 +86,11 @@ class Request_Curl extends \Request_Driver
 	}
 
 	/**
-	 * Overwrites driver method to set options driver specifically
-	 *
-	 * @param   array  $options
-	 * @return  Request_Curl
-	 */
-	public function set_options(array $options)
+     * Overwrites driver method to set options driver specifically
+     *
+     * @return  Request_Curl
+     */
+    public function set_options(array $options)
 	{
 		foreach ($options as $key => $val)
 		{
@@ -106,11 +105,11 @@ class Request_Curl extends \Request_Driver
 		return $this;
 	}
 
-	public function execute(array $additional_params = array())
+	public function execute(array $additional_params = [])
 	{
 		// Reset response
 		$this->response = null;
-		$this->response_info = array();
+		$this->response_info = [];
 
 		// Set two default options, and merge any extra ones in
 		if ( ! isset($this->options[CURLOPT_TIMEOUT]))
@@ -147,7 +146,7 @@ class Request_Curl extends \Request_Driver
 		if ( ! empty($this->method))
 		{
 			$this->options[CURLOPT_CUSTOMREQUEST] = $this->method;
-			$this->{'method_'.strtolower($this->method)}();
+			$this->{'method_'.strtolower((string) $this->method)}();
 		}
 		else
 		{
@@ -165,7 +164,7 @@ class Request_Curl extends \Request_Driver
 		$mime = $this->response_info('content_type', 'text/plain');
 
 		// Was header data requested?
-		$headers = array();
+		$headers = [];
 		if (isset($this->options[CURLOPT_HEADER]) and $this->options[CURLOPT_HEADER])
 		{
 			// Split the headers from the body
@@ -183,27 +182,22 @@ class Request_Curl extends \Request_Driver
 			}
 		}
 
-		$this->set_response($body, $this->response_info('http_code', 200), $mime, $headers, isset($this->headers['Accept']) ? $this->headers['Accept'] : null);
+		$this->set_response($body, $this->response_info('http_code', 200), $mime, $headers, $this->headers['Accept'] ?? null);
+        // Request failed
+        if ($this->response_info['response'] === false) {
+            $this->set_defaults();
+            throw new \RequestException(curl_error($connection), curl_errno($connection));
+        }
 
 		// Request failed
-		if ($this->response_info['response'] === false)
-		{
-			$this->set_defaults();
-			throw new \RequestException(curl_error($connection), curl_errno($connection));
-		}
-		elseif ($this->response->status >= 400)
-		{
-			$this->set_defaults();
-			throw new \RequestStatusException($body, $this->response->status);
-		}
-		else
-		{
-			// Request successful
-			curl_close($connection);
-			$this->set_defaults();
-
-			return $this;
-		}
+		if ($this->response->status >= 400) {
+            $this->set_defaults();
+            throw new \RequestStatusException($body, $this->response->status);
+        }
+        // Request successful
+        curl_close($connection);
+        $this->set_defaults();
+        return $this;
 	}
 
 	/**
@@ -214,7 +208,7 @@ class Request_Curl extends \Request_Driver
 	protected function set_defaults()
 	{
 		parent::set_defaults();
-		$this->headers = array();
+		$this->headers = [];
 
 		if ( ! empty($this->preserve_resource))
 		{
@@ -233,7 +227,7 @@ class Request_Curl extends \Request_Driver
 	protected function method_get()
 	{
 		$this->preserve_resource = $this->resource;
-		$this->resource = \Uri::create($this->resource, array(), $this->params);
+		$this->resource = \Uri::create($this->resource, [], $this->params);
 	}
 
 	/**
@@ -294,15 +288,14 @@ class Request_Curl extends \Request_Driver
 	}
 
 	/**
-	 * Function to encode input array depending on the content type
-	 *
-	 * @param   array $input
-	 * @return  mixed encoded output
-	 */
-	protected function encode(array $input)
+     * Function to encode input array depending on the content type
+     *
+     * @return  mixed encoded output
+     */
+    protected function encode(array $input)
 	{
 		// Detect the request content type, default to 'text/plain'
-		$content_type = isset($this->headers['Content-Type']) ? $this->headers['Content-Type'] : $this->response_info('content_type', 'text/plain');
+		$content_type = $this->headers['Content-Type'] ?? $this->response_info('content_type', 'text/plain');
 
 		// Get the correct format for the current content type
 		$format = \Arr::key_exists(static::$auto_detect_formats, $content_type) ? static::$auto_detect_formats[$content_type] : null;
@@ -320,31 +313,23 @@ class Request_Curl extends \Request_Driver
 						$base_node = key($input);
 						return \Format::forge($input[$base_node])->to_xml(null, null, $base_node);
 					}
-					else
-					{
-						return \Format::forge($input)->to_xml();
-					}
-				break;
+				return \Format::forge($input)->to_xml();
 
 			// Format as JSON
 			case 'json':
 					return \Format::forge($input)->to_json();
-				break;
 
 			// Format as PHP Serialized Array
 			case 'serialize':
 					return \Format::forge($input)->to_serialize();
-				break;
 
 			// Format as PHP Array
 			case 'php':
 					return \Format::forge($input)->to_php();
-				break;
 
 			// Format as CSV
 			case 'csv':
 					return \Format::forge($input)->to_csv();
-				break;
 
 			default:
 					if (count($input) === 1 and key($input) === 'form-data')
@@ -352,12 +337,8 @@ class Request_Curl extends \Request_Driver
 						// multipart/form-data
 						return $input['form-data'];
 					}
-					else
-					{
-						//application/x-www-form-urlencoded
-						return http_build_query($input, null, '&');
-					}
-				break;
+				//application/x-www-form-urlencoded
+                return http_build_query($input, null, '&');
 		}
 	}
 }

@@ -27,11 +27,11 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 	/**
 	 * @var  array  driver specific configuration
 	 */
-	protected $config = array();
+	protected $config = [];
 
 	// ---------------------------------------------------------------------
 
-	public static function _init()
+	public static function _init(): void
 	{
 		\Config::load('file', true);
 
@@ -48,11 +48,10 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 	{
 		parent::__construct($identifier, $config);
 
-		$this->config = isset($config['file']) ? $config['file'] : array();
+		$this->config = $config['file'] ?? [];
 
 		// check for an expiration override
-		$this->expiration = $this->_validate_config('expiration', isset($this->config['expiration'])
-			? $this->config['expiration'] : $this->expiration);
+		$this->expiration = $this->_validate_config('expiration', $this->config['expiration'] ?? $this->expiration);
 
 		// determine the file cache path
 		static::$path = !empty($this->config['path'])
@@ -102,7 +101,7 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 	/**
 	 * Delete Cache
 	 */
-	public function delete()
+	public function delete(): void
 	{
 		if (is_file($file = static::$path.$this->identifier_to_path($this->identifier).'.cache'))
 		{
@@ -130,10 +129,10 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 		}
 
 		// get all files in this section
-		$files = \File::read_dir($path.$section, -1, array('\.cache$' => 'file'));
+		$files = \File::read_dir($path.$section, -1, ['\.cache$' => 'file']);
 
 		// closure to recusively delete the files
-		$delete = function($folder, $files) use(&$delete, $path)
+		$delete = function($folder, $files) use(&$delete, $path): array|int|float|string|null|bool
 		{
 			$folder = rtrim($folder, '\\/').DS;
 
@@ -192,12 +191,12 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 	 */
 	protected function prep_contents()
 	{
-		$properties = array(
+		$properties = [
 			'created'          => $this->created,
 			'expiration'       => $this->expiration,
 			'dependencies'     => $this->dependencies,
 			'content_handler'  => $this->content_handler,
-		);
+		];
 		$properties = '{{'.self::PROPS_TAG.'}}'.json_encode($properties).'{{/'.self::PROPS_TAG.'}}';
 
 		return $properties.$this->contents;
@@ -211,14 +210,14 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 	 */
 	protected function unprep_contents($payload)
 	{
-		$properties_end = strpos($payload, '{{/'.self::PROPS_TAG.'}}');
+		$properties_end = strpos((string) $payload, '{{/'.self::PROPS_TAG.'}}');
 		if ($properties_end === false)
 		{
 			throw new \UnexpectedValueException('Cache has bad formatting');
 		}
 
-		$this->contents = substr($payload, $properties_end + strlen('{{/'.self::PROPS_TAG.'}}'));
-		$props = substr(substr($payload, 0, $properties_end), strlen('{{'.self::PROPS_TAG.'}}'));
+		$this->contents = substr((string) $payload, $properties_end + strlen('{{/'.self::PROPS_TAG.'}}'));
+		$props = substr(substr((string) $payload, 0, $properties_end), strlen('{{'.self::PROPS_TAG.'}}'));
 		$props = json_decode($props, true);
 		if ($props === null)
 		{
@@ -267,7 +266,7 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 							}
 							chmod($basepath, $chmod);
 						}
-						catch (\PHPErrorException $e)
+						catch (\PHPErrorException)
 						{
 							return false;
 						}
@@ -350,7 +349,7 @@ class Cache_Storage_File extends \Cache_Storage_Driver
 		{
 			$this->unprep_contents($payload);
 		}
-		catch (\UnexpectedValueException $e)
+		catch (\UnexpectedValueException)
 		{
 			return false;
 		}

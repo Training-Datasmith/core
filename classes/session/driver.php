@@ -17,27 +17,27 @@ abstract class Session_Driver
 	/*
 	 * @var	session class configuration
 	 */
-	protected $config = array();
+	protected $config = [];
 
 	/*
 	 * @var	session identification keys
 	 */
-	protected $keys = array();
+	protected $keys = [];
 
 	/*
 	 * @var	session variable data
 	 */
-	protected $data = array();
+	protected $data = [];
 
 	/*
 	 * @var	session flash data
 	 */
-	protected $flash = array();
+	protected $flash = [];
 
 	/*
 	 * @var	session time object
 	 */
-	protected $time = null;
+	protected $time;
 
 	/*
 	 * @var	session state
@@ -52,11 +52,11 @@ abstract class Session_Driver
 	/**
 	 *
 	 */
-	public function __construct($config = array())
-	{
-		// get a time object
-		$this->time = \Date::time();
-	}
+	public function __construct()
+    {
+        // get a time object
+        $this->time = \Date::time();
+    }
 
 	// --------------------------------------------------------------------
 	// generic driver methods
@@ -181,7 +181,7 @@ abstract class Session_Driver
 	 */
 	public function key($name = 'session_id')
 	{
-		return isset($this->keys[$name]) ? $this->keys[$name] : false;
+		return $this->keys[$name] ?? false;
 	}
 
 	// --------------------------------------------------------------------
@@ -237,7 +237,7 @@ abstract class Session_Driver
 	 */
 	public function set_flash($name, $value)
 	{
-		if (strpos($name, '.') !== false)
+		if (str_contains($name, '.'))
 		{
 			$keys = explode('.', $name, 2);
 			$name = array_shift($keys);
@@ -255,13 +255,13 @@ abstract class Session_Driver
 			}
 			else
 			{
-				$this->flash[$this->config['flash_id'].'::'.$name] = array('state' => 'new', 'value' => array());
+				$this->flash[$this->config['flash_id'].'::'.$name] = ['state' => 'new', 'value' => []];
 			}
 			\Arr::set($this->flash[$this->config['flash_id'].'::'.$name]['value'], $keys[0], $value);
 		}
 		else
 		{
-			$this->flash[$this->config['flash_id'].'::'.$name] = array('state' => 'new', 'value' => $value);
+			$this->flash[$this->config['flash_id'].'::'.$name] = ['state' => 'new', 'value' => $value];
 		}
 
 		return $this;
@@ -284,17 +284,17 @@ abstract class Session_Driver
 
 		if (is_null($name))
 		{
-			$default = array();
+			$default = [];
 			foreach($this->flash as $key => $value)
 			{
-				$key = substr($key, strpos($key, '::')+2);
+				$key = substr((string) $key, strpos((string) $key, '::')+2);
 				$default[$key] = $value;
 			}
 		}
 		else
 		{
 			// check if we need to run an Arr:get()
-			if (strpos($name, '.') !== false)
+			if (str_contains($name, '.'))
 			{
 				$keys = explode('.', $name, 2);
 				$name = array_shift($keys);
@@ -334,7 +334,7 @@ abstract class Session_Driver
 	 * @param	string	$name	name of the variable to keep
 	 * @return	\Session_Driver
 	 */
-	public function keep_flash($name)
+	public function keep_flash(?string $name)
 	{
 		if (is_null($name))
 		{
@@ -359,11 +359,11 @@ abstract class Session_Driver
 	 * @param	string	$name	name of the variable to delete
 	 * @return	\Session_Driver
 	 */
-	public function delete_flash($name)
+	public function delete_flash(?string $name)
 	{
 		if (is_null($name))
 		{
-			$this->flash = array();
+			$this->flash = [];
 		}
 		elseif (isset($this->flash[$this->config['flash_id'].'::'.$name]))
 		{
@@ -410,7 +410,7 @@ abstract class Session_Driver
 	 */
 	public function get_config($name)
 	{
-		return isset($this->config[$name]) ? $this->config[$name] : null;
+		return $this->config[$name] ?? null;
 	}
 
 	// --------------------------------------------------------------------
@@ -483,9 +483,9 @@ abstract class Session_Driver
 			$this->time = \Date::time();
 
 			// initialize the session storage
-			$this->data = array();
-			$this->keys = array();
-			$this->flash = array();
+			$this->data = [];
+			$this->keys = [];
+			$this->flash = [];
 		}
 
 		// init -> started
@@ -505,14 +505,14 @@ abstract class Session_Driver
 			}
 
 			// register a shutdown event to close the session on termination
-			\Event::register('fuel-shutdown', array($this, 'close'));
+			\Event::register('fuel-shutdown', $this->close(...));
 		}
 
 		// started -> closed
 		elseif ($newstate === 'closed' and $this->state === 'started')
 		{
 			// unregister a shutdown event, we've closed the session
-			\Event::unregister('fuel-shutdown', array($this, 'close'));
+			\Event::unregister('fuel-shutdown', $this->close(...));
 
 			// remove stale flash
 			$this->_cleanup_flash();
@@ -522,7 +522,7 @@ abstract class Session_Driver
 		elseif ($newstate === 'destroyed' and $this->state === 'started')
 		{
 			// unregister a shutdown event, we've closed the session
-			\Event::unregister('fuel-shutdown', array($this, 'close'));
+			\Event::unregister('fuel-shutdown', $this->close(...));
 
 			// delete the session cookie
 			\Cookie::delete($this->config['cookie_name'], $this->config['cookie_path'], $this->config['cookie_domain'], null, $this->config['cookie_http_only']);
@@ -614,7 +614,7 @@ abstract class Session_Driver
 	 * @return	mixed
 	 * @throws	\FuelException
 	 */
-	 protected function _set_cookie($payload = array())
+	 protected function _set_cookie($payload = [])
 	 {
 		if ($this->config['enable_cookie'])
 		{
@@ -624,7 +624,7 @@ abstract class Session_Driver
 			$this->config['encrypt_cookie'] and $payload = \Crypt::encode($payload);
 
 			// make sure it doesn't exceed the cookie size specification
-			if (strlen($payload) > 4000)
+			if (strlen((string) $payload) > 4000)
 			{
 				throw new \FuelException('The session data stored by the application in the cookie exceeds 4Kb. Select a different session storage driver.');
 			}
@@ -634,10 +634,7 @@ abstract class Session_Driver
 			{
 				return \Cookie::set($this->config['cookie_name'], $payload, 0, $this->config['cookie_path'], $this->config['cookie_domain'], null, $this->config['cookie_http_only']);
 			}
-			else
-			{
-				return \Cookie::set($this->config['cookie_name'], $payload, $this->config['expiration_time'], $this->config['cookie_path'], $this->config['cookie_domain'], null, $this->config['cookie_http_only']);
-			}
+            return \Cookie::set($this->config['cookie_name'], $payload, $this->config['expiration_time'], $this->config['cookie_path'], $this->config['cookie_domain'], null, $this->config['cookie_http_only']);
 		}
 	}
 
@@ -693,7 +690,7 @@ abstract class Session_Driver
 			// or a string containing the session id
 			elseif (is_string($cookie) and strlen($cookie) == 32)
 			{
-				$cookie = array($cookie);
+				$cookie = [$cookie];
 			}
 
 			// invalid general format
@@ -756,24 +753,20 @@ abstract class Session_Driver
 	protected function _unserialize($input)
 	{
 		$data = @unserialize($input);
-
-		if (is_array($data))
-		{
-			foreach ($data as $key => $val)
+        if (is_array($data)) {
+            foreach ($data as $key => $val)
 			{
 				if (is_string($val))
 				{
 					$data[$key] = str_replace('{{slash}}', '\\', $val);
 				}
 			}
+            return $data;
+        }
 
-			return $data;
-		}
-
-		elseif ($data === false)
-		{
-			is_string($input) and $data = array($input);
-		}
+		if ($data === false) {
+            is_string($input) and $data = [$input];
+        }
 
 		return (is_string($data)) ? str_replace('{{slash}}', '\\', $data) : $data;
 	}
@@ -790,7 +783,7 @@ abstract class Session_Driver
 	 */
 	protected function _validate_config($config)
 	{
-		$validated = array();
+		$validated = [];
 
 		foreach ($config as $name => $item)
 		{

@@ -17,17 +17,17 @@ class File_Area
 	/**
 	 * @var	string	path to basedir restriction, null for no restriction
 	 */
-	protected $basedir = null;
+	protected $basedir;
 
 	/**
 	 * @var	array	array of allowed extensions, null for all
 	 */
-	protected $extensions = null;
+	protected $extensions;
 
 	/**
 	 * @var	string	base url for files, null for not available
 	 */
-	protected $url = null;
+	protected $url;
 
 	/**
 	 * @var	bool	whether or not to use file locks when doing file operations
@@ -37,9 +37,9 @@ class File_Area
 	/**
 	 * @var	array	contains file handler per file extension
 	 */
-	protected $file_handlers = array();
+	protected $file_handlers = [];
 
-	protected function __construct(array $config = array())
+	protected function __construct(array $config = [])
 	{
 		foreach ($config as $key => $value)
 		{
@@ -56,12 +56,11 @@ class File_Area
 	}
 
 	/**
-	 * Factory for area objects
-	 *
-	 * @param	array
-	 * @return	File_Area
-	 */
-	public static function forge(array $config = array())
+     * Factory for area objects
+     *
+     * @param	array
+     */
+    public static function forge(array $config = []): static
 	{
 		return new static($config);
 	}
@@ -76,36 +75,30 @@ class File_Area
 	 * @throws	\FileAccessException			when outside basedir restriction or disallowed file extension
 	 * @throws  \OutsideAreaException
 	 */
-	public function get_handler($path, array $config = array(), $content = array())
+	public function get_handler($path, array $config = [], $content = [])
 	{
 		$path = $this->get_path($path);
-
-		if (is_file($path))
-		{
-			$info = pathinfo($path);
-
-			// deal with path names without an extension
-			isset($info['extension']) or $info['extension'] = '';
-
-			// check file extension
-			if ( ! empty($this->extensions) && ! in_array($info['extension'], $this->extensions))
+        if (is_file($path)) {
+            $info = pathinfo($path);
+            // deal with path names without an extension
+            isset($info['extension']) or $info['extension'] = '';
+            // check file extension
+            if ( ! empty($this->extensions) && ! in_array($info['extension'], $this->extensions))
 			{
 				throw new \FileAccessException('File operation not allowed: disallowed file extension.');
 			}
-
-			// create specific handler when available
-			if (array_key_exists($info['extension'], $this->file_handlers))
+            // create specific handler when available
+            if (array_key_exists($info['extension'], $this->file_handlers))
 			{
-				$class = '\\'.ltrim($this->file_handlers[$info['extension']], '\\');
+				$class = '\\'.ltrim((string) $this->file_handlers[$info['extension']], '\\');
 				return $class::forge($path, $config, $this);
 			}
+            return \File_Handler_File::forge($path, $config, $this);
+        }
 
-			return \File_Handler_File::forge($path, $config, $this);
-		}
-		elseif (is_dir($path))
-		{
-			return \File_Handler_Directory::forge($path, $config, $this, $content);
-		}
+		if (is_dir($path)) {
+            return \File_Handler_Directory::forge($path, $config, $this, $content);
+        }
 
 		// still here? path is invalid
 		throw new \FileAccessException('Invalid path for file or directory.');
@@ -132,22 +125,21 @@ class File_Area
 	}
 
 	/**
-	 * Translate relative path to real path, throws error when operation is not allowed
-	 *
-	 * @param	string	$path
-	 * @return	string
-	 * @throws	\FileAccessException	when outside basedir restriction or disallowed file extension
-	 * @throws	\OutsideAreaException
-	 */
-	public function get_path($path)
+     * Translate relative path to real path, throws error when operation is not allowed
+     *
+     * @param	string	$path
+     * @throws	\FileAccessException	when outside basedir restriction or disallowed file extension
+     * @throws	\OutsideAreaException
+     */
+    public function get_path($path): string
 	{
-		$pathinfo = is_dir($path) ? array('dirname' => $path, 'extension' => null, 'basename' => '') : pathinfo($path);
+		$pathinfo = is_dir($path) ? ['dirname' => $path, 'extension' => null, 'basename' => ''] : pathinfo($path);
 
 		// make sure we have a dirname to work with
 		isset($pathinfo['dirname']) or $pathinfo['dirname'] = '';
 
 		// do we have a basedir, and is the path already prefixed by the basedir? then just deal with the double dots...
-		if ( ! empty($this->basedir) && substr($pathinfo['dirname'], 0, strlen($this->basedir)) == $this->basedir)
+		if ( ! empty($this->basedir) && str_starts_with($pathinfo['dirname'], $this->basedir))
 		{
 			$pathinfo['dirname'] = realpath($pathinfo['dirname']);
 		}
@@ -159,7 +151,7 @@ class File_Area
 		}
 
 		// basedir prefix is required when it is set (may cause unexpected errors when realpath doesn't work)
-		if ( ! empty($this->basedir) && substr($pathinfo['dirname'], 0, strlen($this->basedir)) != $this->basedir)
+		if ( ! empty($this->basedir) && !str_starts_with($pathinfo['dirname'], $this->basedir))
 		{
 			throw new \OutsideAreaException('File operation not allowed: given path is outside the basedir for this area.');
 		}
@@ -174,13 +166,12 @@ class File_Area
 	}
 
 	/**
-	 * Translate relative path to accessible path, throws error when operation is not allowed
-	 *
-	 * @param	string
-	 * @return	string
-	 * @throws	\LogicException	when no url is set or no basedir is set and file is outside DOCROOT
-	 */
-	public function get_url($path)
+     * Translate relative path to accessible path, throws error when operation is not allowed
+     *
+     * @param	string
+     * @throws	\LogicException	when no url is set or no basedir is set and file is outside DOCROOT
+     */
+    public function get_url($path): string
 	{
 		if(empty($this->url))
 		{
@@ -192,12 +183,12 @@ class File_Area
 		$basedir = $this->basedir;
 		empty($basedir) and $basedir = DOCROOT;
 
-		if(stripos($path, $basedir) !== 0)
+		if(stripos($path, (string) $basedir) !== 0)
 		{
 			throw new \LogicException('File operation not allowed: cannot create file url whithout a basedir and file outside DOCROOT.');
 		}
 
-		return rtrim($this->url, '/').'/'.ltrim(str_replace(DS, '/', substr($path, strlen($basedir))), '/');
+		return rtrim($this->url, '/').'/'.ltrim(str_replace(DS, '/', substr($path, strlen((string) $basedir))), '/');
 	}
 
 	/* -------------------------------------------------------------------------------------
@@ -222,7 +213,7 @@ class File_Area
 	public function read_dir($path, $depth = 0, $filter = null)
 	{
 		$content = \File::read_dir($path, $depth, $filter, $this);
-		return $this->get_handler($path, array(), $content);
+		return $this->get_handler($path, [], $content);
 	}
 
 	public function rename($path, $new_path)

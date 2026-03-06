@@ -28,20 +28,20 @@ class Cookie
 	/**
 	 * @var  array  Cookie class configuration defaults
 	 */
-	protected static $config = array(
+	protected static $config = [
 		'expiration'            => 0,
 		'path'                  => '/',
 		'domain'                => null,
 		'secure'                => false,
 		'http_only'             => false,
-	);
+	];
 
 	/*
 	 * initialisation and auto configuration
 	 */
-	public static function _init()
+	public static function _init(): void
 	{
-		static::$config = array_merge(static::$config, \Config::get('cookie', array()));
+		static::$config = array_merge(static::$config, \Config::get('cookie', []));
 	}
 
 	/**
@@ -97,7 +97,7 @@ class Cookie
 		// add the current time so we have an offset
 		$expiration = $expiration > 0 ? $expiration + time() : 0;
 
-		return setcookie($name, $value, $expiration, $path, $domain, $secure, $http_only);
+		return setcookie($name, $value, ['expires' => $expiration, 'path' => $path, 'domain' => $domain, 'secure' => $secure, 'httponly' => $http_only]);
 	}
 
 	/**

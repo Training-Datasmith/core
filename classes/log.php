@@ -23,22 +23,22 @@ class Log
 	/**
 	 * container for the Monolog instance
 	 */
-	protected static $monolog = null;
+	protected static $monolog;
 
 	/**
 	 * log file path
 	 */
-	protected static $path = null;
+	protected static $path;
 
 	/**
 	 * log file filename
 	 */
-	protected static $filename = null;
+	protected static $filename;
 
 	/**
 	 * create the monolog instance
 	 */
-	public static function _init()
+	public static function _init(): void
 	{
 		static::$monolog = new \Monolog\Logger('fuelphp');
 		static::initialize();
@@ -55,7 +55,7 @@ class Log
 	/**
 	 * initialize the created the monolog instance
 	 */
-	public static function initialize()
+	public static function initialize(): void
 	{
 		// load the file config
 		\Config::load('file', true);
@@ -74,7 +74,7 @@ class Log
 		}
 
 		// determine the name of the logfile
-		$filename = \Config::get('log_file', null);
+		$filename = \Config::get('log_file');
 		if (empty($filename))
 		{
 			$filename = date('Y').DS.date('m').DS.date('d').'.php';
@@ -120,11 +120,11 @@ class Log
 	/**
 	 * Get the current log filename, optionally with a prefix or suffix.
 	 */
-	public static function logfile($prefix = '', $suffix = '')
+	public static function logfile(string $prefix = '', string $suffix = ''): string
 	{
-		$ext = pathinfo(static::$filename, PATHINFO_EXTENSION);
-		$path = dirname(static::$filename);
-		$file = pathinfo(static::$filename, PATHINFO_FILENAME);
+		$ext = pathinfo((string) static::$filename, PATHINFO_EXTENSION);
+		$path = dirname((string) static::$filename);
+		$file = pathinfo((string) static::$filename, PATHINFO_FILENAME);
 		return static::$path.$path.DS.$prefix.$file.$suffix.($ext?('.'.$ext):'');
 	}
 
@@ -177,15 +177,14 @@ class Log
 	}
 
 	/**
-	 * Write a log entry to Monolog
-	 *
-	 * @param	int|string    $level     the log level
-	 * @param	string        $msg      the log message
-	 * @param	array         $context  message context
-	 * @return	bool
-	 * @throws	\FuelException
-	 */
-	public static function log($level, $msg, array $context = array())
+     * Write a log entry to Monolog
+     *
+     * @param	int|string    $level     the log level
+     * @param	string        $msg      the log message
+     * @param	array         $context  message context
+     * @throws	\FuelException
+     */
+    public static function log($level, $msg, array $context = []): bool
 	{
 		// bail out if we don't need logging at all
 		if ( ! static::need_logging($level))
@@ -216,7 +215,7 @@ class Log
 	 * @return	bool
 	 * @throws	\FuelException
 	 */
-	public static function write($level, $msg, $context = null)
+	public static function write($level, string $msg, $context = null)
 	{
 		// bail out if we don't need logging at all
 		if (($level = static::need_logging($level)) === false)
@@ -252,7 +251,7 @@ class Log
 	protected static function need_logging($level)
 	{
 		// defined default error labels
-		static $levels = array(
+		static $levels = [
 			100 => 'DEBUG',
 			200 => 'INFO',
 			250 => 'NOTICE',
@@ -261,15 +260,15 @@ class Log
 			500 => 'CRITICAL',
 			550 => 'ALERT',
 			600 => 'EMERGENCY',
-		);
+		];
 
 		// defined old default error labels
-		static $oldlabels = array(
+		static $oldlabels = [
 			1  => 'Error',
 			2  => 'Warning',
 			3  => 'Debug',
 			4  => 'Info',
-		);
+		];
 
 		// get the levels defined to be logged
 		$loglabels = \Config::get('log_threshold');
@@ -284,7 +283,7 @@ class Log
 		// if it's not an array, assume it's an "up to" level
 		if ( ! is_array($loglabels))
 		{
-			$a = array();
+			$a = [];
 			foreach ($levels as $l => $label)
 			{
 				$l >= $loglabels and $a[] = $l;

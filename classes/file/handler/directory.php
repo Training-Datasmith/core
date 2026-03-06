@@ -17,37 +17,31 @@ class File_Handler_Directory
 	/**
 	 * @var	string	path to the file
 	 */
-	protected $path;
-
-	/**
-	 * @var	File_Area
-	 */
-	protected $area;
+	protected string $path;
 
 	/**
 	 * @var	array	listing of files and directories within this directory
 	 */
-	protected $content = array();
+	protected $content = [];
 
-	protected function __construct($path, array &$config, File_Area $area, $content = array())
+	protected function __construct(string $path, array &$config, protected \Fuel\Core\File_Area $area, $content = [])
 	{
 		$this->path	= rtrim($path, '\\/').DS;
-		$this->area	= $area;
 
 		foreach ($content as $key => $value)
 		{
 			if ( ! is_int($key))
 			{
-				$this->content[$key] = $value === false ? false : $area->get_handler($path.DS.$key, $config, $value);
+				$this->content[$key] = $value === false ? false : $this->area->get_handler($path.DS.$key, $config, $value);
 			}
 			else
 			{
-				$this->content[$key] = $area->get_handler($path.DS.$value, $config);
+				$this->content[$key] = $this->area->get_handler($path.DS.$value, $config);
 			}
 		}
 	}
 
-	public static function forge($path, array $config = array(), File_Area $area = null, $content = array())
+	public static function forge($path, array $config = [], File_Area $area = null, $content = []): static
 	{
 		return new static($path, $config, $area, $content);
 	}
@@ -61,7 +55,7 @@ class File_Handler_Directory
 	 */
 	public function read($depth = 0, $filters = null)
 	{
-		return $this->area->read_dir($this->path, $depth, $filters, $this->area);
+		return $this->area->read_dir($this->path, $depth, $filters);
 	}
 
 	/**
@@ -74,7 +68,7 @@ class File_Handler_Directory
 	{
 		$info = pathinfo($this->path);
 
-		$new_name = str_replace(array('..', '/', '\\'), array('', '', ''), $new_name);
+		$new_name = str_replace(['..', '/', '\\'], ['', '', ''], $new_name);
 
 		$new_path = $info['dirname'].DS.$new_name;
 
@@ -126,7 +120,7 @@ class File_Handler_Directory
 	 *
 	 * @throws	\BadMethodCallException
 	 */
-	public function update()
+	public function update(): never
 	{
 		throw new \BadMethodCallException('Update method is unavailable on directories.');
 	}
@@ -151,7 +145,7 @@ class File_Handler_Directory
 	 *
 	 * @throws	\BadMethodCallException
 	 */
-	public function get_url()
+	public function get_url(): never
 	{
 		throw new \BadMethodCallException('Get_url method is unavailable on directories.');
 	}
@@ -184,7 +178,7 @@ class File_Handler_Directory
 	 *
 	 * @throws	\BadMethodCallException
 	 */
-	public function get_size()
+	public function get_size(): never
 	{
 		throw new \BadMethodCallException('Get_size method is unavailable on directories.');
 	}

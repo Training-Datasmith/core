@@ -13,17 +13,17 @@
 
 namespace Fuel\Core;
 
-abstract class Database_Connection
+abstract class Database_Connection implements \Stringable
 {
 	/**
 	 * @var string Cache of the name of the readonly connection
 	 */
-	protected static $_readonly = array();
+	protected static $_readonly = [];
 
 	/**
 	 * @var  array  Database instances
 	 */
-	public static $instances = array();
+	public static $instances = [];
 
 	/**
 	 * Get a singleton Database instance. If configuration is not specified,
@@ -90,12 +90,7 @@ abstract class Database_Connection
 	/**
 	 * @var  string  Character that is used to quote identifiers
 	 */
-	protected $_identifier = '';
-
-	/**
-	 * @var  string  Instance name
-	 */
-	protected $_instance;
+	protected string $_identifier;
 
 	/**
 	 *
@@ -126,21 +121,17 @@ abstract class Database_Connection
 	protected $_schema;
 
 	/**
-	 * Stores the database configuration locally and name the instance.
-	 *
-	 * [!!] This method cannot be accessed directly, you must use [static::instance].
-	 *
-	 * @param string $name
-	 * @param array  $config
-	 */
-	protected function __construct($name, array $config)
+     * Stores the database configuration locally and name the instance.
+     *
+     * [!!] This method cannot be accessed directly, you must use [static::instance].
+     *
+     * @param string $_instance
+     */
+    protected function __construct(protected $_instance, array $config)
 	{
-		// Set the instance name
-		$this->_instance = $name;
-
 		// make sure we have all connection parameters, add defaults for those missing
-		$this->_config = array_merge(array(
-			'connection'  => array(
+		$this->_config = array_merge([
+			'connection'  => [
 				'dsn'        => '',
 				'hostname'   => '',
 				'username'   => null,
@@ -148,7 +139,7 @@ abstract class Database_Connection
 				'database'   => '',
 				'persistent' => false,
 				'compress'   => false,
-			),
+			],
 			'identifier'   => '',
 			'table_prefix' => '',
 			'charset'      => 'utf8',
@@ -156,45 +147,41 @@ abstract class Database_Connection
 			'enable_cache' => true,
 			'profiling'    => false,
 			'readonly'     => false,
-		), $config);
+		], $config);
 
 		// Set up a generic schema processor if needed
 		if ( ! $this->_schema)
 		{
-			$this->_schema = new \Database_Schema($name, $this);
+			$this->_schema = new \Database_Schema($this->_instance, $this);
 		}
 
 		// Allow the identifier to be overloaded per-connection
 		$this->_identifier = (string) $this->_config['identifier'];
 
 		// Store the database instance
-		static::$instances[$name] = $this;
+		static::$instances[$this->_instance] = $this;
 	}
 
 	/**
-	 * Disconnect from the database when the object is destroyed.
-	 *
-	 *     // Destroy the database instance
-	 *     unset(static::instances[(string) $db], $db);
-	 *
-	 * [!!] Calling `unset($db)` is not enough to destroy the database, as it
-	 * will still be stored in `static::$instances`.
-	 *
-	 * @return  void
-	 */
-	final public function __destruct()
+     * Disconnect from the database when the object is destroyed.
+     *
+     *     // Destroy the database instance
+     *     unset(static::instances[(string) $db], $db);
+     *
+     * [!!] Calling `unset($db)` is not enough to destroy the database, as it
+     * will still be stored in `static::$instances`.
+     */
+    final public function __destruct()
 	{
 		$this->disconnect();
 	}
 
 	/**
-	 * Returns the database instance name.
-	 *
-	 *     echo (string) $db;
-	 *
-	 * @return  string
-	 */
-	final public function __toString()
+     * Returns the database instance name.
+     *
+     *     echo (string) $db;
+     */
+    final public function __toString(): string
 	{
 		return $this->_instance;
 	}
@@ -340,9 +327,9 @@ abstract class Database_Connection
 	 * @param   string  table to delete from
 	 * @return  Database_Query_Builder_Delete
 	 */
-	public function schema($operation, array $params = array())
+	public function schema($operation, array $params = [])
 	{
-		return call_user_func_array(array($this->_schema, $operation), $params);
+		return call_user_func_array([$this->_schema, $operation], $params);
 	}
 
 	/**
@@ -369,16 +356,16 @@ abstract class Database_Connection
 				$sql = preg_replace('/\sLIMIT\s+[^a-z\)]+/i', ' ', $sql);
 			}
 
-			if (stripos($sql, 'OFFSET') !== false)
+			if (stripos((string) $sql, 'OFFSET') !== false)
 			{
 				// Remove OFFSET from the SQL
-				$sql = preg_replace('/\sOFFSET\s+\d+/i', '', $sql);
+				$sql = preg_replace('/\sOFFSET\s+\d+/i', '', (string) $sql);
 			}
 
-			if (stripos($sql, 'ORDER BY') !== false)
+			if (stripos((string) $sql, 'ORDER BY') !== false)
 			{
 				// Remove ORDER BY clauses from the SQL to improve count query performance
-				$sql = preg_replace('/ORDER BY (.+?)(?=LIMIT|GROUP BY|PROCEDURE|INTO|FOR|LOCK|\)|$)/mi', '', $sql);
+				$sql = preg_replace('/ORDER BY (.+?)(?=LIMIT|GROUP BY|PROCEDURE|INTO|FOR|LOCK|\)|$)/mi', '', (string) $sql);
 			}
 
 			// Get the total rows from the last query executed
@@ -446,65 +433,60 @@ abstract class Database_Connection
 	 */
 	public function datatype($type)
 	{
-		static $types = array(
+		static $types = [
 			// SQL-92
-			'bit'                           => array('type' => 'string', 'exact' => true),
-			'bit varying'                   => array('type' => 'string'),
-			'char'                          => array('type' => 'string', 'exact' => true),
-			'char varying'                  => array('type' => 'string'),
-			'character'                     => array('type' => 'string', 'exact' => true),
-			'character varying'             => array('type' => 'string'),
-			'date'                          => array('type' => 'string'),
-			'dec'                           => array('type' => 'float', 'exact' => true),
-			'decimal'                       => array('type' => 'float', 'exact' => true),
-			'double precision'              => array('type' => 'float'),
-			'float'                         => array('type' => 'float'),
-			'int'                           => array('type' => 'int', 'min' => '-2147483648', 'max' => '2147483647'),
-			'integer'                       => array('type' => 'int', 'min' => '-2147483648', 'max' => '2147483647'),
-			'interval'                      => array('type' => 'string'),
-			'national char'                 => array('type' => 'string', 'exact' => true),
-			'national char varying'         => array('type' => 'string'),
-			'national character'            => array('type' => 'string', 'exact' => true),
-			'national character varying'    => array('type' => 'string'),
-			'nchar'                         => array('type' => 'string', 'exact' => true),
-			'nchar varying'                 => array('type' => 'string'),
-			'numeric'                       => array('type' => 'float', 'exact' => true),
-			'real'                          => array('type' => 'float'),
-			'smallint'                      => array('type' => 'int', 'min' => '-32768', 'max' => '32767'),
-			'time'                          => array('type' => 'string'),
-			'time with time zone'           => array('type' => 'string'),
-			'timestamp'                     => array('type' => 'string'),
-			'timestamp with time zone'      => array('type' => 'string'),
-			'varchar'                       => array('type' => 'string'),
+			'bit'                           => ['type' => 'string', 'exact' => true],
+			'bit varying'                   => ['type' => 'string'],
+			'char'                          => ['type' => 'string', 'exact' => true],
+			'char varying'                  => ['type' => 'string'],
+			'character'                     => ['type' => 'string', 'exact' => true],
+			'character varying'             => ['type' => 'string'],
+			'date'                          => ['type' => 'string'],
+			'dec'                           => ['type' => 'float', 'exact' => true],
+			'decimal'                       => ['type' => 'float', 'exact' => true],
+			'double precision'              => ['type' => 'float'],
+			'float'                         => ['type' => 'float'],
+			'int'                           => ['type' => 'int', 'min' => '-2147483648', 'max' => '2147483647'],
+			'integer'                       => ['type' => 'int', 'min' => '-2147483648', 'max' => '2147483647'],
+			'interval'                      => ['type' => 'string'],
+			'national char'                 => ['type' => 'string', 'exact' => true],
+			'national char varying'         => ['type' => 'string'],
+			'national character'            => ['type' => 'string', 'exact' => true],
+			'national character varying'    => ['type' => 'string'],
+			'nchar'                         => ['type' => 'string', 'exact' => true],
+			'nchar varying'                 => ['type' => 'string'],
+			'numeric'                       => ['type' => 'float', 'exact' => true],
+			'real'                          => ['type' => 'float'],
+			'smallint'                      => ['type' => 'int', 'min' => '-32768', 'max' => '32767'],
+			'time'                          => ['type' => 'string'],
+			'time with time zone'           => ['type' => 'string'],
+			'timestamp'                     => ['type' => 'string'],
+			'timestamp with time zone'      => ['type' => 'string'],
+			'varchar'                       => ['type' => 'string'],
 
 			// SQL:1999
-			'binary large object'               => array('type' => 'string', 'binary' => true),
-			'blob'                              => array('type' => 'string', 'binary' => true),
-			'boolean'                           => array('type' => 'bool'),
-			'char large object'                 => array('type' => 'string'),
-			'character large object'            => array('type' => 'string'),
-			'clob'                              => array('type' => 'string'),
-			'national character large object'   => array('type' => 'string'),
-			'nchar large object'                => array('type' => 'string'),
-			'nclob'                             => array('type' => 'string'),
-			'time without time zone'            => array('type' => 'string'),
-			'timestamp without time zone'       => array('type' => 'string'),
+			'binary large object'               => ['type' => 'string', 'binary' => true],
+			'blob'                              => ['type' => 'string', 'binary' => true],
+			'boolean'                           => ['type' => 'bool'],
+			'char large object'                 => ['type' => 'string'],
+			'character large object'            => ['type' => 'string'],
+			'clob'                              => ['type' => 'string'],
+			'national character large object'   => ['type' => 'string'],
+			'nchar large object'                => ['type' => 'string'],
+			'nclob'                             => ['type' => 'string'],
+			'time without time zone'            => ['type' => 'string'],
+			'timestamp without time zone'       => ['type' => 'string'],
 
 			// SQL:2003
-			'bigint'    => array('type' => 'int', 'min' => '-9223372036854775808', 'max' => '9223372036854775807'),
+			'bigint'    => ['type' => 'int', 'min' => '-9223372036854775808', 'max' => '9223372036854775807'],
 
 			// SQL:2008
-			'binary'            => array('type' => 'string', 'binary' => true, 'exact' => true),
-			'binary varying'    => array('type' => 'string', 'binary' => true),
-			'varbinary'         => array('type' => 'string', 'binary' => true),
-		);
+			'binary'            => ['type' => 'string', 'binary' => true, 'exact' => true],
+			'binary varying'    => ['type' => 'string', 'binary' => true],
+			'varbinary'         => ['type' => 'string', 'binary' => true],
+		];
 
-		if (isset($types[$type]))
-		{
-			return $types[$type];
-		}
-
-		return array();
+		return $types[$type] ?? [];
 	}
 
 	/**
@@ -572,7 +554,7 @@ abstract class Database_Connection
 		if (($open = strpos($type, '(')) === false)
 		{
 			// No length specified
-			return array($type, null);
+			return [$type, null];
 		}
 
 		// Closing parenthesis
@@ -584,7 +566,7 @@ abstract class Database_Connection
 		// Type without the length
 		$type = substr($type, 0, $open).substr($type, $close + 1);
 
-		return array($type, $length);
+		return [$type, $length];
 	}
 
 	/**
@@ -626,51 +608,38 @@ abstract class Database_Connection
 	 */
 	public function quote($value)
 	{
-		if ($value === null)
-		{
-			return 'null';
-		}
-		elseif ($value === true)
-		{
-			return "'1'";
-		}
-		elseif ($value === false)
-		{
-			return "'0'";
-		}
-		elseif (is_object($value))
-		{
-			if ($value instanceof Database_Query)
-			{
-				// Create a sub-query
-				return '('.$value->compile($this).')';
-			}
-			elseif ($value instanceof Database_Expression)
-			{
-				// Use a raw expression
-				return $value->value();
-			}
-			else
-			{
-				// Convert the object to a string
-				return $this->quote((string) $value);
-			}
-		}
-		elseif (is_array($value))
-		{
-			return '('.implode(', ', array_map(array($this, __FUNCTION__), $value)).')';
-		}
-		elseif (is_int($value))
-		{
-			return (int) $value;
-		}
-		elseif (is_float($value))
-		{
-			$locale_info = localeconv();
-			$value = str_replace($locale_info["thousands_sep"], "", strval($value));
-			$value = str_replace($locale_info["decimal_point"], ".", $value);
-			return $value;
-		}
+		if ($value === null) {
+            return 'null';
+        }
+        if ($value === true) {
+            return "'1'";
+        }
+        if ($value === false) {
+            return "'0'";
+        }
+        if (is_object($value)) {
+            if ($value instanceof Database_Query) {
+                // Create a sub-query
+                return '('.$value->compile($this).')';
+            }
+            if ($value instanceof Database_Expression) {
+                // Use a raw expression
+                return $value->value();
+            }
+            // Convert the object to a string
+            return $this->quote((string) $value);
+        }
+        if (is_array($value)) {
+            return '('.implode(', ', array_map([$this, __FUNCTION__], $value)).')';
+        }
+        if (is_int($value)) {
+            return $value;
+        }
+        if (is_float($value)) {
+            $locale_info = localeconv();
+            $value = str_replace($locale_info["thousands_sep"], "", strval($value));
+            return str_replace($locale_info["decimal_point"], ".", $value);
+        }
 
 		return $this->escape($value);
 	}
@@ -687,7 +656,7 @@ abstract class Database_Connection
 	 * @uses    static::quote_identifier
 	 * @uses    static::table_prefix
 	 */
-	public function quote_table($value)
+	public function quote_table(string $value)
 	{
 		// Assign the table by reference from the value
 		if (is_array($value))
@@ -710,7 +679,7 @@ abstract class Database_Connection
 		}
 		elseif (is_string($table))
 		{
-			if (strpos($table, '.') === false)
+			if (!str_contains($table, '.'))
 			{
 				// Add the table prefix for tables
 				$table = $this->quote_identifier($this->table_prefix().$table);
@@ -738,7 +707,7 @@ abstract class Database_Connection
 				}
 
 				// Quote each of the parts
-				$table = implode('.', array_map(array($this, 'quote_identifier'), $parts));
+				$table = implode('.', array_map($this->quote_identifier(...), $parts));
 			}
 		}
 
@@ -746,15 +715,12 @@ abstract class Database_Connection
 		if (is_array($value))
 		{
 			// Separate the column and alias
-			list($value, $alias) = $value;
+			[$value, $alias] = $value;
 
 			return $value.' AS '.$this->quote_identifier($alias);
 		}
-		else
-		{
-			// return the value
-			return $value;
-		}
+        // return the value
+        return $value;
 	}
 
 	/**
@@ -781,47 +747,38 @@ abstract class Database_Connection
 	 */
 	public function quote_identifier($value)
 	{
-		if ($value === '*')
-		{
-			return $value;
-		}
-		elseif (is_object($value))
-		{
-			if ($value instanceof Database_Query)
-			{
-				// Create a sub-query
-				return '('.$value->compile($this).')';
-			}
-			elseif ($value instanceof Database_Expression)
-			{
-				// Use a raw expression
-				return $value->value();
-			}
-			else
-			{
-				// Convert the object to a string
-				return $this->quote_identifier((string) $value);
-			}
-		}
-		elseif (is_array($value))
-		{
-			// Separate the column and alias
-			list($value, $alias) = $value;
+		if ($value === '*') {
+            return $value;
+        }
+        if (is_object($value)) {
+            if ($value instanceof Database_Query) {
+                // Create a sub-query
+                return '('.$value->compile($this).')';
+            }
+            if ($value instanceof Database_Expression) {
+                // Use a raw expression
+                return $value->value();
+            }
+            // Convert the object to a string
+            return $this->quote_identifier((string) $value);
+        }
+        if (is_array($value)) {
+            // Separate the column and alias
+            [$value, $alias] = $value;
+            return $this->quote_identifier($value).' AS '.$this->quote_identifier($alias);
+        }
 
-			return $this->quote_identifier($value).' AS '.$this->quote_identifier($alias);
-		}
-
-		if (preg_match('/^(["\']).*\1$/m', $value))
+		if (preg_match('/^(["\']).*\1$/m', (string) $value))
 		{
 			return $value;
 		}
 
-		if (strpos($value, '.') !== false)
+		if (str_contains((string) $value, '.'))
 		{
 			// Split the identifier into the individual parts
 			// This is slightly broken, because a table or column name
 			// (or user-defined alias!) might legitimately contain a period.
-			$parts = explode('.', $value);
+			$parts = explode('.', (string) $value);
 
 			if ($prefix = $this->table_prefix())
 			{
@@ -834,7 +791,7 @@ abstract class Database_Connection
 			}
 
 			// Quote each of the parts
-			return implode('.', array_map(array($this, __FUNCTION__), $parts));
+			return implode('.', array_map([$this, __FUNCTION__], $parts));
 		}
 
 		// That you can simply escape the identifier by doubling

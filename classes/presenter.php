@@ -19,7 +19,7 @@ namespace Fuel\Core;
  * @subpackage  Core
  * @category    Core * @author      Jelmer Schreuder
  */
-abstract class Presenter
+abstract class Presenter implements \Stringable
 {
 	// namespace prefix
 	protected static $ns_prefix = 'Presenter_';
@@ -39,7 +39,7 @@ abstract class Presenter
 		$namespace = \Request::active() ? ucfirst(\Request::active()->module) : '';
 
 		// create the list of possible class prefixes
-		$prefixes = array(static::$ns_prefix, $namespace.'\\');
+		$prefixes = [static::$ns_prefix, $namespace.'\\'];
 
 		/**
 		 * Add non prefixed classnames to the list as well, for BC reasons
@@ -53,7 +53,7 @@ abstract class Presenter
 		}
 
 		// loading from a specific namespace?
-		if (strpos($presenter, '::') !== false)
+		if (str_contains($presenter, '::'))
 		{
 			$split = explode('::', $presenter, 2);
 			if (isset($split[1]))
@@ -68,13 +68,13 @@ abstract class Presenter
 
 		// strip any extensions from the view name to determine the presenter to load
 		$presenter = \Inflector::words_to_upper(str_replace(
-			array('/', DS),
+			['/', DS],
 			'_',
-			strpos($presenter, '.') === false ? $presenter : substr($presenter, 0, -strlen(strrchr($presenter, '.')))
+			!str_contains($presenter, '.') ? $presenter : substr($presenter, 0, -strlen(strrchr($presenter, '.')))
 		));
 
 		// create the list of possible presenter classnames, start with the namespaced one
-		$classes = array();
+		$classes = [];
 		foreach ($prefixes as $prefix)
 		{
 			$classes[] = $prefix.$presenter;
@@ -93,41 +93,38 @@ abstract class Presenter
 	}
 
 	/**
-	 * @var  string  method to execute when rendering
-	 */
-	protected $_method;
-
-	/**
 	 * @var  string|View  view name, after instantiation a View object
 	 */
 	protected $_view;
-
-	/**
-	 * @var  bool  whether or not to use auto filtering
-	 */
-	protected $_auto_filter;
 
 	/**
 	 * @var  Request  active request during Presenter creation for proper context
 	 */
 	protected $_active_request;
 
-	protected function __construct($method, $auto_filter = null, $view = null)
+	/**
+     * @param string $method
+     * @param bool $auto_filter
+     */
+    protected function __construct(/**
+     * @var  string  method to execute when rendering
+     */
+    protected $_method, /**
+     * @var  bool  whether or not to use auto filtering
+     */
+    protected $_auto_filter = null, $view = null)
 	{
-		$this->_auto_filter = $auto_filter;
 		$this->_view === null and $this->_view = $view;
 		class_exists('Request', false) and $this->_active_request = \Request::active();
 
 		if (empty($this->_view))
 		{
 			// Take the class name and guess the view name
-			$class = get_class($this);
+			$class = static::class;
 			$this->_view = strtolower(str_replace('_', DS, preg_replace('#^([a-z0-9_]*\\\\)?(View_)?#i', '', $class)));
 		}
 
 		$this->set_view();
-
-		$this->_method = $method;
 	}
 
 	/**
@@ -143,7 +140,7 @@ abstract class Presenter
 	/**
 	 * Construct the View object
 	 */
-	public function set_view($view = null)
+	public function set_view($view = null): void
 	{
 		// construct a view object if needed
 		if (is_null($view))
@@ -187,24 +184,21 @@ abstract class Presenter
 	public function after() {}
 
 	/**
-	 * Fetches an existing value from the template
-	 *
-	 * @param   mixed  $name
-	 * @return  mixed
-	 */
-	public function & __get($name)
+     * Fetches an existing value from the template
+     *
+     * @param   mixed  $name
+     */
+    public function & __get(string $name): mixed
 	{
 		return $this->get($name);
 	}
 
 	/**
-	 * Gets a variable from the template
-	 *
-	 * @param   null  $key
-	 * @param   null  $default
-	 * @return  string
-	 */
-	public function & get($key = null, $default = null)
+     * Gets a variable from the template
+     *
+     * @return  string
+     */
+    public function & get($key = null, $default = null)
 	{
 		if (is_null($default) and func_num_args() === 1)
 		{
@@ -214,13 +208,11 @@ abstract class Presenter
 	}
 
 	/**
-	 * Sets and sanitizes a variable on the template
-	 *
-	 * @param   string  $key
-	 * @param   mixed   $value
-	 * @return  Presenter
-	 */
-	public function __set($key, $value)
+     * Sets and sanitizes a variable on the template
+     *
+     * @return  Presenter
+     */
+    public function __set(string $key, mixed $value)
 	{
 		return $this->set($key, $value);
 	}
@@ -263,7 +255,7 @@ abstract class Presenter
 	 * @param   string  $key	variable name
 	 * @return  boolean
 	 */
-	public function __isset($key)
+	public function __isset(string $key)
 	{
 		return isset($this->_view->$key);
 	}
@@ -276,7 +268,7 @@ abstract class Presenter
 	 * @param   string  $key	variable name
 	 * @return  void
 	 */
-	public function __unset($key)
+	public function __unset(string $key)
 	{
 		unset($this->_view->$key);
 	}
@@ -345,11 +337,11 @@ abstract class Presenter
 	/**
 	 * Auto-render on toString
 	 */
-	public function __toString()
+	public function __toString(): string
 	{
 		try
 		{
-			return $this->render();
+			return (string) $this->render();
 		}
 		catch (\Exception $e)
 		{

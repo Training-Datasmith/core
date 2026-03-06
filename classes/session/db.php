@@ -19,20 +19,20 @@ class Session_Db extends \Session_Driver
 	/*
 	 * @var	session database result object
 	 */
-	protected $record = null;
+	protected $record;
 
 	/**
 	 * array of driver config defaults
 	 */
-	protected static $_defaults = array(
+	protected static $_defaults = [
 		'cookie_name'    => 'fueldid',				// name of the session cookie for database based sessions
 		'table'          => 'sessions',				// name of the sessions table
 		'gc_probability' => 5,						// probability % (between 0 and 100) for garbage collection
-	);
+	];
 
 	// --------------------------------------------------------------------
 
-	public function __construct($config = array())
+	public function __construct($config = [])
 	{
 		parent::__construct($config);
 
@@ -187,11 +187,11 @@ class Session_Db extends \Session_Driver
 			$this->keys['updated'] = $this->time->get_timestamp();
 
 			// add a random identifier, we need the payload to be absolutely unique
-			$this->flash[$this->config['flash_id'].'::__session_identifier__'] = array('state' => 'expire', 'value' => sha1(uniqid(rand(), true)));
+			$this->flash[$this->config['flash_id'].'::__session_identifier__'] = ['state' => 'expire', 'value' => sha1(uniqid(random_int(0, mt_getrandmax()), true))];
 
 			// create the session record, and add the session payload
 			$session = $this->keys;
-			$session['payload'] = $this->_serialize(array($this->keys, $this->data, $this->flash));
+			$session['payload'] = $this->_serialize([$this->keys, $this->data, $this->flash]);
 
 			try
 			{
@@ -199,7 +199,7 @@ class Session_Db extends \Session_Driver
 				if (is_null($this->record))
 				{
 					// create the new session record
-					list($notused, $result) = \DB::insert($this->config['table'], array_keys($session))->values($session)->execute($this->config['database']);
+					[$notused, $result] = \DB::insert($this->config['table'], array_keys($session))->values($session)->execute($this->config['database']);
 				}
 				else
 				{
@@ -221,7 +221,7 @@ class Session_Db extends \Session_Driver
 
 							// and recreate the payload
 							$session = $this->keys;
-							$session['payload'] = $this->_serialize(array($this->keys, $this->data, $this->flash));
+							$session['payload'] = $this->_serialize([$this->keys, $this->data, $this->flash]);
 
 							// and update the database
 							$result = \DB::update($this->config['table'])->set($session)->where('session_id', '=', $this->keys['session_id'])->execute($this->config['database']);
@@ -238,7 +238,7 @@ class Session_Db extends \Session_Driver
 				if ($result !== 0)
 				{
 					// then update the cookie
-					$this->_set_cookie(array($this->keys['session_id']));
+					$this->_set_cookie([$this->keys['session_id']]);
 				}
 
 				// Run garbage collector
@@ -269,7 +269,7 @@ class Session_Db extends \Session_Driver
 	 */
 	public function _validate_config($config)
 	{
-		$validated = array();
+		$validated = [];
 
 		foreach ($config as $name => $item)
 		{

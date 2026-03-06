@@ -85,7 +85,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	 * @param   array  $data  Model data
 	 * @return  Model_Crud
 	 */
-	public static function forge(array $data = array())
+	public static function forge(array $data = [])
 	{
 		return new static($data);
 	}
@@ -111,9 +111,9 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	 */
 	public static function find_one_by($column, $value = null, $operator = '=')
 	{
-		$config = array(
+		$config = [
 			'limit' => 1,
-		);
+		];
 
 		if (is_array($column) or ($column instanceof \Closure))
 		{
@@ -121,7 +121,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 		}
 		else
 		{
-			$config['where'] = array(array($column, $operator, $value));
+			$config['where'] = [[$column, $operator, $value]];
 		}
 
 		$result = static::find($config);
@@ -147,10 +147,10 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	 */
 	public static function find_by($column = null, $value = null, $operator = '=', $limit = null, $offset = 0)
 	{
-		$config = array(
+		$config = [
 			'limit' => $limit,
 			'offset' => $offset,
-		);
+		];
 
 		if ($column !== null)
 		{
@@ -160,7 +160,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 			}
 			else
 			{
-				$config['where'] = array(array($column, $operator, $value));
+				$config['where'] = [[$column, $operator, $value]];
 			}
 		}
 
@@ -176,10 +176,10 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	 */
 	public static function find_all($limit = null, $offset = 0)
 	{
-		return static::find(array(
+		return static::find([
 			'limit' => $limit,
 			'offset' => $offset,
-		));
+		]);
 	}
 
 	/**
@@ -189,11 +189,11 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	 * @param    string    $key        optional array index key
 	 * @return   array|null            an array containing models or null if none are found
 	 */
-	public static function find($config = array(), $key = null)
+	public static function find($config = [], $key = null)
 	{
 		$query = \DB::select()
 			->from(static::$_table_name)
-			->as_object(get_called_class());
+			->as_object(static::class);
 
 		if ($config instanceof \Closure)
 		{
@@ -201,17 +201,17 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 		}
 		else
 		{
-			$config = $config + array(
-				'select' => array(static::$_table_name.'.*'),
-				'where' => array(),
-				'order_by' => array(),
+			$config = $config + [
+				'select' => [static::$_table_name.'.*'],
+				'where' => [],
+				'order_by' => [],
 				'limit' => null,
 				'offset' => 0,
-			);
+			];
 
 			extract($config);
 
-			is_string($select) and $select = array($select);
+			is_string($select) and $select = [$select];
 			$query->select_array($select);
 
 			if ( ! empty($where))
@@ -255,7 +255,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	 * @return  int     The number of rows OR false
 	 * @throws \FuelException
 	 */
-	public static function count($column = null, $distinct = true, $where = array(), $group_by = null)
+	public static function count($column = null, $distinct = true, $where = [], $group_by = null)
 	{
 		$select = $column ?: static::primary_key();
 
@@ -287,7 +287,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 			//is_array($where) or $where = array($where);
 			if ( ! is_array($where) and ($where instanceof \Closure) === false)
 			{
-				throw new \FuelException(get_called_class().'::count where statement must be an array or a closure.');
+				throw new \FuelException(static::class.'::count where statement must be an array or a closure.');
 			}
 			$query = $query->where($where);
 		}
@@ -295,7 +295,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 		if ( ! empty($group_by))
 		{
 			$result = $query->select($group_by)->group_by($group_by)->execute($connection)->as_array();
-			$counts = array();
+			$counts = [];
 			foreach ($result as $res)
 			{
 				$counts[$res[$group_by]] = $res['count_result'];
@@ -325,14 +325,12 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	 */
 	public static function __callStatic($name, $args)
 	{
-		if (strncmp($name, 'find_by_', 8) === 0)
-		{
-			return static::find_by(substr($name, 8), reset($args));
-		}
-		elseif (strncmp($name, 'find_one_by_', 12) === 0)
-		{
-			return static::find_one_by(substr($name, 12), reset($args));
-		}
+		if (str_starts_with($name, 'find_by_')) {
+            return static::find_by(substr($name, 8), reset($args));
+        }
+        if (str_starts_with($name, 'find_one_by_')) {
+            return static::find_one_by(substr($name, 12), reset($args));
+        }
 		throw new \BadMethodCallException('Method "'.$name.'" does not exist.');
 	}
 
@@ -349,7 +347,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 			return static::$_write_connection;
 		}
 
-		return isset(static::$_connection) ? static::$_connection : null;
+		return static::$_connection ?? null;
 	}
 
 	/**
@@ -359,7 +357,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	 */
 	protected static function primary_key()
 	{
-		return isset(static::$_primary_key) ? static::$_primary_key : 'id';
+		return static::$_primary_key ?? 'id';
 	}
 
 	/**
@@ -385,7 +383,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	/**
 	 * @var  array  $_data  Data container for this object
 	 */
-	protected $_data = array();
+	protected $_data = [];
 
 	/**
 	 * @var  bool  $_is_new  If this is a new record
@@ -405,14 +403,14 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	/**
 	 * @var  object  $_validation  The validation instance
 	 */
-	protected $_validation = null;
+	protected $_validation;
 
 	/**
 	 * Sets up the object.
 	 *
 	 * @param   array  $data  The data array
 	 */
-	public function __construct(array $data = array())
+	public function __construct(array $data = [])
 	{
 		$this->set($data);
 
@@ -447,7 +445,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 			return $this->_sanitization_enabled ? \Security::clean($this->_data[$property], null, 'security.output_filter') : $this->_data[$property];
 		}
 
-		throw new \OutOfBoundsException('Property "'.$property.'" not found for '.get_called_class().'.');
+		throw new \OutOfBoundsException('Property "'.$property.'" not found for '.static::class.'.');
 	}
 
 	/**
@@ -525,9 +523,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 
 			if ($validated)
 			{
-				$validated = array_filter($this->validation()->validated(), function($val){
-					return ($val !== null);
-				});
+				$validated = array_filter($this->validation()->validated(), fn($val) => $val !== null);
 
 				$vars = $validated + $vars;
 			}
@@ -727,7 +723,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	 * Implementation of the Iterator interface
 	 */
 
-	public function rewind()
+	public function rewind(): void
 	{
 		reset($this->_data);
 	}
@@ -761,13 +757,12 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	}
 
 	/**
-	 * Sets the value of the given offset (class property).
-	 *
-	 * @param   string  $offset  class property
-	 * @param   string  $value   value
-	 * @return  void
-	 */
-	public function offsetSet($offset, $value)
+     * Sets the value of the given offset (class property).
+     *
+     * @param   string  $offset  class property
+     * @param   string  $value   value
+     */
+    public function offsetSet($offset, $value): void
 	{
 		$this->_data[$offset] = $value;
 	}
@@ -784,12 +779,11 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	}
 
 	/**
-	 * Unsets the given offset (class property).
-	 *
-	 * @param   string  $offset  class property
-	 * @return  void
-	 */
-	public function offsetUnset($offset)
+     * Unsets the given offset (class property).
+     *
+     * @param   string  $offset  class property
+     */
+    public function offsetUnset($offset): void
 	{
 		unset($this->_data[$offset]);
 	}
@@ -811,7 +805,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 			return $this->_data[$offset];
 		}
 
-		throw new \OutOfBoundsException('Property "'.$offset.'" not found for '.get_called_class().'.');
+		throw new \OutOfBoundsException('Property "'.$offset.'" not found for '.static::class.'.');
 	}
 
 	/**
@@ -969,7 +963,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	 * @param   string  $data
 	 * @return  array   model data
 	 */
-	public function unserialize($data)
+	public function unserialize($data): void
 	{
 		$data = unserialize($data);
 

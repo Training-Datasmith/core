@@ -32,7 +32,7 @@ class Redis_Db
 	/**
 	 * Multiton pattern, keep track of all created instances
 	 */
-	protected static $instances = array();
+	protected static $instances = [];
 
 	/**
 	 * Get an instance of the Redis class
@@ -54,14 +54,12 @@ class Redis_Db
 	}
 
 	/**
-	 * create an instance of the Redis class
-	 *
-	 * @param   string  $name
-	 * @param   array   $config
-	 * @return  mixed
-	 * @throws  \RedisException
-	 */
-	public static function forge($name = 'default', $config = array())
+     * create an instance of the Redis class
+     *
+     * @param   array   $config
+     * @throws  \RedisException
+     */
+    public static function forge(string $name = 'default', $config = []): static
 	{
 		empty(static::$instances) and \Config::load('db', true);
 
@@ -93,15 +91,14 @@ class Redis_Db
 	 *
 	 * @var	array
 	 */
-	protected $queue = array();
+	protected $queue = [];
 
 	/**
-	 * Create a new Redis instance using the configuration values supplied
-	 *
-	 * @param   array  $config
-	 * @throws  \RedisException
-	 */
-	public function  __construct(array $config = array())
+     * Create a new Redis instance using the configuration values supplied
+     *
+     * @throws  \RedisException
+     */
+    public function  __construct(array $config = [])
 	{
 		empty($config['timeout']) and $config['timeout'] = ini_get("default_socket_timeout");
 
@@ -111,14 +108,10 @@ class Redis_Db
 		{
 			throw new \RedisException($errstr, $errno);
 		}
-		else
-		{
-			// execute the auth command if a password is present in config
-			empty($config['password']) or $this->auth($config['password']);
-
-			// Select database using zero-based numeric index
-			empty($config['database']) or $this->select($config['database']);
-		}
+        // execute the auth command if a password is present in config
+        empty($config['password']) or $this->auth($config['password']);
+        // Select database using zero-based numeric index
+        empty($config['database']) or $this->select($config['database']);
 	}
 
 	/**
@@ -137,7 +130,7 @@ class Redis_Db
 	 * @see execute
 	 *
 	 */
-	public function pipeline()
+	public function pipeline(): static
 	{
 		$this->pipelined = true;
 
@@ -153,9 +146,9 @@ class Redis_Db
 		// open a Redis connection and execute the queued commands
 		foreach ($this->queue as $command)
 		{
-			for ($written = 0; $written < strlen($command); $written += $fwrite)
+			for ($written = 0; $written < strlen((string) $command); $written += $fwrite)
 			{
-				$fwrite = fwrite($this->connection, substr($command, $written));
+				$fwrite = fwrite($this->connection, substr((string) $command, $written));
 				if ($fwrite === false || $fwrite <= 0)
 				{
 					throw new \RedisException('Failed to write entire command to stream');
@@ -164,24 +157,21 @@ class Redis_Db
 		}
 
 		// Read in the results from the pipelined commands
-		$responses = array();
+		$responses = [];
 		for ($i = 0; $i < count($this->queue); $i++)
 		{
 			$responses[] = $this->readResponse();
 		}
 
 		// Clear the queue and return the response
-		$this->queue = array();
+		$this->queue = [];
 
 		if ($this->pipelined)
 		{
 			$this->pipelined = false;
 			return $responses;
 		}
-		else
-		{
-			return $responses[0];
-		}
+        return $responses[0];
 	}
 
 	/**
@@ -192,13 +182,11 @@ class Redis_Db
 	 * @param   callable  $callback  callback, to process the responses
 	 * @throws  \RedisException  if writing the command failed
 	 */
-    public function psubscribe($pattern, $callback)
+    public function psubscribe($pattern, $callback): void
     {
-        $args = array('PSUBSCRIBE', $pattern);
+        $args = ['PSUBSCRIBE', $pattern];
 
-        $command = sprintf('*%d%s%s%s', 2, CRLF, implode(array_map(function($arg) {
-            return sprintf('$%d%s%s', strlen($arg), CRLF, $arg);
-        }, $args), CRLF), CRLF);
+        $command = sprintf('*%d%s%s%s', 2, CRLF, implode(CRLF, array_map(fn(string $arg) => sprintf('$%d%s%s', strlen($arg), CRLF, $arg), $args)), CRLF);
 
         for ($written = 0; $written < strlen($command); $written += $fwrite)
         {
@@ -229,7 +217,7 @@ class Redis_Db
 	 * @return  $this|array
 	 * @throws  \RedisException
 	 */
-	public function __call($name, $args)
+	public function __call(string $name, array $args)
 	{
 		// build the Redis unified protocol command
 		array_unshift($args, strtoupper($name));
@@ -246,10 +234,7 @@ class Redis_Db
 		{
 			return $this;
 		}
-		else
-		{
-			return $this->execute();
-		}
+        return $this->execute();
 	}
 
 	protected function readResponse()
@@ -262,7 +247,6 @@ class Redis_Db
 			// error reply
 			case '-':
 				throw new \RedisException(trim(substr($reply, 1)));
-				break;
 
 			// inline reply
 			case '+':
@@ -292,11 +276,8 @@ class Redis_Db
 						{
 							throw new \RedisException('Failed to read response from stream');
 						}
-						else
-						{
-							$read += strlen($r);
-							$response .= $r;
-						}
+                        $read += strlen($r);
+                        $response .= $r;
 					}
 					while ($read < $size);
 				}
@@ -312,7 +293,7 @@ class Redis_Db
 				{
 					return null;
 				}
-				$response = array();
+				$response = [];
 				for ($i = 0; $i < $count; $i++)
 				{
 					$response[] = $this->readResponse();
@@ -326,7 +307,6 @@ class Redis_Db
 
 			default:
 				throw new \RedisException("Unknown response: {$reply}");
-				break;
 		}
 
 		// party on...

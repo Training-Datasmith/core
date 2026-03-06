@@ -25,7 +25,7 @@ abstract class Event
 	/**
 	 * @var  array  $instances  Event_Instance container
 	 */
-	protected static $instances = array();
+	protected static $instances = [];
 
 	/**
 	 * Event instance forge.
@@ -33,7 +33,7 @@ abstract class Event
 	 * @param   array   $events  events array
 	 * @return  object  new Event_Instance instance
 	 */
-	public static function forge(array $events = array())
+	public static function forge(array $events = [])
 	{
 		return new \Event_Instance($events);
 	}
@@ -45,11 +45,11 @@ abstract class Event
 	 * @param   array   $events  events array
 	 * @return  object  Event_Instance object
 	 */
-	public static function instance($name = 'fuelphp', array $events = array())
+	public static function instance(string $name = 'fuelphp', array $events = [])
 	{
 		if ( ! array_key_exists($name, static::$instances))
 		{
-			$events = array_merge(\Config::get('event.'.$name, array()), $events);
+			$events = array_merge(\Config::get('event.'.$name, []), $events);
 			$instance = static::forge($events);
 			static::$instances[$name] = &$instance;
 		}
@@ -65,22 +65,22 @@ abstract class Event
 	 * @return  mixed
 	 * @throws  \BadMethodCallException
 	 */
-	public static function __callStatic($func, $args)
+	public static function __callStatic(string $func, array $args)
 	{
 		$instance = static::instance();
 
 		if (method_exists($instance, $func))
 		{
-			return call_fuel_func_array(array($instance, $func), $args);
+			return call_fuel_func_array([$instance, $func], $args);
 		}
 
-		throw new \BadMethodCallException('Call to undefined method: '.get_called_class().'::'.$func);
+		throw new \BadMethodCallException('Call to undefined method: '.static::class.'::'.$func);
 	}
 
 	/**
 	 * Load events config
 	 */
-	public static function _init()
+	public static function _init(): void
 	{
 		\Config::load('event', true);
 	}

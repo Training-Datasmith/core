@@ -14,8 +14,8 @@ namespace Fuel\Core;
 
 class Image_Imagick extends \Image_Driver
 {
-	protected $accepted_extensions = array('png', 'gif', 'jpg', 'jpeg');
-	protected $imagick = null;
+	protected $accepted_extensions = ['png', 'gif', 'jpg', 'jpeg'];
+	protected $imagick;
 
 	public function load($filename, $return_data = false, $force_extension = false)
 	{
@@ -30,20 +30,12 @@ class Image_Imagick extends \Image_Driver
 
 		// deal with exif autorotation
 		$orientation = $this->imagick->getImageOrientation();
-		switch($orientation)
-		{
-			case \Imagick::ORIENTATION_BOTTOMRIGHT:
-				$this->imagick->rotateimage("#000", 180); // rotate 180 degrees
-			break;
-
-			case \Imagick::ORIENTATION_RIGHTTOP:
-				$this->imagick->rotateimage("#000", 90); // rotate 90 degrees CW
-			break;
-
-			case \Imagick::ORIENTATION_LEFTBOTTOM:
-				$this->imagick->rotateimage("#000", -90); // rotate 90 degrees CCW
-			break;
-		}
+		match ($orientation) {
+            \Imagick::ORIENTATION_BOTTOMRIGHT => $this->imagick->rotateimage("#000", 180),
+            \Imagick::ORIENTATION_RIGHTTOP => $this->imagick->rotateimage("#000", 90),
+            \Imagick::ORIENTATION_LEFTBOTTOM => $this->imagick->rotateimage("#000", -90),
+            default => $this,
+        };
 
 		return $this;
 	}
@@ -83,7 +75,7 @@ class Image_Imagick extends \Image_Driver
 		$this->imagick->rotateImage($this->create_color('#000', 0), $degrees);
 	}
 
-	protected function _watermark($filename, $position, $padding = array(5,5))
+	protected function _watermark($filename, $position, $padding = [5,5])
 	{
 		extract(parent::_watermark($filename, $position, $padding));
 		$wmimage = new \Imagick();
@@ -137,18 +129,18 @@ class Image_Imagick extends \Image_Driver
 		$sizes->width_half = $sizes->width / 2;
 		$sizes->height_half = $sizes->height / 2;
 
-		$list = array();
+		$list = [];
 		if (!$tl) {
-			$list = array('x' => 0, 'y' => 0);
+			$list = ['x' => 0, 'y' => 0];
 		}
 		if (!$tr) {
-			$list = array('x' => $sizes->width_half, 'y' => 0);
+			$list = ['x' => $sizes->width_half, 'y' => 0];
 		}
 		if (!$bl) {
-			$list = array('x' => 0, 'y' => $sizes->height_half);
+			$list = ['x' => 0, 'y' => $sizes->height_half];
 		}
 		if (!$br) {
-			$list = array('x' => $sizes->width_half, 'y' => $sizes->height_half);
+			$list = ['x' => $sizes->width_half, 'y' => $sizes->height_half];
 		}
 
 		foreach($list as $index => $element) {
@@ -173,18 +165,18 @@ class Image_Imagick extends \Image_Driver
 	{
 		if ($filename === null)
 		{
-			return (object) array(
+			return (object) [
 				'width'  => $this->imagick->getImageWidth(),
 				'height' => $this->imagick->getImageHeight(),
-			);
+			];
 		}
 
 		$tmpimage = new \Imagick();
 		$tmpimage->readImage($filename);
-		return (object) array(
+		return (object) [
 			'width'  => $tmpimage->getImageWidth(),
 			'height' => $tmpimage->getImageHeight(),
-		);
+		];
 	}
 
 	public function save($filename = null, $permissions = null)

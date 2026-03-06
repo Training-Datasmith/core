@@ -56,11 +56,9 @@ class Database_PDO_Cached extends \Database_Result implements \SeekableIterator,
 	}
 
 	/**
-	 * Result destruction cleans up all open result sets.
-	 *
-	 * @return  void
-	 */
-	public function __destruct()
+     * Result destruction cleans up all open result sets.
+     */
+    public function __destruct()
 	{
 		// Cached results do not use driver resources
 	}
@@ -124,11 +122,9 @@ class Database_PDO_Cached extends \Database_Result implements \SeekableIterator,
 	}
 
 	/**
-	 * Implements [Iterator::next], returns the next row.
-	 *
-	 * @return  mixed
-	 */
-	public function next()
+     * Implements [Iterator::next], returns the next row.
+     */
+    public function next(): void
 	{
 		parent::next();
 
@@ -171,14 +167,12 @@ class Database_PDO_Cached extends \Database_Result implements \SeekableIterator,
 		{
 			return false;
 		}
-		else
-
-		$result = $this->_results[$offset];
+        $result = $this->_results[$offset];
 
 		// sanitize the data if needed
 		if ($this->_sanitization_enabled)
 		{
-			$result = \Security::clean($result, null, 'security.output_filter');
+			return \Security::clean($result, null, 'security.output_filter');
 		}
 
 		return $result;

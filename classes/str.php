@@ -30,16 +30,16 @@ class Str
 	 * @param   bool    $is_html       whether the string has HTML
 	 * @return  string  the truncated string
 	 */
-	public static function truncate($string, $limit, $continuation = '...', $is_html = false)
+	public static function truncate($string, $limit, $continuation = '...', $is_html = false): string
 	{
-		static $self_closing_tags = array(
+		static $self_closing_tags = [
 			'area', 'base', 'br', 'col', 'command', 'embed'
 			, 'hr', 'img', 'input', 'keygen', 'link', 'meta'
 			, 'param', 'source', 'track', 'wbr'
-		);
+		];
 
 		$offset = 0;
-		$tags = array();
+		$tags = [];
 		if ($is_html)
 		{
 			// Handle special characters.
@@ -107,14 +107,13 @@ class Str
 	}
 
 	/**
-	 * Add's _1 to a string or increment the ending number to allow _2, _3, etc
-	 *
-	 * @param   string  $str        required
-	 * @param   int     $first      number that is used to mean first
-	 * @param   string  $separator  separtor between the name and the number
-	 * @return  string
-	 */
-	public static function increment($str, $first = 1, $separator = '_')
+     * Add's _1 to a string or increment the ending number to allow _2, _3, etc
+     *
+     * @param   string  $str        required
+     * @param   int     $first      number that is used to mean first
+     * @param   string  $separator  separtor between the name and the number
+     */
+    public static function increment(string $str, $first = 1, string $separator = '_'): string
 	{
 		preg_match('/(.+)'.$separator.'([0-9]+)$/', $str, $match);
 
@@ -129,7 +128,7 @@ class Str
 	 * @param   boolean  $ignore_case  whether to ignore the case
 	 * @return  boolean  whether a string starts with a specified beginning
 	 */
-	public static function starts_with($str, $start, $ignore_case = false)
+	public static function starts_with($str, $start, $ignore_case = false): bool
 	{
 		return (bool) preg_match('/^'.preg_quote($start, '/').'/m'.($ignore_case ? 'i' : ''), $str);
 	}
@@ -142,7 +141,7 @@ class Str
 	 * @param   boolean  $ignore_case  whether to ignore the case
 	 * @return  boolean  whether a string ends with a specified ending
 	 */
-	public static function ends_with($str, $end, $ignore_case = false)
+	public static function ends_with($str, $end, $ignore_case = false): bool
 	{
 		return (bool) preg_match('/'.preg_quote($end, '/').'$/m'.($ignore_case ? 'i' : ''), $str);
 	}
@@ -160,7 +159,6 @@ class Str
 		{
 			case 'basic':
 				return mt_rand();
-				break;
 
 			default:
 			case 'alnum':
@@ -203,18 +201,15 @@ class Str
 					$str .= substr($pool, mt_rand(0, strlen($pool) -1), 1);
 				}
 				return $str;
-				break;
 
 			case 'unique':
 				return md5(uniqid(mt_rand()));
-				break;
 
 			case 'sha1' :
 				return sha1(uniqid(mt_rand(), true));
-				break;
 
 			case 'uuid':
-			    $pool = array('8', '9', 'a', 'b');
+			    $pool = ['8', '9', 'a', 'b'];
 				return sprintf('%s-%s-4%s-%s%s-%s',
 					static::random('hexdec', 8),
 					static::random('hexdec', 4),
@@ -222,7 +217,6 @@ class Str
 					$pool[array_rand($pool)],
 					static::random('hexdec', 3),
 					static::random('hexdec', 12));
-				break;
 		}
 	}
 
@@ -252,34 +246,30 @@ class Str
 	 * @param   array   $array   params to str_replace
 	 * @return  string
 	 */
-	public static function tr($string, $array = array())
+	public static function tr($string, $array = [])
 	{
 		if (is_string($string))
 		{
-			$tr_arr = array();
+			$tr_arr = [];
 
 			foreach ($array as $from => $to)
 			{
-				substr($from, 0, 1) !== ':' and $from = ':'.$from;
+				!str_starts_with((string) $from, ':') and $from = ':'.$from;
 				$tr_arr[$from] = $to;
 			}
 			unset($array);
 
 			return strtr($string, $tr_arr);
 		}
-		else
-		{
-			return $string;
-		}
+        return $string;
 	}
 
 	/**
-	 * Check if a string is json encoded
-	 *
-	 * @param  string $string string to check
-	 * @return bool
-	 */
-	public static function is_json($string)
+     * Check if a string is json encoded
+     *
+     * @param  string $string string to check
+     */
+    public static function is_json($string): bool
 	{
 		json_decode($string);
 		return json_last_error() === JSON_ERROR_NONE;
@@ -308,24 +298,22 @@ class Str
 	}
 
 	/**
-	 * Check if a string is serialized
-	 *
-	 * @param  string  $string  string to check
-	 * @return bool
-	 */
-	public static function is_serialized($string)
+     * Check if a string is serialized
+     *
+     * @param  string  $string  string to check
+     */
+    public static function is_serialized($string): bool
 	{
 		$array = @unserialize($string);
 		return ! ($array === false and $string !== 'b:0;');
 	}
 
 	/**
-	 * Check if a string is html
-	 *
-	 * @param  string $string string to check
-	 * @return bool
-	 */
-	public static function is_html($string)
+     * Check if a string is html
+     *
+     * @param  string $string string to check
+     */
+    public static function is_html($string): bool
 	{
 		return strlen(strip_tags($string)) < strlen($string);
 	}
@@ -340,7 +328,7 @@ class Str
 	 *
 	 * @return int                The length of the string on success, and 0 if the string is empty.
 	 */
-	public static function strlen($str, $encoding = null)
+	public static function strlen($str, $encoding = null): int
 	{
 		$encoding or $encoding = \Fuel::$encoding;
 
@@ -362,13 +350,13 @@ class Str
 	 *                            positions start at 0, and not 1.
 	 *                            Returns FALSE if the needle was not found.
 	 */
-	public static function strpos($haystack, $needle, $offset = 0, $encoding = null)
+	public static function strpos($haystack, $needle, $offset = 0, $encoding = null): int|false
 	{
 		$encoding or $encoding = \Fuel::$encoding;
 
 		return (MBSTRING and $encoding)
-			? mb_strpos($haystack, $needle, $offset, $encoding)
-			: strpos($haystack, $needle, $offset);
+			? mb_strpos($haystack, (string) $needle, $offset, $encoding)
+			: strpos($haystack, (string) $needle, $offset);
 	}
 
 	/**
@@ -382,13 +370,13 @@ class Str
 	 * @return mixed              Returns the numeric position of the last occurrence of needle in the
 	 *                            haystack string. If needle is not found, it returns FALSE.
 	 */
-	public static function strrpos($haystack, $needle, $offset = 0, $encoding = null)
+	public static function strrpos($haystack, $needle, $offset = 0, $encoding = null): int|false
 	{
 		$encoding or $encoding = \Fuel::$encoding;
 
 		return (MBSTRING and $encoding)
-			? mb_strrpos($haystack, $needle, $offset, $encoding)
-			: strrpos($haystack, $needle, $offset);
+			? mb_strrpos($haystack, (string) $needle, $offset, $encoding)
+			: strrpos($haystack, (string) $needle, $offset);
 	}
 
 	/*
@@ -404,18 +392,18 @@ class Str
 	 *
 	 * @return mixed             Returns the extracted part of string; or FALSE on failure, or an empty string.
 	 */
-	public static function substr($str, $start, $length = null, $encoding = null)
+	public static function substr($str, $start, $length = null, $encoding = null): string
 	{
 		$encoding or $encoding = \Fuel::$encoding;
 
 		// substr functions don't parse null correctly if the string is multibyte
 		$length = is_null($length)
-			? (MBSTRING ? mb_strlen($str, $encoding)
-			: strlen($str)) - $start : $length;
+			? (MBSTRING ? mb_strlen((string) $str, $encoding)
+			: strlen((string) $str)) - $start : $length;
 
 		return (MBSTRING and $encoding)
-			? mb_substr($str, $start, $length, $encoding)
-			: substr($str, $start, $length);
+			? mb_substr((string) $str, $start, $length, $encoding)
+			: substr((string) $str, $start, $length);
 	}
 
 	/**
@@ -426,7 +414,7 @@ class Str
 	 *
 	 * @return  string            The lowercased string
 	 */
-	public static function strtolower($str, $encoding = null)
+	public static function strtolower($str, $encoding = null): string
 	{
 		$encoding or $encoding = \Fuel::$encoding;
 
@@ -443,7 +431,7 @@ class Str
 	 *
 	 * @return  string            The uppercased string
 	 */
-	public static function strtoupper($str, $encoding = null)
+	public static function strtoupper($str, $encoding = null): string
 	{
 		$encoding or $encoding = \Fuel::$encoding;
 
@@ -465,13 +453,13 @@ class Str
 	 *                            positions start at 0, and not 1.
 	 *                            Returns FALSE if the needle was not found.
 	 */
-	public static function stripos($haystack, $needle, $offset = 0, $encoding = null)
+	public static function stripos($haystack, $needle, $offset = 0, $encoding = null): int|false
 	{
 		$encoding or $encoding = \Fuel::$encoding;
 
 		return (MBSTRING and $encoding)
-			? mb_stripos($haystack, $needle, $offset, $encoding)
-			: stripos($haystack, $needle, $offset);
+			? mb_stripos($haystack, (string) $needle, $offset, $encoding)
+			: stripos($haystack, (string) $needle, $offset);
 	}
 
 	/**
@@ -485,13 +473,13 @@ class Str
 	 * @return mixed              Returns the numeric position of the last occurrence of needle in the
 	 *                            haystack string. If needle is not found, it returns FALSE.
 	 */
-	public static function strripos($haystack, $needle, $offset = 0, $encoding = null)
+	public static function strripos($haystack, $needle, $offset = 0, $encoding = null): int|false
 	{
 		$encoding or $encoding = \Fuel::$encoding;
 
 		return (MBSTRING and $encoding)
-			? mb_strripos($haystack, $needle, $offset, $encoding)
-			: strripos($haystack, $needle, $offset);
+			? mb_strripos($haystack, (string) $needle, $offset, $encoding)
+			: strripos($haystack, (string) $needle, $offset);
 	}
 
 	/**
@@ -504,13 +492,13 @@ class Str
 	 *
 	 * @return mixed                  The portion of haystack, or FALSE if needle is not found
 	 */
-	public static function strstr($haystack, $needle, $before_needle = false, $encoding = null)
+	public static function strstr($haystack, $needle, $before_needle = false, $encoding = null): string|false
 	{
 		$encoding or $encoding = \Fuel::$encoding;
 
 		return (MBSTRING and $encoding)
-			? mb_strstr($haystack, $needle, $before_needle, $encoding)
-			: strstr($haystack, $needle, $before_needle);
+			? mb_strstr($haystack, (string) $needle, $before_needle, $encoding)
+			: strstr($haystack, (string) $needle, $before_needle);
 	}
 
 	/**
@@ -523,13 +511,13 @@ class Str
 	 *
 	 * @return mixed                  The portion of haystack, or FALSE if needle is not found
 	 */
-	public static function stristr($haystack, $needle, $before_needle = false, $encoding = null)
+	public static function stristr($haystack, $needle, $before_needle = false, $encoding = null): string|false
 	{
 		$encoding or $encoding = \Fuel::$encoding;
 
 		return (MBSTRING and $encoding)
-			? mb_stristr($haystack, $needle, $before_needle, $encoding)
-			: stristr($haystack, $needle, $before_needle);
+			? mb_stristr($haystack, (string) $needle, $before_needle, $encoding)
+			: stristr($haystack, (string) $needle, $before_needle);
 	}
 
 	/**
@@ -542,13 +530,13 @@ class Str
 	 *
 	 * @return mixed              The portion of haystack, or FALSE if needle is not found
 	 */
-	public static function strrchr($haystack, $needle, $before_needle = false, $encoding = null)
+	public static function strrchr($haystack, $needle, $before_needle = false, $encoding = null): string|false
 	{
 		$encoding or $encoding = \Fuel::$encoding;
 
 		return (MBSTRING and $encoding)
-			? mb_strrchr($haystack, $needle, $part, $encoding)
-			: strrchr($haystack, $needle, $part);
+			? mb_strrchr($haystack, (string) $needle, $part, $encoding)
+			: strrchr($haystack, (string) $needle, $part);
 	}
 
 	/**
@@ -561,25 +549,24 @@ class Str
 	 *
 	 * @return int                The number of occurences found
 	 */
-	public static function substr_count($haystack, $needle, $offset = 0, $encoding = null)
+	public static function substr_count($haystack, $needle, $offset = 0, $encoding = null): int
 	{
 		$encoding or $encoding = \Fuel::$encoding;
 
 		return (MBSTRING and $encoding)
-			? mb_substr_count($haystack, $needle, $offset, $encoding)
-			: substr_count($haystack, $needle, $offset);
+			? mb_substr_count($haystack, (string) $needle, $offset)
+			: substr_count($haystack, (string) $needle, $offset);
 	}
 
 	/**
-	 * lcfirst
-	 *
-	 * Does not strtoupper first
-	 *
-	 * @param   string  $str       required
-	 * @param   string  $encoding  default UTF-8
-	 * @return  string
-	 */
-	public static function lcfirst($str, $encoding = null)
+     * lcfirst
+     *
+     * Does not strtoupper first
+     *
+     * @param   string  $str       required
+     * @param   string  $encoding  default UTF-8
+     */
+    public static function lcfirst($str, $encoding = null): string
 	{
 		$encoding or $encoding = \Fuel::$encoding;
 
@@ -590,15 +577,14 @@ class Str
 	}
 
 	/**
-	 * ucfirst
-	 *
-	 * Does not strtolower first
-	 *
-	 * @param   string $str       required
-	 * @param   string $encoding  default UTF-8
-	 * @return  string
-	 */
-	public static function ucfirst($str, $encoding = null)
+     * ucfirst
+     *
+     * Does not strtolower first
+     *
+     * @param   string $str       required
+     * @param   string $encoding  default UTF-8
+     */
+    public static function ucfirst($str, $encoding = null): string
 	{
 		$encoding or $encoding = \Fuel::$encoding;
 
@@ -609,18 +595,17 @@ class Str
 	}
 
 	/**
-	 * ucwords
-	 *
-	 * First strtolower then ucwords
-	 *
-	 * ucwords normally doesn't strtolower first
-	 * but MB_CASE_TITLE does, so ucwords now too
-	 *
-	 * @param   string   $str       required
-	 * @param   string   $encoding  default UTF-8
-	 * @return  string
-	 */
-	public static function ucwords($str, $encoding = null)
+     * ucwords
+     *
+     * First strtolower then ucwords
+     *
+     * ucwords normally doesn't strtolower first
+     * but MB_CASE_TITLE does, so ucwords now too
+     *
+     * @param   string   $str       required
+     * @param   string   $encoding  default UTF-8
+     */
+    public static function ucwords($str, $encoding = null): string
 	{
 		$encoding or $encoding = \Fuel::$encoding;
 

@@ -25,17 +25,17 @@ class Session
 	/**
 	 * default session driver instance
 	 */
-	protected static $_instance = null;
+	protected static $_instance;
 
 	/**
 	 * array of loaded instances
 	 */
-	protected static $_instances = array();
+	protected static $_instances = [];
 
 	/**
 	 * array of global config defaults
 	 */
-	protected static $_defaults = array(
+	protected static $_defaults = [
 		'driver'                    => 'cookie',
 		'match_ip'                  => false,
 		'match_ua'                  => true,
@@ -50,14 +50,14 @@ class Session
 		'flash_auto_expire'         => true,
 		'flash_expire_after_get'    => true,
 		'post_cookie_name'          => '',
-	);
+	];
 
 	// --------------------------------------------------------------------
 
 	/**
 	 * Initialize by loading config & starting default session
 	 */
-	public static function _init()
+	public static function _init(): void
 	{
 		\Config::load('session', true);
 
@@ -78,24 +78,20 @@ class Session
 			// emulate native PHP sessions
 			session_set_save_handler(
 				// open
-				function ($savePath, $sessionName) {
-					return true;
-				},
+				fn($savePath, $sessionName) => true,
 				// close
-				function () {
-					return true;
-				},
+				fn() => true,
 				// read
-				function ($sessionId) {
+				function ($sessionId): string {
 					// copy all existing session vars into the PHP session store
 					$_SESSION = \Session::get();
 					$_SESSION['__org__'] = $_SESSION;
 					return '';
 				},
 				// write
-				function ($sessionId, $data) {
+				function ($sessionId, $data): true {
 					// get the original data
-					$org = isset($_SESSION['__org__']) ? $_SESSION['__org__'] : array();
+					$org = $_SESSION['__org__'] ?? [];
 					unset($_SESSION['__org__']);
 
 					// do we need to remove stuff?
@@ -109,14 +105,12 @@ class Session
 					return true;
 				},
 				// destroy
-				function ($sessionId) {
+				function ($sessionId): true {
 					\Session::destroy();
 					return true;
 				},
 				// gc
-				function ($lifetime) {
-					return true;
-				}
+				fn($lifetime) => true
 			);
 		}
 	}
@@ -133,14 +127,14 @@ class Session
 	 * @throws	\FuelException
 	 * @throws	\Session_Exception
 	 */
-	public static function forge($custom = array())
+	public static function forge($custom = [])
 	{
-		$config = \Config::get('session', array());
+		$config = \Config::get('session', []);
 
 		// When a string was passed it's just the driver type
 		if ( ! empty($custom) and ! is_array($custom))
 		{
-			$custom = array('driver' => $custom);
+			$custom = ['driver' => $custom];
 		}
 
 		$config = array_merge(static::$_defaults, $config, $custom);
@@ -151,7 +145,7 @@ class Session
 		}
 
 		// determine the driver to load
-		$class = '\\Session_'.ucfirst($config['driver']);
+		$class = '\\Session_'.ucfirst((string) $config['driver']);
 
 		$driver = new $class($config);
 

@@ -40,7 +40,7 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
 			}
 			elseif (is_string($this->_as_object))
 			{
-				$this->_results = array();
+				$this->_results = [];
 				while ($row = $this->_result->fetch_object($this->_as_object))
 				{
 					$this->_results[] = $row;
@@ -48,7 +48,7 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
 			}
 			else
 			{
-				$this->_results = array();
+				$this->_results = [];
 				while ($row = $this->_result->fetch_object())
 				{
 					$this->_results[] = $row;
@@ -64,11 +64,9 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
 	}
 
 	/**
-	 * Result destruction cleans up all open result sets.
-	 *
-	 * @return  void
-	 */
-	public function __destruct()
+     * Result destruction cleans up all open result sets.
+     */
+    public function __destruct()
 	{
 		// Cached results do not use driver resources
 	}
@@ -132,11 +130,9 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
 	}
 
 	/**
-	 * Implements [Iterator::next], returns the next row.
-	 *
-	 * @return  mixed
-	 */
-	public function next()
+     * Implements [Iterator::next], returns the next row.
+     */
+    public function next(): void
 	{
 		parent::next();
 
@@ -179,14 +175,12 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
 		{
 			return false;
 		}
-		else
-
-		$result = $this->_results[$offset];
+        $result = $this->_results[$offset];
 
 		// sanitize the data if needed
 		if ($this->_sanitization_enabled)
 		{
-			$result = \Security::clean($result, null, 'security.output_filter');
+			return \Security::clean($result, null, 'security.output_filter');
 		}
 
 		return $result;

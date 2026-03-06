@@ -17,7 +17,7 @@ class Router
 	/**
 	 *
 	 */
-	public static $routes = array();
+	public static $routes = [];
 
 	/**
 	 * Defines the controller class prefix. This allows you to namespace controllers
@@ -27,7 +27,7 @@ class Router
 	/**
 	 * Fetch the controller prefix to be used, or set a default if not defined
 	 */
-	public static function _init()
+	public static function _init(): void
 	{
 		static::$prefix = ltrim(\Config::get('controller_prefix', 'Controller_'), '\\');
 	}
@@ -40,23 +40,21 @@ class Router
 	 * @param  bool                $prepend         whether to prepend the route(s) to the routes array
 	 * @param  bool                $case_sensitive  whether to check case sensitive
 	 */
-	public static function add($path, $options = null, $prepend = false, $case_sensitive = null)
+	public static function add($path, $options = null, $prepend = false, $case_sensitive = null): void
 	{
-		if (is_array($path))
-		{
-			// Reverse to keep correct order in prepending
-			$prepend and $path = array_reverse($path, true);
-			foreach ($path as $p => $t)
+		if (is_array($path)) {
+            // Reverse to keep correct order in prepending
+            $prepend and $path = array_reverse($path, true);
+            foreach ($path as $p => $t)
 			{
 				static::add($p, $t, $prepend);
 			}
-			return;
-		}
-		elseif ($options instanceof Route)
-		{
-			static::$routes[$path] = $options;
-			return;
-		}
+            return;
+        }
+        if ($options instanceof Route) {
+            static::$routes[$path] = $options;
+            return;
+        }
 
 		$name = $path;
 		if (is_array($options) and array_key_exists('name', $options))
@@ -93,7 +91,7 @@ class Router
 	 * @param   array   $named_params  the array of named parameters
 	 * @return  string  the full url for the named route
 	 */
-	public static function get($name, $named_params = array())
+	public static function get($name, array $named_params = [])
 	{
 		// check if we have this named route
 		if (array_key_exists($name, static::$routes))
@@ -104,14 +102,14 @@ class Router
 			// get named parameters regex's out of the way first
 			foreach($named_params as $name => $value)
 			{
-				if (is_string($name) and ($pos = strpos($url, '(:'.$name.')')) !== false)
+				if (is_string($name) and ($pos = strpos((string) $url, '(:'.$name.')')) !== false)
 				{
 					$url = substr_replace($url, $value, $pos, strlen($name)+3);
 				}
 			}
 
 			// deal with regex's groups
-			if (preg_match_all('#\((?:\?P<(\w+?)>)?.*?\)#', $url, $matches) !== false)
+			if (preg_match_all('#\((?:\?P<(\w+?)>)?.*?\)#', (string) $url, $matches) !== false)
 			{
 				if (count($matches) == 2)
 				{
@@ -126,7 +124,7 @@ class Router
 							$replace = $named_params[$key];
 						}
 
-						if (($pos = strpos($url, $target)) !== false)
+						if (($pos = strpos((string) $url, $target)) !== false)
 						{
 							$url = substr_replace($url, $replace, $pos, strlen($target));
 						}
@@ -145,7 +143,7 @@ class Router
 	 * @param  string|array  $path            route path, or array of route paths
 	 * @param  bool          $case_sensitive  whether to check case sensitive
 	 */
-	public static function delete($path, $case_sensitive = null)
+	public static function delete($path, $case_sensitive = null): void
 	{
 		// if multiple paths are passed, recurse
 		if (is_array($path))
@@ -160,34 +158,34 @@ class Router
 			$case_sensitive ?: \Config::get('routing.case_sensitive', true);
 
 			// support the usual route path placeholders
-			$path = str_replace(array(
+			$path = str_replace([
 				':any',
 				':everything',
 				':alnum',
 				':num',
 				':alpha',
 				':segment',
-			), array(
+			], [
 				'.+',
 				'.*',
 				'[[:alnum:]]+',
 				'[[:digit:]]+',
 				'[[:alpha:]]+',
 				'[^/]*',
-			), $path);
+			], $path);
 
 			foreach (static::$routes as $name => $route)
 			{
 				if ($case_sensitive)
 				{
-					if (preg_match('#^'.$path.'$#uD', $name))
+					if (preg_match('#^'.$path.'$#uD', (string) $name))
 					{
 						unset(static::$routes[$name]);
 					}
 				}
 				else
 				{
-					if (preg_match('#^'.$path.'$#uiD', $name))
+					if (preg_match('#^'.$path.'$#uiD', (string) $name))
 					{
 						unset(static::$routes[$name]);
 					}
@@ -221,7 +219,7 @@ class Router
 		if ( ! $match)
 		{
 			// Since we didn't find a match, we will create a new route.
-			$match = new \Route(preg_quote($request->uri->get(), '#'), $request->uri->get());
+			$match = new \Route(preg_quote((string) $request->uri->get(), '#'), $request->uri->get());
 			$match->parse($request);
 		}
 
@@ -263,13 +261,10 @@ class Router
 			$match->method_params = $info['method_params'];
 			return $match;
 		}
-		else
-		{
-			return null;
-		}
+        return null;
 	}
 
-	protected static function parse_segments($segments, $namespace = '', $module = false)
+	protected static function parse_segments($segments, string $namespace = '', $module = false): array|false
 	{
 		$temp_segments = $segments;
 		$prefix = static::get_prefix();
@@ -277,9 +272,9 @@ class Router
 		foreach (array_reverse($segments, true) as $key => $segment)
 		{
 			// determine which classes to check. First, all underscores, or all namespaced
-			$classes = array(
+			$classes = [
 				$namespace.$prefix.\Inflector::words_to_upper(implode(substr($prefix, -1, 1), $temp_segments), substr($prefix, -1, 1)),
-			);
+			];
 
 			// if we're namespacing, check a hybrid version too
 			$classes[] = $namespace.$prefix.\Inflector::words_to_upper(implode('_', $temp_segments));
@@ -290,12 +285,12 @@ class Router
 			{
 				if (static::check_class($class))
 				{
-					return array(
+					return [
 						'controller'       => $class,
 						'controller_path'  => implode('/', array_slice($segments, 0, $key + 1)),
-						'action'           => isset($segments[$key + 1]) ? $segments[$key + 1] : null,
+						'action'           => $segments[$key + 1] ?? null,
 						'method_params'    => array_slice($segments, $key + 2),
-					);
+					];
 				}
 			}
 		}
@@ -303,15 +298,15 @@ class Router
 		// Fall back for default module controllers
 		if ($module)
 		{
-			$class = $namespace.$prefix.ucfirst($module);
+			$class = $namespace.$prefix.ucfirst((string) $module);
 			if (static::check_class($class))
 			{
-				return array(
+				return [
 					'controller'       => $class,
 					'controller_path'  => isset($key) ? implode('/', array_slice($segments, 0, $key + 1)) : '',
-					'action'           => isset($segments[0]) ? $segments[0] : null,
+					'action'           => $segments[0] ?? null,
 					'method_params'    => array_slice($segments, 1),
-				);
+				];
 			}
 		}
 
@@ -334,7 +329,7 @@ class Router
 		catch (\Exception $e)
 		{
 			// capture autoloader failures
-			if (strpos($e->getFile(),'/core/classes/autoloader.php') !== false)
+			if (str_contains($e->getFile(),'/core/classes/autoloader.php'))
 			{
 				return false;
 			}

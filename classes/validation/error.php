@@ -25,7 +25,7 @@ class Validation_Error extends \Exception
 	/**
 	 * Load validation Language file when errors are thrown
 	 */
-	public static function _init()
+	public static function _init(): void
 	{
 		\Lang::load('validation', true);
 	}
@@ -36,19 +36,9 @@ class Validation_Error extends \Exception
 	public $field;
 
 	/**
-	 * @var  mixed  value that failed to validate
-	 */
-	public $value;
-
-	/**
 	 * @var  string  validation rule string representation
 	 */
 	public $rule;
-
-	/**
-	 * @var  array  variables passed to rule other than the value
-	 */
-	public $params = array();
 
 	/**
 	 * Constructor
@@ -58,25 +48,22 @@ class Validation_Error extends \Exception
 	 * @param  array           $callback  contains rule name as key and callback as value
 	 * @param  array           $params    additional rule params
 	 */
-	public function __construct(Fieldset_Field $field, $value, $callback, $params)
+	public function __construct(Fieldset_Field $field, public $value, $callback, public $params)
 	{
 		$this->field   = $field;
-		$this->value   = $value;
-		$this->params  = $params;
 		$this->rule    = key($callback);
 	}
 
 	/**
-	 * Get Message
-	 *
-	 * Shows the error message which can be taken from loaded language file.
-	 *
-	 * @param   string  $msg    HTML to prefix error message
-	 * @param   string  $open   HTML to postfix error message
-	 * @param   string  $close  Message to use, or false to try and load it from Lang class
-	 * @return  string
-	 */
-	public function get_message($msg = false, $open = '', $close = '')
+     * Get Message
+     *
+     * Shows the error message which can be taken from loaded language file.
+     *
+     * @param   string  $msg    HTML to prefix error message
+     * @param   string  $open   HTML to postfix error message
+     * @param   string  $close  Message to use, or false to try and load it from Lang class
+     */
+    public function get_message($msg = false, $open = '', $close = ''): string
 	{
 		$open   = empty($open)  ? \Config::get('validation.open_single_error', '')  : $open;
 		$close  = empty($close) ? \Config::get('validation.close_single_error', '') : $close;
@@ -98,7 +85,7 @@ class Validation_Error extends \Exception
 		}
 
 		// only parse when there's tags in the message
-		return $open.(strpos($msg, ':') === false ? $msg : $this->_replace_tags($msg)).$close;
+		return $open.(!str_contains($msg, ':') ? $msg : $this->_replace_tags($msg)).$close;
 	}
 
 	/**
@@ -107,20 +94,20 @@ class Validation_Error extends \Exception
 	 * @param   mixed  $msg  error message to parse
 	 * @return  string
 	 */
-	protected function _replace_tags($msg)
+	protected function _replace_tags($msg): string|array
 	{
 		// prepare label & value
 		$label    = is_array($this->field->label) ? $this->field->label['label'] : $this->field->label;
 		$value    = is_array($this->value) ? implode(', ', $this->value) : $this->value;
-		if (\Config::get('validation.quote_labels', false) and strpos($label, ' ') !== false)
+		if (\Config::get('validation.quote_labels', false) and str_contains($label, ' '))
 		{
 			// put the label in quotes if it contains spaces
 			$label = '"'.$label.'"';
 		}
 
 		// setup find & replace arrays
-		$find     = array(':field', ':label', ':value', ':rule');
-		$replace  = array($this->field->name, $label, $value, $this->rule);
+		$find     = [':field', ':label', ':value', ':rule'];
+		$replace  = [$this->field->name, $label, $value, $this->rule];
 
 		// add the params to the find & replace arrays
 		foreach($this->params as $key => $val)
@@ -154,7 +141,7 @@ class Validation_Error extends \Exception
 			// Convert object with __toString or just the classname
 			elseif (is_object($val))
 			{
-				$val = method_exists($val, '__toString') ? (string) $val : get_class($val);
+				$val = method_exists($val, '__toString') ? (string) $val : $val::class;
 			}
 
 			$find[]     = ':param:'.($key + 1);
@@ -166,11 +153,9 @@ class Validation_Error extends \Exception
 	}
 
 	/**
-	 * Generate the error message
-	 *
-	 * @return  string
-	 */
-	public function __toString()
+     * Generate the error message
+     */
+    public function __toString(): string
 	{
 		return $this->get_message();
 	}

@@ -30,9 +30,9 @@ class Cli
 
 	public static $nocolor = false;
 
-	protected static $args = array();
+	protected static $args = [];
 
-	protected static $foreground_colors = array(
+	protected static $foreground_colors = [
 		'black'			=> '0;30',
 		'dark_gray'		=> '1;30',
 		'blue'			=> '0;34',
@@ -50,9 +50,9 @@ class Cli
 		'yellow'		=> '1;33',
 		'light_gray'	=> '0;37',
 		'white'			=> '1;37',
-	);
+	];
 
-	protected static $background_colors = array(
+	protected static $background_colors = [
 		'black'			=> '40',
 		'red'			=> '41',
 		'green'			=> '42',
@@ -61,7 +61,7 @@ class Cli
 		'magenta'		=> '45',
 		'cyan'			=> '46',
 		'light_gray'	=> '47',
-	);
+	];
 
 	protected static $STDOUT;
 	protected static $STDERR;
@@ -69,7 +69,7 @@ class Cli
 	/**
 	 * Static constructor.	Parses all the CLI params.
 	 */
-	public static function _init()
+	public static function _init(): void
 	{
 		if ( ! \Fuel::$is_cli)
 		{
@@ -77,13 +77,13 @@ class Cli
 		}
 		for ($i = 1; $i < $_SERVER['argc']; $i++)
 		{
-			$arg = explode('=', $_SERVER['argv'][$i]);
+			$arg = explode('=', (string) $_SERVER['argv'][$i]);
 
 			static::$args[$i] = $arg[0];
 
-			if (count($arg) > 1 || strncmp($arg[0], '-', 1) === 0)
+			if (count($arg) > 1 || str_starts_with($arg[0], '-'))
 			{
-				static::$args[ltrim($arg[0], '-')] = isset($arg[1]) ? $arg[1] : true;
+				static::$args[ltrim($arg[0], '-')] = $arg[1] ?? true;
 			}
 		}
 
@@ -116,13 +116,12 @@ class Cli
 	}
 
 	/**
-	 * Allows you to set a commandline option from code
-	 *
-	 * @param   string|int  $name   the name of the option (int if unnamed)
-	 * @param   mixed|null  $value  value to set, or null to delete the option
-	 * @return  mixed
-	 */
-	public static function set_option($name, $value = null)
+     * Allows you to set a commandline option from code
+     *
+     * @param   string|int  $name   the name of the option (int if unnamed)
+     * @param   mixed|null  $value  value to set, or null to delete the option
+     */
+    public static function set_option($name, $value = null): void
 	{
 		if ($value === null)
 		{
@@ -146,7 +145,7 @@ class Cli
 	 * @param	string|int	$prefix	the name of the option (int if unnamed)
 	 * @return	string
 	 */
-	public static function input($prefix = '')
+	public static function input($prefix = ''): string|false
 	{
         if (static::$readline_support)
 		{
@@ -180,7 +179,7 @@ class Cli
 	{
 		$args = func_get_args();
 
-		$options = array();
+		$options = [];
 		$output = '';
 		$default = null;
 
@@ -201,13 +200,13 @@ class Cli
 				// E.g: $ready = CLI::prompt('Are you ready?', array('y','n'));
 				if (is_array($args[1]))
 				{
-					list($output, $options)=$args;
+					[$output, $options]=$args;
 				}
 
 				// E.g: $color = CLI::prompt('What is your favourite color?', 'white');
 				elseif (is_string($args[1]))
 				{
-					list($output, $default)=$args;
+					[$output, $default]=$args;
 				}
 
 			break;
@@ -241,7 +240,7 @@ class Cli
 				$extra_output = ' [ Default: "'.$default.'" ]';
 			}
 
-			elseif ($options !== array())
+			elseif ($options !== [])
 			{
 				$extra_output = ' [ '.implode(', ', $options).' ]';
 			}
@@ -258,7 +257,7 @@ class Cli
 			static::write('This is required.');
 			static::new_line();
 
-			$input = forward_static_call_array(array(__CLASS__, 'prompt'), $args);
+			$input = forward_static_call_array(self::prompt(...), $args);
 		}
 
 		// If options are provided and the choice is not in the array, tell them to try again
@@ -267,7 +266,7 @@ class Cli
 			static::write('This is not a valid option. Please try again.');
 			static::new_line();
 
-			$input = forward_static_call_array(array(__CLASS__, 'prompt'), $args);
+			$input = forward_static_call_array(self::prompt(...), $args);
 		}
 
 		return $input;
@@ -282,7 +281,7 @@ class Cli
 	 * @param string		$background	the foreground color
 	 * @throws \FuelException
 	 */
-	public static function write($text = '', $foreground = null, $background = null)
+	public static function write($text = '', $foreground = null, $background = null): void
 	{
 		if (is_array($text))
 		{
@@ -305,7 +304,7 @@ class Cli
 	 * @param string		$background	the foreground color
 	 * @throws \FuelException
 	 */
-	public static function error($text = '', $foreground = 'light_red', $background = null)
+	public static function error($text = '', $foreground = 'light_red', $background = null): void
 	{
 		if (is_array($text))
 		{
@@ -325,7 +324,7 @@ class Cli
 	 *
 	 * @param	int $num	the number of times to beep
 	 */
-	public static function beep($num = 1)
+	public static function beep($num = 1): void
 	{
 		echo str_repeat("\x07", $num);
 	}
@@ -337,7 +336,7 @@ class Cli
 	 * @param	int		$seconds	number of seconds
 	 * @param	bool	$countdown	show a countdown or not
 	 */
-	public static function wait($seconds = 0, $countdown = false)
+	public static function wait($seconds = 0, $countdown = false): void
 	{
 		if ($countdown === true)
 		{
@@ -376,12 +375,11 @@ class Cli
  	}
 
 	/**
-	 * Enter a number of empty lines
-	 *
-	 * @param	integer	Number of lines to output
-	 * @return	void
-	 */
-	public static function new_line($num = 1)
+     * Enter a number of empty lines
+     *
+     * @param	integer	Number of lines to output
+     */
+    public static function new_line($num = 1): void
 	{
         // Do it once or more, write with empty string gives us a new line
         for($i = 0; $i < $num; $i++)
@@ -391,11 +389,9 @@ class Cli
     }
 
 	/**
-	 * Clears the screen of output
-	 *
-	 * @return	void
-	 */
-    public static function clear_screen()
+     * Clears the screen of output
+     */
+    public static function clear_screen(): void
     {
 		is_windows()
 
@@ -417,7 +413,7 @@ class Cli
 	 * @return	string	the color coded string
 	 * @throws \FuelException
 	 */
-	public static function color($text, $foreground, $background = null, $format=null)
+	public static function color(string $text, string $foreground, $background = null, $format=null): string
 	{
 		if (is_windows() and ! \Input::server('ANSICON'))
 		{
@@ -451,22 +447,18 @@ class Cli
 			$string .= "\033[4m";
 		}
 
-		$string .= $text."\033[0m";
-
-		return $string;
+		return $string . ($text . "\033[0m");
 	}
 
 	/**
-	 * Spawn Background Process
-	 *
-	 * Launches a background process (note, provides no security itself, $call must be sanitised prior to use)
-	 * @param string $call the system call to make
-	 * @param string $output
-	 * @return void
-	 * @author raccettura
-	 * @link http://robert.accettura.com/blog/2006/09/14/asynchronous-processing-with-php/
-	*/
-	public static function spawn($call, $output = '/dev/null')
+     * Spawn Background Process
+     *
+     * Launches a background process (note, provides no security itself, $call must be sanitised prior to use)
+     * @param string $call the system call to make
+     * @author raccettura
+     * @link http://robert.accettura.com/blog/2006/09/14/asynchronous-processing-with-php/
+     */
+    public static function spawn(string $call, string $output = '/dev/null'): void
 	{
 		// Windows
 		if(is_windows())

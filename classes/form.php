@@ -28,18 +28,16 @@ class Form
 	protected static $instance;
 
 	/**
-	 * When autoloaded this will method will be fired, load once and once only
-	 *
-	 * @return  void
-	 */
-	public static function _init()
+     * When autoloaded this will method will be fired, load once and once only
+     */
+    public static function _init(): void
 	{
 		\Config::load('form', true);
 
 		static::$instance = static::forge('_default_', \Config::get('form'));
 	}
 
-	public static function forge($fieldset = 'default', array $config = array())
+	public static function forge($fieldset = 'default', array $config = [])
 	{
 		if (is_string($fieldset))
 		{
@@ -70,13 +68,12 @@ class Form
 	}
 
 	/**
-	 * Create a form open tag
-	 *
-	 * @param   string|array  $attributes  action string or array with more tag attribute settings
-	 * @param   array         $hidden
-	 * @return  string
-	 */
-	public static function open($attributes = array(), array $hidden = array())
+     * Create a form open tag
+     *
+     * @param   string|array  $attributes  action string or array with more tag attribute settings
+     * @return  string
+     */
+    public static function open($attributes = [], array $hidden = [])
 	{
 		return static::$instance->open($attributes, $hidden);
 	}
@@ -98,7 +95,7 @@ class Form
 	 * @param   string  $legend  string for the fieldset legend
 	 * @return  string
 	 */
-	public static function fieldset_open($attributes = array(), $legend = null)
+	public static function fieldset_open($attributes = [], $legend = null)
 	{
 		return static::$instance->fieldset_open($attributes, $legend);
 	}
@@ -114,27 +111,25 @@ class Form
 	}
 
 	/**
-	 * Create a form input
-	 *
-	 * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
-	 * @param   string        $value
-	 * @param   array         $attributes
-	 * @return  string
-	 */
-	public static function input($field, $value = null, array $attributes = array())
+     * Create a form input
+     *
+     * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
+     * @param   string        $value
+     * @return  string
+     */
+    public static function input($field, $value = null, array $attributes = [])
 	{
 		return static::$instance->input($field, $value, $attributes);
 	}
 
 	/**
-	 * Create a hidden field
-	 *
-	 * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
-	 * @param   string        $value
-	 * @param   array         $attributes
-	 * @return  string
-	 */
-	public static function hidden($field, $value = null, array $attributes = array())
+     * Create a hidden field
+     *
+     * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
+     * @param   string        $value
+     * @return  string
+     */
+    public static function hidden($field, $value = null, array $attributes = [])
 	{
 		return static::$instance->hidden($field, $value, $attributes);
 	}
@@ -150,135 +145,125 @@ class Form
 	}
 
 	/**
-	 * Create a password input field
-	 *
-	 * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
-	 * @param   string        $value
-	 * @param   array         $attributes
-	 * @return  string
-	 */
-	public static function password($field, $value = null, array $attributes = array())
+     * Create a password input field
+     *
+     * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
+     * @param   string        $value
+     * @return  string
+     */
+    public static function password($field, $value = null, array $attributes = [])
 	{
 		return static::$instance->password($field, $value, $attributes);
 	}
 
 	/**
-	 * Create a radio button
-	 *
-	 * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
-	 * @param   string        $value
-	 * @param   mixed         $checked     either attributes (array) or bool/string to set checked status
-	 * @param   array         $attributes
-	 * @return  string
-	 */
-	public static function radio($field, $value = null, $checked = null, array $attributes = array())
+     * Create a radio button
+     *
+     * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
+     * @param   string        $value
+     * @param   mixed         $checked     either attributes (array) or bool/string to set checked status
+     * @return  string
+     */
+    public static function radio($field, $value = null, $checked = null, array $attributes = [])
 	{
 		return static::$instance->radio($field, $value, $checked, $attributes);
 	}
 
 	/**
-	 * Create a checkbox
-	 *
-	 * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
-	 * @param   string        $value
-	 * @param   mixed         $checked     either attributes (array) or bool/string to set checked status
-	 * @param   array         $attributes
-	 * @return  string
-	 */
-	public static function checkbox($field, $value = null, $checked = null, array $attributes = array())
+     * Create a checkbox
+     *
+     * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
+     * @param   string        $value
+     * @param   mixed         $checked     either attributes (array) or bool/string to set checked status
+     * @return  string
+     */
+    public static function checkbox($field, $value = null, $checked = null, array $attributes = [])
 	{
 		return static::$instance->checkbox($field, $value, $checked, $attributes);
 	}
 
 	/**
-	 * Create a file upload input field
-	 *
-	 * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
-	 * @param   array         $attributes
-	 * @return  string
-	 */
-	public static function file($field, array $attributes = array())
+     * Create a file upload input field
+     *
+     * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
+     * @return  string
+     */
+    public static function file($field, array $attributes = [])
 	{
 		return static::$instance->file($field, $attributes);
 	}
 
 	/**
-	 * Create a button
-	 *
-	 * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
-	 * @param   string        $value
-	 * @param   array         $attributes
-	 * @return  string
-	 */
-	public static function button($field, $value = null, array $attributes = array())
+     * Create a button
+     *
+     * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
+     * @param   string        $value
+     * @return  string
+     */
+    public static function button($field, $value = null, array $attributes = [])
 	{
 		return static::$instance->button($field, $value, $attributes);
 	}
 
 	/**
-	 * Create a reset button
-	 *
-	 * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
-	 * @param   string        $value
-	 * @param   array         $attributes
-	 * @return  string
-	 */
-	public static function reset($field = 'reset', $value = 'Reset', array $attributes = array())
+     * Create a reset button
+     *
+     * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
+     * @param   string        $value
+     * @return  string
+     */
+    public static function reset($field = 'reset', $value = 'Reset', array $attributes = [])
 	{
 		return static::$instance->reset($field, $value, $attributes);
 	}
 
 	/**
-	 * Create a submit button
-	 *
-	 * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
-	 * @param   string        $value
-	 * @param   array         $attributes
-	 * @return  string
-	 */
-	public static function submit($field = 'submit', $value = 'Submit', array $attributes = array())
+     * Create a submit button
+     *
+     * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
+     * @param   string        $value
+     * @return  string
+     */
+    public static function submit($field = 'submit', $value = 'Submit', array $attributes = [])
 	{
 		return static::$instance->submit($field, $value, $attributes);
 	}
 
 	/**
-	 * Create a textarea field
-	 *
-	 * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
-	 * @param   string        $value
-	 * @param   array         $attributes
-	 * @return  string
-	 */
-	public static function textarea($field, $value = null, array $attributes = array())
+     * Create a textarea field
+     *
+     * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
+     * @param   string        $value
+     * @return  string
+     */
+    public static function textarea($field, $value = null, array $attributes = [])
 	{
 		return static::$instance->textarea($field, $value, $attributes);
 	}
 
 	/**
-	 * Select
-	 *
-	 * Generates a html select element based on the given parameters
-	 *
-	 * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
-	 * @param   string        $values      selected value(s)
-	 * @param   array         $options     array of options and option groups
-	 * @param   array         $attributes
-	 * @return  string
-	 */
-	public static function select($field, $values = null, array $options = array(), array $attributes = array())
+     * Select
+     *
+     * Generates a html select element based on the given parameters
+     *
+     * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
+     * @param   string        $values      selected value(s)
+     * @param   array         $options     array of options and option groups
+     * @return  string
+     */
+    public static function select($field, $values = null, array $options = [], array $attributes = [])
 	{
 		return static::$instance->select($field, $values, $options, $attributes);
 	}
 
 	/**
-	 * Create a label field
-	 *
-	 * @param   string|array  $label       either fieldname or full attributes array (when array other params are ignored)
-	 * @param   string        $id
-	 * @param   array         $attributes
-	 * @return  string
-	 */
-	public static function label($label, $id = null, array $attributes = array())
+     * Create a label field
+     *
+     * @param   string|array  $label       either fieldname or full attributes array (when array other params are ignored)
+     * @param   string        $id
+     * @return  string
+     */
+    public static function label($label, $id = null, array $attributes = [])
 	{
 		return static::$instance->label($label, $id, $attributes);
 	}

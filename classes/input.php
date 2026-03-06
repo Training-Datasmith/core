@@ -70,9 +70,9 @@ class Input
 	/**
 	 * Static calls to the current input instance
 	 */
-	public static function __callStatic($method, $arguments)
+	public static function __callStatic(string $method, array $arguments)
 	{
-		return call_fuel_func_array(array(static::instance(), $method), $arguments);
+		return call_fuel_func_array([static::instance(), $method], $arguments);
 	}
 
 	/**
@@ -99,10 +99,10 @@ class Input
 
 		if (empty($server_keys))
 		{
-			$server_keys = array('HTTP_CLIENT_IP', 'REMOTE_ADDR');
+			$server_keys = ['HTTP_CLIENT_IP', 'REMOTE_ADDR'];
 			if (\Config::get('security.allow_x_headers', false))
 			{
-				$server_keys = array_merge(array('HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_FORWARDED_FOR'), $server_keys);
+				$server_keys = array_merge(['HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_FORWARDED_FOR'], $server_keys);
 			}
 		}
 
@@ -114,13 +114,11 @@ class Input
 			}
 
 			$ips = explode(',', static::server($key));
-			array_walk($ips, function (&$ip) {
+			array_walk($ips, function (&$ip): void {
 				$ip = trim($ip);
 			});
 
-			$ips = array_filter($ips, function($ip) use($exclude_reserved) {
-				return filter_var($ip, FILTER_VALIDATE_IP, $exclude_reserved ? FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE : null);
-			});
+			$ips = array_filter($ips, fn($ip) => filter_var($ip, FILTER_VALIDATE_IP, $exclude_reserved ? FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE : null));
 
 			if ($ips)
 			{
@@ -132,11 +130,9 @@ class Input
 	}
 
 	/**
-	 * Return's the protocol that the request was made with
-	 *
-	 * @return  string
-	 */
-	public static function protocol()
+     * Return's the protocol that the request was made with
+     */
+    public static function protocol(): string
 	{
 		if (static::server('HTTPS') == 'on' or
 			static::server('HTTPS') == 1 or
@@ -151,11 +147,9 @@ class Input
 	}
 
 	/**
-	 * Return's whether this is an AJAX request or not
-	 *
-	 * @return  bool
-	 */
-	public static function is_ajax()
+     * Return's whether this is an AJAX request or not
+     */
+    public static function is_ajax(): bool
 	{
 		return (static::server('HTTP_X_REQUESTED_WITH') !== null) and strtolower(static::server('HTTP_X_REQUESTED_WITH')) === 'xmlhttprequest';
 	}
@@ -215,7 +209,7 @@ class Input
 	 */
 	public static function server($index = null, $default = null)
 	{
-		return (func_num_args() === 0) ? $_SERVER : \Arr::get($_SERVER, strtoupper($index), $default);
+		return (func_num_args() === 0) ? $_SERVER : \Arr::get($_SERVER, strtoupper((string) $index), $default);
 	}
 
 	/**
@@ -239,7 +233,7 @@ class Input
 
 				foreach ($server as $key => $value)
 				{
-					$key = join('-', array_map('ucfirst', explode('_', strtolower($key))));
+					$key = join('-', array_map(ucfirst(...), explode('_', strtolower($key))));
 
 					$headers[$key] = $value;
 				}
@@ -253,7 +247,7 @@ class Input
 			}
 		}
 
-		return empty($headers) ? $default : ((func_num_args() === 0) ? $headers : \Arr::get(array_change_key_case($headers), strtolower($index), $default));
+		return empty($headers) ? $default : ((func_num_args() === 0) ? $headers : \Arr::get(array_change_key_case($headers), strtolower((string) $index), $default));
 	}
 
 	/**

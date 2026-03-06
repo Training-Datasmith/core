@@ -31,11 +31,9 @@ class Database_MySQLi_Result extends \Database_Result
 	}
 
 	/**
-	 * Result destruction cleans up all open result sets.
-	 *
-	 * @return  void
-	 */
-	public function __destruct()
+     * Result destruction cleans up all open result sets.
+     */
+    public function __destruct()
 	{
 		if ($this->_result instanceof \MySQLi_Result)
 		{

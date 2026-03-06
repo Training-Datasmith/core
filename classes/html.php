@@ -25,7 +25,7 @@ namespace Fuel\Core;
  */
 class Html
 {
-	public static $doctypes = null;
+	public static $doctypes;
 	public static $html5 = true;
 
 	/**
@@ -37,16 +37,16 @@ class Html
 	 * @param	bool	$secure	true to force https, false to force http
 	 * @return	string	the html link
 	 */
-	public static function anchor($href, $text = null, $attr = array(), $secure = null)
+	public static function anchor($href, $text = null, array $attr = [], $secure = null)
 	{
 		if ( ! preg_match('#^(\w+://|javascript:|\#)# i', $href))
 		{
 			$urlparts = explode('?', $href, 2);
-			$href = \Uri::create($urlparts[0], array(), isset($urlparts[1]) ? $urlparts[1] : array(), $secure);
+			$href = \Uri::create($urlparts[0], [], $urlparts[1] ?? [], $secure);
 		}
 		elseif ( ! preg_match('#^(javascript:|\#)# i', $href) and is_bool($secure))
 		{
-			$href = http_build_url($href, array('scheme' => $secure ? 'https' : 'http'));
+			$href = http_build_url($href, ['scheme' => $secure ? 'https' : 'http']);
 
 			// Trim the trailing slash
 			$href = rtrim($href, '/');
@@ -69,14 +69,14 @@ class Html
 	 * @param	array	$attr	the attributes array
 	 * @return	string	the image tag
 	 */
-	public static function img($src, $attr = array())
+	public static function img($src, array $attr = [])
 	{
 		if ( ! preg_match('#^(\w+://)# i', $src))
 		{
 			$src = \Uri::base(false).$src;
 		}
 		$attr['src'] = $src;
-		$attr['alt'] = (isset($attr['alt'])) ? $attr['alt'] : pathinfo($src, PATHINFO_FILENAME);
+		$attr['alt'] ??= pathinfo($src, PATHINFO_FILENAME);
 		return html_tag('img', $attr);
 	}
 
@@ -87,11 +87,11 @@ class Html
 	 * @param	string	$schema	the schema
 	 * @return	string	url with schema
 	 */
-	public static function prep_url($url, $schema = 'http')
+	public static function prep_url(string $url, string $schema = 'http'): string
 	{
 		if ( ! preg_match('#^(\w+://|javascript:)# i', $url))
 		{
-			$url = $schema.'://'.$url;
+			return $schema.'://'.$url;
 		}
 
 		return $url;
@@ -106,15 +106,15 @@ class Html
 	 * @param	array	$attr		attributes for the tag
 	 * @return	string	The mailto link
 	 */
-	public static function mail_to($email, $text = null, $subject = null, $attr = array())
+	public static function mail_to(string $email, $text = null, $subject = null, $attr = [])
 	{
 		$text or $text = $email;
 
 		$subject and $subject = '?subject='.$subject;
 
-		return html_tag('a', array(
+		return html_tag('a', [
 			'href' => 'mailto:'.$email.$subject,
-		) + $attr, $text);
+		] + $attr, $text);
 	}
 
 	/**
@@ -127,7 +127,7 @@ class Html
 	 * @param	array	$attr		attributes for the tag
 	 * @return	string	the javascript code containing email
 	 */
-	public static function mail_to_safe($email, $text = null, $subject = null, $attr = array())
+	public static function mail_to_safe($email, $text = null, $subject = null, $attr = []): string
 	{
 		$text or $text = str_replace('@', '[at]', $email);
 
@@ -145,8 +145,7 @@ class Html
 		$output .= 'var server = "'.$email[1].'";';
 		$output .= "document.write('<a href=\"' + 'mail' + 'to:' + user + at + server + '$subject\"$attr>$text</a>');";
 		$output .= '})();';
-		$output .= '</script>';
-		return $output;
+		return $output . '</script>';
 	}
 
 	/**
@@ -161,7 +160,7 @@ class Html
 	{
 		if( ! is_array($name))
 		{
-			$result = html_tag('meta', array($type => $name, 'content' => $content));
+			$result = html_tag('meta', [$type => $name, 'content' => $content]);
 		}
 		elseif(is_array($name))
 		{
@@ -186,7 +185,7 @@ class Html
 		if(static::$doctypes === null)
 		{
 			\Config::load('doctypes', true);
-			static::$doctypes = \Config::get('doctypes', array());
+			static::$doctypes = \Config::get('doctypes', []);
 		}
 
 		if(is_array(static::$doctypes) and isset(static::$doctypes[$type]))
@@ -197,10 +196,7 @@ class Html
 			}
 			return static::$doctypes[$type];
 		}
-		else
-		{
-			return false;
-		}
+        return false;
 	}
 
 	/**
@@ -220,12 +216,12 @@ class Html
 				$source = '';
 				foreach($src as $item)
 				{
-					$source .= html_tag('source', array('src' => $item));
+					$source .= html_tag('source', ['src' => $item]);
 				}
 			}
 			else
 			{
-				$source = html_tag('source', array('src' => $src));
+				$source = html_tag('source', ['src' => $src]);
 			}
 			return html_tag('audio', $attr, $source);
 		}
@@ -238,7 +234,7 @@ class Html
 	 * @param	array|string	$attr	outer list attributes
 	 * @return	string
 	 */
-	public static function ul(array $list = array(), $attr = false)
+	public static function ul(array $list = [], $attr = false)
 	{
 		return static::build_list('ul', $list, $attr);
 	}
@@ -250,21 +246,20 @@ class Html
 	 * @param	array|string	$attr	outer list attributes
 	 * @return	string
 	 */
-	public static function ol(array $list = array(), $attr = false)
+	public static function ol(array $list = [], $attr = false)
 	{
 		return static::build_list('ol', $list, $attr);
 	}
 
 	/**
-	 * Generates the html for the list methods
-	 *
-	 * @param	string	$type	list type (ol or ul)
-	 * @param	array	$list	list items, may be nested
-	 * @param	array	$attr	tag attributes
-	 * @param	string	$indent	indentation
-	 * @return	string
-	 */
-	protected static function build_list($type = 'ul', array $list = array(), $attr = false, $indent = '')
+     * Generates the html for the list methods
+     *
+     * @param	string	$type	list type (ol or ul)
+     * @param	array	$list	list items, may be nested
+     * @param	array	$attr	tag attributes
+     * @param	string	$indent	indentation
+     */
+    protected static function build_list($type = 'ul', array $list = [], $attr = false, string $indent = ''): string
 	{
 		if ( ! is_array($list))
 		{
@@ -276,14 +271,13 @@ class Html
 		{
 			if ( ! is_array($val))
 			{
-				$out .= $indent."\t".html_tag('li', array(), $val).PHP_EOL;
+				$out .= $indent."\t".html_tag('li', [], $val).PHP_EOL;
 			}
 			else
 			{
-				$out .= $indent."\t".html_tag('li', array(), $key.PHP_EOL.static::build_list($type, $val, '', $indent."\t\t").$indent."\t").PHP_EOL;
+				$out .= $indent."\t".html_tag('li', [], $key.PHP_EOL.static::build_list($type, $val, '', $indent."\t\t").$indent."\t").PHP_EOL;
 			}
 		}
-		$result = $indent.html_tag($type, $attr, PHP_EOL.$out.$indent).PHP_EOL;
-		return $result;
+		return $indent.html_tag($type, $attr, PHP_EOL.$out.$indent).PHP_EOL;
 	}
 }

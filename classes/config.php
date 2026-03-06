@@ -19,17 +19,17 @@ class Config
 	/**
 	 * @var    array    $loaded_files    array of loaded files
 	 */
-	public static $loaded_files = array();
+	public static $loaded_files = [];
 
 	/**
 	 * @var    array    $items           the master config array
 	 */
-	public static $items = array();
+	public static $items = [];
 
 	/**
 	 * @var    array    $itemcache       the dot-notated item cache
 	 */
-	protected static $itemcache = array();
+	protected static $itemcache = [];
 
 	/**
 	 * Loads a config file.
@@ -44,13 +44,13 @@ class Config
 	public static function load($file, $group = null, $reload = false, $overwrite = false)
 	{
 		// storage for the config
-		$config = array();
+		$config = [];
 
 		// Config_Instance class
 		$class = null;
 
 		// name of the config group
-		$name = $group === true ? $file : ($group === null ? null : $group);
+		$name = $group === true ? $file : ($group ?? null);
 
 		// need to store flag
 		$cache = ($group !== false);
@@ -134,7 +134,7 @@ class Config
 				{
 					$config = $class->load($overwrite, ! $reload);
 				}
-				catch (\ConfigException $e)
+				catch (\ConfigException)
 				{
 					$config = false;
 				}
@@ -160,7 +160,7 @@ class Config
 			if ($name === null)
 			{
 				static::$items = $reload ? $config : ($overwrite ? array_merge(static::$items, $config) : \Arr::merge(static::$items, $config));
-				static::$itemcache = array();
+				static::$itemcache = [];
 			}
 
 			// or in a named config
@@ -168,21 +168,21 @@ class Config
 			{
 				if ( ! isset(static::$items[$name]) or $reload)
 				{
-					static::$items[$name] = array();
+					static::$items[$name] = [];
 				}
 
 				if ($overwrite)
 				{
-					\Arr::set(static::$items, $name, array_merge(\Arr::get(static::$items, $name, array()), $config));
+					\Arr::set(static::$items, $name, array_merge(\Arr::get(static::$items, $name, []), $config));
 				}
 				else
 				{
-					\Arr::set(static::$items, $name, \Arr::merge(\Arr::get(static::$items, $name, array()), $config));
+					\Arr::set(static::$items, $name, \Arr::merge(\Arr::get(static::$items, $name, []), $config));
 				}
 
 				foreach (static::$itemcache as $key => $value)
 				{
-					if (strpos($key, $name) === 0)
+					if (str_starts_with((string) $key, $name))
 					{
 						unset(static::$itemcache[$key]);
 					}
@@ -247,25 +247,20 @@ class Config
 	 */
 	public static function get($item, $default = null)
 	{
-		if (array_key_exists($item, static::$items))
-		{
-			return static::$items[$item];
-		}
-		elseif ( ! array_key_exists($item, static::$itemcache))
-		{
-			// cook up something unique
-			$miss = new \stdClass();
-
-			$val = \Arr::get(static::$items, $item, $miss);
-
-			// so we can detect a miss here...
-			if ($val === $miss)
+		if (array_key_exists($item, static::$items)) {
+            return static::$items[$item];
+        }
+        if (! array_key_exists($item, static::$itemcache)) {
+            // cook up something unique
+            $miss = new \stdClass();
+            $val = \Arr::get(static::$items, $item, $miss);
+            // so we can detect a miss here...
+            if ($val === $miss)
 			{
 				return $default;
 			}
-
-			static::$itemcache[$item] = $val;
-		}
+            static::$itemcache[$item] = $val;
+        }
 
 		return \Fuel::value(static::$itemcache[$item]);
 	}
@@ -276,9 +271,9 @@ class Config
 	 * @param    string   $item   a (dot notated) config key
 	 * @param    mixed    $value  the config value
 	 */
-	public static function set($item, $value)
+	public static function set($item, $value): void
 	{
-		strpos($item, '.') === false or static::$itemcache[$item] = $value;
+		!str_contains($item, '.') or static::$itemcache[$item] = $value;
 		\Arr::set(static::$items, $item, $value);
 	}
 

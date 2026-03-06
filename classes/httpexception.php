@@ -25,7 +25,7 @@ abstract class HttpException extends \FuelException
 	 * When this type of exception isn't caught this method is called by
 	 * Errorhandler::exception_handler() to deal with the problem.
 	 */
-	public function handle()
+	public function handle(): void
 	{
 		// get the exception response
 		$response = $this->response();

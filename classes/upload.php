@@ -55,7 +55,7 @@ class Upload
 	/**
 	 * @var object FuelPHP\Upload\Upload object
 	 */
-	protected static $upload = null;
+	protected static $upload;
 
 	/**
 	 * @var object Ftp object
@@ -69,7 +69,7 @@ class Upload
 	/**
 	 * class initialisation, load the config and process $_FILES if needed
 	 */
-	public static function _init()
+	public static function _init(): void
 	{
 		// get the language file for this upload
 		\Lang::load('upload', true);
@@ -78,7 +78,7 @@ class Upload
 		\Config::load('upload', true);
 
 		// fetch the config
-		$config = \Config::get('upload', array());
+		$config = \Config::get('upload', []);
 
 		// add the language callback to link into Fuel's Lang class
 		$config['langCallback'] = '\\Upload::lang_callback';
@@ -130,7 +130,7 @@ class Upload
 	 */
 	public static function lang_callback($error)
 	{
-		return \Lang::get('upload.error_'.$error, array(), '');
+		return \Lang::get('upload.error_'.$error, [], '');
 	}
 
 	// ---------------------------------------------------------------------------
@@ -161,9 +161,9 @@ class Upload
 	 *
 	 * @return	bool	true if static:$files contains uploaded files that are valid
 	 */
-	public static function is_valid()
+	public static function is_valid(): bool
 	{
-		return static::$upload->getValidFiles() == array() ? false : true;
+		return static::$upload->getValidFiles() == [] ? false : true;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -174,7 +174,7 @@ class Upload
 	 * @param	mixed	$index
 	 * @return	array	list of uploaded files that are validated
 	 */
-	public static function get_files($index = null)
+	public static function get_files($index = null): array
 	{
 		// convert element name formats
 		is_string($index) and $index = str_replace(':', '.', $index);
@@ -182,11 +182,11 @@ class Upload
 		$files = static::$upload->getValidFiles($index);
 
 		// convert the file object to 1.x compatible data
-		$result = array();
+		$result = [];
 
 		foreach ($files as $file)
 		{
-			$data = array();
+			$data = [];
 			foreach ($file as $item => $value)
 			{
 				$item == 'element' and $item = 'field';
@@ -197,7 +197,7 @@ class Upload
 			}
 			$data['field'] = str_replace('.', ':', $data['field']);
 			$data['error'] = ! $file->isValid();
-			$data['errors'] = array();
+			$data['errors'] = [];
 			$result[] = $data;
 		}
 
@@ -206,10 +206,7 @@ class Upload
 		{
 			return reset($result);
 		}
-		else
-		{
-			return $result;
-		}
+        return $result;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -220,7 +217,7 @@ class Upload
 	 * @param	mixed	$index
 	 * @return	array	list of uploaded files that failed to validate
 	 */
-	public static function get_errors($index = null)
+	public static function get_errors($index = null): array
 	{
 		// convert element name formats
 		is_string($index) and $index = str_replace(':', '.', $index);
@@ -228,11 +225,11 @@ class Upload
 		$files = static::$upload->getInvalidFiles($index);
 
 		// convert the file object to 1.x compatible data
-		$result = array();
+		$result = [];
 
 		foreach ($files as $file)
 		{
-			$data = array();
+			$data = [];
 			foreach ($file as $item => $value)
 			{
 				// swap item names for BC
@@ -244,10 +241,10 @@ class Upload
 			}
 			$data['field'] = str_replace('.', ':', $data['field']);
 			$data['error'] = ! $file->isValid();
-			$data['errors'] = array();
+			$data['errors'] = [];
 			foreach ($file->getErrors() as $error)
 			{
-				$data['errors'][] = array('error' => $error->getError(), 'message' => $error->getMessage());
+				$data['errors'][] = ['error' => $error->getError(), 'message' => $error->getMessage()];
 			}
 			$result[] = $data;
 		}
@@ -257,41 +254,33 @@ class Upload
 		{
 			return reset($result);
 		}
-		else
-		{
-			return $result;
-		}
+        return $result;
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * Register
-	 *
-	 * Registers a Callback for a given event
-	 *
-	 * @param	string	$event		The name of the event
-	 * @param	mixed	$callback	callback information
-	 *
-	 * @return	void
-	 */
-	public static function register($event, $callback)
+    /**
+     * Register
+     *
+     * Registers a Callback for a given event
+     *
+     * @param	string	$event		The name of the event
+     * @param	mixed	$callback	callback information
+     */
+    public static function register($event, $callback): void
 	{
 		// make sure we're setting the correct events
-		$event = str_replace(array('before', 'after', 'validate'), array('before_save', 'after_save', 'after_validation'), $event);
+		$event = str_replace(['before', 'after', 'validate'], ['before_save', 'after_save', 'after_validation'], $event);
 
 		static::$upload->register($event, $callback);
 	}
 
 	// ---------------------------------------------------------------------------
-
-	/**
-	 * Process the uploaded files, and run the validation
-	 *
-	 * @param	array	$config
-	 * @return	void
-	 */
-	public static function process($config = array())
+    /**
+     * Process the uploaded files, and run the validation
+     *
+     * @param	array	$config
+     */
+    public static function process($config = []): void
 	{
 		foreach (static::$upload->getAllFiles() as $file)
 		{
@@ -308,7 +297,7 @@ class Upload
 	 * @param   string|array  $config	The name of the config group to use, or a configuration array.
 	 * @param   bool          $connect	Automatically connect to this server.
 	 */
-	public static function with_ftp($config = 'default', $connect = true)
+	public static function with_ftp($config = 'default', $connect = true): void
 	{
 		if (static::$with_ftp = \Ftp::forge($config, $connect))
 		{
@@ -323,17 +312,14 @@ class Upload
 	}
 
 	// ---------------------------------------------------------------------------
-
-	/**
-	 * save uploaded file(s)
-	 *
-	 * @return	void
-	 */
-	public static function save()
+    /**
+     * save uploaded file(s)
+     */
+    public static function save(): void
 	{
 		// storage for arguments
 		$path = null;
-		$ids = array();
+		$ids = [];
 
 		// do we have any arguments
 		if (func_num_args())

@@ -20,16 +20,15 @@ namespace Fuel\Core;
 class Format
 {
 	/**
-	 * Returns an instance of the Format object.
-	 *
-	 *     echo Format::forge(array('foo' => 'bar'))->to_xml();
-	 *
-	 * @param   mixed   $data       general date to be converted
-	 * @param   string  $from_type  data format the file was provided in
-	 * @param   mixed   $param      additional parameter that can be passed on to a 'from' method
-	 * @return  Format
-	 */
-	public static function forge($data = null, $from_type = null, $param = null)
+     * Returns an instance of the Format object.
+     *
+     *     echo Format::forge(array('foo' => 'bar'))->to_xml();
+     *
+     * @param   mixed   $data       general date to be converted
+     * @param   string  $from_type  data format the file was provided in
+     * @param   mixed   $param      additional parameter that can be passed on to a 'from' method
+     */
+    public static function forge($data = null, $from_type = null, $param = null): static
 	{
 		return new static($data, $from_type, $param);
 	}
@@ -37,7 +36,7 @@ class Format
 	/**
 	 * @var  array|mixed  input to convert
 	 */
-	protected $_data = array();
+	protected $_data = [];
 
 	/**
 	 * @var  bool 	whether to ignore namespaces when parsing xml
@@ -66,7 +65,7 @@ class Format
 
 			if (method_exists($this, '_from_' . $from_type))
 			{
-				$data = call_user_func_array(array($this, '_from_' . $from_type), array($data, $param));
+				$data = call_user_func_array([$this, '_from_' . $from_type], [$data, $param]);
 			}
 
 			else
@@ -79,23 +78,21 @@ class Format
 	}
 
 	// FORMATING OUTPUT ---------------------------------------------------------
-
-	/**
-	 * To array conversion
-	 *
-	 * Goes through the input and makes sure everything is either a scalar value or array
-	 *
-	 * @param   mixed  $data
-	 * @return  array
-	 */
-	public function to_array($data = null)
+    /**
+     * To array conversion
+     *
+     * Goes through the input and makes sure everything is either a scalar value or array
+     *
+     * @param   mixed  $data
+     */
+    public function to_array($data = null): array
 	{
 		if ($data === null)
 		{
 			$data = $this->_data;
 		}
 
-		$array = array();
+		$array = [];
 
 		if (is_object($data) and ! $data instanceof \Iterator)
 		{
@@ -104,7 +101,7 @@ class Format
 
 		if (empty($data))
 		{
-			return array();
+			return [];
 		}
 
 		foreach ($data as $key => $value)
@@ -123,16 +120,15 @@ class Format
 	}
 
 	/**
-	 * To XML conversion
-	 *
-	 * @param   mixed        $data
-	 * @param   null         $structure
-	 * @param   null|string  $basenode
-	 * @param   null|bool    $use_cdata             whether to use CDATA in nodes
-	 * @param   mixed        $bool_representation  if true, element values are true/false. if 1, 1/0.
-	 * @return  string
-	 */
-	public function to_xml($data = null, $structure = null, $basenode = null, $use_cdata = null, $bool_representation = null)
+     * To XML conversion
+     *
+     * @param   mixed        $data
+     * @param   null|string  $basenode
+     * @param   null|bool    $use_cdata             whether to use CDATA in nodes
+     * @param   mixed        $bool_representation  if true, element values are true/false. if 1, 1/0.
+     * @return  string
+     */
+    public function to_xml($data = null, $structure = null, $basenode = null, $use_cdata = null, $bool_representation = null)
 	{
 		if ($data == null)
 		{
@@ -141,7 +137,7 @@ class Format
 
 		is_null($basenode) and $basenode = \Config::get('format.xml.basenode', 'xml');
 		is_null($use_cdata) and $use_cdata = \Config::get('format.xml.use_cdata', false);
-		is_null($bool_representation) and $bool_representation = \Config::get('format.xml.bool_representation', null);
+		is_null($bool_representation) and $bool_representation = \Config::get('format.xml.bool_representation');
 
 		// turn off compatibility mode as simple xml throws a wobbly if you don't.
 		if (ini_get('zend.ze1_compatibility_mode') == 1)
@@ -163,7 +159,7 @@ class Format
 		foreach ($data as $key => $value)
 		{
 			// replace anything not alpha numeric
-			$key = preg_replace('/[^a-z_\-0-9]/i', '', $key);
+			$key = preg_replace('/[^a-z_\-0-9]/i', '', (string) $key);
 
 			// no numeric keys in our xml please!
 			if (is_numeric($key))
@@ -198,7 +194,7 @@ class Format
 			else
 			{
 				// add single node.
-				$encoded = htmlspecialchars(html_entity_decode($value, ENT_QUOTES, 'UTF-8'), ENT_QUOTES, "UTF-8");
+				$encoded = htmlspecialchars(html_entity_decode((string) $value, ENT_QUOTES, 'UTF-8'), ENT_QUOTES, "UTF-8");
 
 				if ($use_cdata and ($encoded !== (string) $value))
 				{
@@ -218,15 +214,14 @@ class Format
 	}
 
 	/**
-	 * To CSV conversion
-	 *
-	 * @param   mixed   $data
-	 * @param   mixed   $delimiter
-	 * @param   mixed   $enclose_numbers
-	 * @param   array   $headings         Custom headings to use
-	 * @return  string
-	 */
-	public function to_csv($data = null, $delimiter = null, $enclose_numbers = null, array $headings = array())
+     * To CSV conversion
+     *
+     * @param   mixed   $data
+     * @param   mixed   $delimiter
+     * @param   mixed   $enclose_numbers
+     * @param   array   $headings         Custom headings to use
+     */
+    public function to_csv($data = null, $delimiter = null, $enclose_numbers = null, array $headings = []): string
 	{
 		// csv format settings
 		$newline = \Config::get('format.csv.newline', \Config::get('format.csv.export.newline', "\n"));
@@ -236,15 +231,13 @@ class Format
 		is_null($enclose_numbers) and $enclose_numbers = \Config::get('format.csv.enclose_numbers', true);
 
 		// escape, delimit and enclose function
-		$escaper = function($items, $enclose_numbers) use($enclosure, $escape, $delimiter) {
-			return 	implode($delimiter, array_map(function($item) use($enclosure, $escape, $delimiter, $enclose_numbers) {
+		$escaper = (fn($items, $enclose_numbers) => implode($delimiter, array_map(function($item) use($enclosure, $escape, $enclose_numbers): float|int|string {
 				if ( ! is_numeric($item) or $enclose_numbers)
 				{
-					$item = $enclosure.str_replace($enclosure, $escape.$enclosure, $item).$enclosure;
+					return $enclosure.str_replace($enclosure, $escape.$enclosure, $item).$enclosure;
 				}
 				return $item;
-			}, $items));
-		};
+			}, $items)));
 
 		if ($data === null)
 		{
@@ -276,7 +269,7 @@ class Format
 			else
 			{
 				$headings = array_keys((array) $data);
-				$data = array($data);
+				$data = [$data];
 			}
 		}
 
@@ -318,7 +311,7 @@ class Format
 	 * @param   string  $callback  JSONP callback
 	 * @return  string  formatted JSONP
 	 */
-	public function to_jsonp($data = null, $pretty = false, $callback = null)
+	public function to_jsonp($data = null, $pretty = false, $callback = null): string
 	{
 		$callback or $callback = \Input::param('callback');
 		is_null($callback) and $callback = 'response';
@@ -327,12 +320,11 @@ class Format
 	}
 
 	/**
-	 * Serialize
-	 *
-	 * @param   mixed  $data
-	 * @return  string
-	 */
-	public function to_serialized($data = null)
+     * Serialize
+     *
+     * @param   mixed  $data
+     */
+    public function to_serialized($data = null): string
 	{
 		if ($data === null)
 		{
@@ -343,12 +335,11 @@ class Format
 	}
 
 	/**
-	 * Return as a string representing the PHP structure
-	 *
-	 * @param   mixed  $data
-	 * @return  string
-	 */
-	public function to_php($data = null)
+     * Return as a string representing the PHP structure
+     *
+     * @param   mixed  $data
+     */
+    public function to_php($data = null): string
 	{
 		if ($data === null)
 		{
@@ -380,27 +371,26 @@ class Format
 	}
 
 	/**
-	 * Import XML data
-	 *
-	 * @param   string  $string
-	 * @param   bool    $recursive
-	 * @return  array
-	 */
-	protected function _from_xml($string, $recursive = false)
+     * Import XML data
+     *
+     * @param   string  $string
+     * @param   bool    $recursive
+     */
+    protected function _from_xml($string, $recursive = false): array
 	{
 		// If it forged with 'xml:ns'
 		if ( ! $this->ignore_namespaces)
 		{
-			static $escape_keys = array();
-			$recursive or $escape_keys = array('_xmlns' => 'xmlns');
+			static $escape_keys = [];
+			$recursive or $escape_keys = ['_xmlns' => 'xmlns'];
 
-			if ( ! $recursive and strpos($string, 'xmlns') !== false and preg_match_all('/(\<.+?\>)/s', $string, $matches))
+			if ( ! $recursive and str_contains($string, 'xmlns') and preg_match_all('/(\<.+?\>)/s', $string, $matches))
 			{
 				foreach ($matches[1] as $tag)
 				{
 					$escaped_tag = $tag;
 
-					strpos($tag, 'xmlns=') !== false and $escaped_tag = str_replace('xmlns=', '_xmlns=', $tag);
+					str_contains($tag, 'xmlns=') and $escaped_tag = str_replace('xmlns=', '_xmlns=', $tag);
 
 					if (preg_match_all('/[\s\<\/]([^\/\s\'"]*?:\S*?)[=\/\>\s]/s', $escaped_tag, $xmlns))
 					{
@@ -419,7 +409,7 @@ class Format
 		$_arr = is_string($string) ? simplexml_load_string($string, 'SimpleXMLElement', LIBXML_NOCDATA) : $string;
 
 		// Convert all objects SimpleXMLElement to array recursively
-		$arr = array();
+		$arr = [];
 		foreach ((array) $_arr as $key => $val)
 		{
 			$this->ignore_namespaces or $key = \Arr::get($escape_keys, $key, $key);
@@ -453,22 +443,21 @@ class Format
 	}
 
 	/**
-	 * Import CSV data
-	 *
-	 * @param   string  $string
-	 * @param   bool    $no_headings
-	 * @return  array
-	 */
-	protected function _from_csv($string, $no_headings = false)
+     * Import CSV data
+     *
+     * @param   string  $string
+     * @param   bool    $no_headings
+     */
+    protected function _from_csv($string, $no_headings = false): array
 	{
-		$data = array();
+		$data = [];
 
 		// csv config
 		$newline = \Config::get('format.csv.regex_newline', "\n");
 		$delimiter = \Config::get('format.csv.delimiter', \Config::get('format.csv.import.delimiter', ','));
 		$escape = \Config::get('format.csv.escape', \Config::get('format.csv.import.escape', '"'));
 		// have to do this in two steps, empty string is a valid value for enclosure!
-		$enclosure = \Config::get('format.csv.enclosure', \Config::get('format.csv.import.enclosure', null));
+		$enclosure = \Config::get('format.csv.enclosure', \Config::get('format.csv.import.enclosure'));
 		$enclosure === null and $enclosure = '"';
 
 		if (empty($enclosure))
@@ -516,23 +505,21 @@ class Format
 	}
 
 	/**
-	 * Import JSON data
-	 *
-	 * @param   string  $string
-	 * @return  mixed
-	 */
-	private function _from_json($string)
+     * Import JSON data
+     *
+     * @param   string  $string
+     */
+    private function _from_json($string): mixed
 	{
 		return json_decode(trim($string));
 	}
 
 	/**
-	 * Import Serialized data
-	 *
-	 * @param   string  $string
-	 * @return  mixed
-	 */
-	private function _from_serialize($string)
+     * Import Serialized data
+     *
+     * @param   string  $string
+     */
+    private function _from_serialize($string): mixed
 	{
 		return unserialize(trim($string));
 	}
@@ -544,7 +531,7 @@ class Format
 	 * @param   string  $data  json encoded array
 	 * @return  string|false  pretty json output or false when the input was not valid
 	 */
-	protected static function pretty_json($data)
+	protected static function pretty_json($data): false|string
 	{
 		$json = json_encode($data, \Config::get('format.json.encode.options', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP));
 
@@ -626,7 +613,7 @@ class Format
 	/**
 	 * Loads Format config.
 	 */
-	public static function _init()
+	public static function _init(): void
 	{
 		\Config::load('format', true);
 	}

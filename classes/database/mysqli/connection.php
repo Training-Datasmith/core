@@ -23,7 +23,7 @@ class Database_MySQLi_Connection extends \Database_Connection
 	/**
 	 * @var  array  Database in use by each connection
 	 */
-	protected static $_current_databases = array();
+	protected static $_current_databases = [];
 
 	/**
 	 * @var  bool  Use SET NAMES to set the character set
@@ -46,10 +46,9 @@ class Database_MySQLi_Connection extends \Database_Connection
 	public $_db_type = 'mysql';
 
 	/**
-	 * @param string $name
-	 * @param array  $config
-	 */
-	protected function __construct($name, array $config)
+     * @param string $name
+     */
+    protected function __construct($name, array $config)
 	{
 		// construct a custom schema driver
 //		$this->_schema = new \Database_Drivername_Schema($name, $this);
@@ -58,17 +57,17 @@ class Database_MySQLi_Connection extends \Database_Connection
 		parent::__construct($name, $config);
 
 		// make sure we have all connection parameters, add defaults for those missing
-		$this->_config = \Arr::merge(array(
-			'connection'  => array(
+		$this->_config = \Arr::merge([
+			'connection'  => [
 				'socket'     => '',
 				'port'       => '',
 				'compress'   => false,
-			),
+			],
 			'enable_cache'   => true,
-		), $this->_config);
+		], $this->_config);
 	}
 
-	public function connect()
+	public function connect(): void
 	{
 		if ($this->_connection)
 		{
@@ -187,7 +186,7 @@ class Database_MySQLi_Connection extends \Database_Connection
 
 			}
 		}
-		catch (\Exception $e)
+		catch (\Exception)
 		{
 			// Database is probably not disconnected
 			$status = ! ($this->_connection instanceof \MySQLi);
@@ -196,7 +195,7 @@ class Database_MySQLi_Connection extends \Database_Connection
 		return $status;
 	}
 
-	public function set_charset($charset)
+	public function set_charset($charset): void
 	{
 		// Make sure the database is connected
 		$this->_connection or $this->connect();
@@ -253,7 +252,7 @@ class Database_MySQLi_Connection extends \Database_Connection
 			$paths = \Config::get('profiling_paths');
 
 			// Storage for the trace information
-			$stacktrace = array();
+			$stacktrace = [];
 
 			// Get the execution trace of this query
 			$include = false;
@@ -263,9 +262,9 @@ class Database_MySQLi_Connection extends \Database_Connection
 				if ($index > 0 and empty($page['file']) === false)
 				{
 					// Checks to see what paths you want backtrace
-					foreach($paths as $index => $path)
+					foreach($paths as $path)
 					{
-						if (strpos($page['file'], $path) !== false)
+						if (str_contains($page['file'], $path))
 						{
 							$include = true;
 							break;
@@ -275,7 +274,7 @@ class Database_MySQLi_Connection extends \Database_Connection
 					// Only log if no paths we defined, or we have a path match
 					if ($include or empty($paths))
 					{
-						$stacktrace[] = array('file' => \Fuel::clean_path($page['file']), 'line' => $page['line']);
+						$stacktrace[] = ['file' => \Fuel::clean_path($page['file']), 'line' => $page['line']];
 					}
 				}
 			}
@@ -317,33 +316,27 @@ class Database_MySQLi_Connection extends \Database_Connection
 
 		// Set the last query
 		$this->last_query = $sql;
-
-		if ($type === \DB::SELECT)
-		{
-			if ($caching)
+        if ($type === \DB::SELECT) {
+            if ($caching)
 			{
 				// Return an iterator of results
 				return new \Database_MySQLi_Cached($result, $sql, $as_object);
 			}
-			else
-			{
-				// Return an iterator of results
-				return new \Database_MySQLi_Result($result, $sql, $as_object);
-			}
-		}
-		elseif ($type === \DB::INSERT)
-		{
-			// Return a list of insert id and rows created
-			return array(
+            // Return an iterator of results
+            return new \Database_MySQLi_Result($result, $sql, $as_object);
+        }
+        if ($type === \DB::INSERT) {
+            // Return a list of insert id and rows created
+            return [
 				$this->_connection->insert_id,
 				$this->_connection->affected_rows,
-			);
-		}
-		elseif ($type === \DB::UPDATE or $type === \DB::DELETE)
-		{
-			// Return the number of rows affected
-			return $this->_connection->affected_rows;
-		}
+			];
+        }
+
+		if ($type === \DB::UPDATE or $type === \DB::DELETE) {
+            // Return the number of rows affected
+            return $this->_connection->affected_rows;
+        }
 
 		return $result;
 	}
@@ -373,51 +366,46 @@ class Database_MySQLi_Connection extends \Database_Connection
 	 */
 	public function datatype($type)
 	{
-		static $types = array(
-			'blob'                      => array('type' => 'string', 'binary' => true, 'character_maximum_length' => '65535'),
-			'bool'                      => array('type' => 'bool'),
-			'bigint unsigned'           => array('type' => 'int', 'min' => '0', 'max' => '18446744073709551615'),
-			'datetime'                  => array('type' => 'string'),
-			'decimal unsigned'          => array('type' => 'float', 'exact' => true, 'min' => '0'),
-			'double'                    => array('type' => 'float'),
-			'double precision unsigned' => array('type' => 'float', 'min' => '0'),
-			'double unsigned'           => array('type' => 'float', 'min' => '0'),
-			'enum'                      => array('type' => 'string'),
-			'fixed'                     => array('type' => 'float', 'exact' => true),
-			'fixed unsigned'            => array('type' => 'float', 'exact' => true, 'min' => '0'),
-			'float unsigned'            => array('type' => 'float', 'min' => '0'),
-			'int unsigned'              => array('type' => 'int', 'min' => '0', 'max' => '4294967295'),
-			'integer unsigned'          => array('type' => 'int', 'min' => '0', 'max' => '4294967295'),
-			'longblob'                  => array('type' => 'string', 'binary' => true, 'character_maximum_length' => '4294967295'),
-			'longtext'                  => array('type' => 'string', 'character_maximum_length' => '4294967295'),
-			'mediumblob'                => array('type' => 'string', 'binary' => true, 'character_maximum_length' => '16777215'),
-			'mediumint'                 => array('type' => 'int', 'min' => '-8388608', 'max' => '8388607'),
-			'mediumint unsigned'        => array('type' => 'int', 'min' => '0', 'max' => '16777215'),
-			'mediumtext'                => array('type' => 'string', 'character_maximum_length' => '16777215'),
-			'national varchar'          => array('type' => 'string'),
-			'numeric unsigned'          => array('type' => 'float', 'exact' => true, 'min' => '0'),
-			'nvarchar'                  => array('type' => 'string'),
-			'point'                     => array('type' => 'string', 'binary' => true),
-			'real unsigned'             => array('type' => 'float', 'min' => '0'),
-			'set'                       => array('type' => 'string'),
-			'smallint unsigned'         => array('type' => 'int', 'min' => '0', 'max' => '65535'),
-			'text'                      => array('type' => 'string', 'character_maximum_length' => '65535'),
-			'tinyblob'                  => array('type' => 'string', 'binary' => true, 'character_maximum_length' => '255'),
-			'tinyint'                   => array('type' => 'int', 'min' => '-128', 'max' => '127'),
-			'tinyint unsigned'          => array('type' => 'int', 'min' => '0', 'max' => '255'),
-			'tinytext'                  => array('type' => 'string', 'character_maximum_length' => '255'),
-			'varchar'                   => array('type' => 'string', 'exact' => true),
-			'year'                      => array('type' => 'string'),
-		);
+		static $types = [
+			'blob'                      => ['type' => 'string', 'binary' => true, 'character_maximum_length' => '65535'],
+			'bool'                      => ['type' => 'bool'],
+			'bigint unsigned'           => ['type' => 'int', 'min' => '0', 'max' => '18446744073709551615'],
+			'datetime'                  => ['type' => 'string'],
+			'decimal unsigned'          => ['type' => 'float', 'exact' => true, 'min' => '0'],
+			'double'                    => ['type' => 'float'],
+			'double precision unsigned' => ['type' => 'float', 'min' => '0'],
+			'double unsigned'           => ['type' => 'float', 'min' => '0'],
+			'enum'                      => ['type' => 'string'],
+			'fixed'                     => ['type' => 'float', 'exact' => true],
+			'fixed unsigned'            => ['type' => 'float', 'exact' => true, 'min' => '0'],
+			'float unsigned'            => ['type' => 'float', 'min' => '0'],
+			'int unsigned'              => ['type' => 'int', 'min' => '0', 'max' => '4294967295'],
+			'integer unsigned'          => ['type' => 'int', 'min' => '0', 'max' => '4294967295'],
+			'longblob'                  => ['type' => 'string', 'binary' => true, 'character_maximum_length' => '4294967295'],
+			'longtext'                  => ['type' => 'string', 'character_maximum_length' => '4294967295'],
+			'mediumblob'                => ['type' => 'string', 'binary' => true, 'character_maximum_length' => '16777215'],
+			'mediumint'                 => ['type' => 'int', 'min' => '-8388608', 'max' => '8388607'],
+			'mediumint unsigned'        => ['type' => 'int', 'min' => '0', 'max' => '16777215'],
+			'mediumtext'                => ['type' => 'string', 'character_maximum_length' => '16777215'],
+			'national varchar'          => ['type' => 'string'],
+			'numeric unsigned'          => ['type' => 'float', 'exact' => true, 'min' => '0'],
+			'nvarchar'                  => ['type' => 'string'],
+			'point'                     => ['type' => 'string', 'binary' => true],
+			'real unsigned'             => ['type' => 'float', 'min' => '0'],
+			'set'                       => ['type' => 'string'],
+			'smallint unsigned'         => ['type' => 'int', 'min' => '0', 'max' => '65535'],
+			'text'                      => ['type' => 'string', 'character_maximum_length' => '65535'],
+			'tinyblob'                  => ['type' => 'string', 'binary' => true, 'character_maximum_length' => '255'],
+			'tinyint'                   => ['type' => 'int', 'min' => '-128', 'max' => '127'],
+			'tinyint unsigned'          => ['type' => 'int', 'min' => '0', 'max' => '255'],
+			'tinytext'                  => ['type' => 'string', 'character_maximum_length' => '255'],
+			'varchar'                   => ['type' => 'string', 'exact' => true],
+			'year'                      => ['type' => 'string'],
+		];
 
 		$type = str_replace(' zerofill', '', $type);
 
-		if (isset($types[$type]))
-		{
-			return $types[$type];
-		}
-
-		return parent::datatype($type);
+		return $types[$type] ?? parent::datatype($type);
 	}
 
 	/**
@@ -439,7 +427,7 @@ class Database_MySQLi_Connection extends \Database_Connection
 			$result = $this->query(\DB::SELECT, 'SHOW TABLES', false);
 		}
 
-		$tables = array();
+		$tables = [];
 		foreach ($result as $row)
 		{
 			$tables[] = reset($row);
@@ -472,10 +460,10 @@ class Database_MySQLi_Connection extends \Database_Connection
 		}
 
 		$count = 0;
-		$columns = array();
+		$columns = [];
 		foreach ($result as $row)
 		{
-			list($type, $length) = $this->_parse_type($row['Type']);
+			[$type, $length] = $this->_parse_type($row['Type']);
 
 			$column = $this->datatype($type);
 
@@ -490,7 +478,7 @@ class Database_MySQLi_Connection extends \Database_Connection
 				case 'float':
 					if (isset($length))
 					{
-						list($column['numeric_precision'], $column['numeric_scale']) = explode(',', $length);
+						[$column['numeric_precision'], $column['numeric_scale']] = explode(',', $length);
 					}
 				break;
 				case 'int':
@@ -521,7 +509,7 @@ class Database_MySQLi_Connection extends \Database_Connection
 						case 'enum':
 						case 'set':
 							$column['collation_name'] = $row['Collation'];
-							$column['options'] = explode('\',\'', substr($length, 1, -1));
+							$column['options'] = explode('\',\'', substr((string) $length, 1, -1));
 						break;
 					}
 				break;
@@ -563,10 +551,10 @@ class Database_MySQLi_Connection extends \Database_Connection
 		}
 
 		// unify the result
-		$indexes = array();
+		$indexes = [];
 		foreach ($result as $row)
 		{
-			$index = array(
+			$index = [
 				'name' => $row['Key_name'],
 				'column' => $row['Column_name'],
 				'order' => $row['Seq_in_index'],
@@ -575,7 +563,7 @@ class Database_MySQLi_Connection extends \Database_Connection
 				'unique' => $row['Non_unique'] == 0 ? true : false,
 				'null' => $row['Null'] == 'YES' ? true : false,
 				'ascending' => $row['Collation'] == 'A' ? true : false,
-			);
+			];
 
 			$indexes[] = $index;
 		}
@@ -606,7 +594,7 @@ class Database_MySQLi_Connection extends \Database_Connection
 	public function error_info()
 	{
 		$errno = $this->_connection->errno;
-		return array($errno, empty($errno) ? null : $errno, empty($errno) ? null : $this->_connection->error);
+		return [$errno, empty($errno) ? null : $errno, empty($errno) ? null : $this->_connection->error];
 	}
 
 	protected function driver_start_transaction()

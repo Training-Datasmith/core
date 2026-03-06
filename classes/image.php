@@ -14,21 +14,19 @@ namespace Fuel\Core;
 
 class Image
 {
-	protected static $_instance = null;
+	protected static $_instance;
 
 	/**
 	 * Holds the config until an instance is initiated.
 	 *
 	 * @var  array   Config options to be passed when the instance is created.
 	 */
-	protected static $_config = array();
+	protected static $_config = [];
 
 	/**
-	 * Initialize by loading config
-	 *
-	 * @return void
-	 */
-	public static function _init()
+     * Initialize by loading config
+     */
+    public static function _init(): void
 	{
 		\Config::load('image', true);
 	}
@@ -55,11 +53,11 @@ class Image
 	 * @return  Image_Driver
 	 * @throws \FuelException
 	 */
-	public static function forge($config = array(), $filename = null)
+	public static function forge($config = [], $filename = null): object
 	{
-		!is_array($config) and $config = array();
+		!is_array($config) and $config = [];
 
-		$config = array_merge(\Config::get('image', array()), $config);
+		$config = array_merge(\Config::get('image', []), $config);
 
 		$protocol = ucfirst( ! empty($config['driver']) ? $config['driver'] : 'gd');
 		$class = 'Image_'.$protocol;
@@ -87,13 +85,13 @@ class Image
 	 * @param   mixed   $value
 	 * @return  Image_Driver
 	 */
-	public static function config($index = array(), $value = null)
+	public static function config($index = [], $value = null)
 	{
 		if (static::$_instance === null)
 		{
 			if ($value !== null)
 			{
-				$index = array($index => $value);
+				$index = [$index => $value];
 			}
 			if (is_array($index))
 			{
@@ -101,9 +99,8 @@ class Image
 			}
 			static::instance();
 			return static::instance();
-		} else {
-			return static::instance()->config($index, $value);
 		}
+        return static::instance()->config($index, $value);
 	}
 
 	/**
@@ -191,7 +188,7 @@ class Image
 	 * @param   integer|array  $padding   The spacing between the edge of the image, or an array with seperate horizontal and vertical padding
 	 * @return  Image_Driver
 	 */
-	public static function watermark($filename, $position, $padding = array(5,5))
+	public static function watermark($filename, $position, $padding = [5,5])
 	{
 		return static::instance()->watermark($filename, $position, $padding);
 	}

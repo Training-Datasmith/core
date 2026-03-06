@@ -18,22 +18,22 @@ class Database_Query_Builder_Join extends \Database_Query_Builder
 	/**
 	 * @var string  $_type  join type
 	 */
-	protected $_type = null;
+	protected $_type;
 
 	/**
 	 * @var string  $_table  join table
 	 */
-	protected $_table = null;
+	protected $_table;
 
 	/**
 	 * @var string  $_alias  join table alias
 	 */
-	protected $_alias = null;
+	protected $_alias;
 
 	/**
 	 * @var array  $_on  ON clauses
 	 */
-	protected $_on = array();
+	protected $_on = [];
 
 	/**
 	 * Creates a new JOIN statement for a table. Optionally, the type of JOIN
@@ -74,7 +74,7 @@ class Database_Query_Builder_Join extends \Database_Query_Builder
 	 */
 	public function or_on($c1, $op, $c2)
 	{
-		$this->_on[] = array($c1, $op, $c2, 'OR');
+		$this->_on[] = [$c1, $op, $c2, 'OR'];
 
 		return $this;
 	}
@@ -90,7 +90,7 @@ class Database_Query_Builder_Join extends \Database_Query_Builder
 	 */
 	public function on($c1, $op, $c2)
 	{
-		$this->_on[] = array($c1, $op, $c2, 'AND');
+		$this->_on[] = [$c1, $op, $c2, 'AND'];
 
 		return $this;
 	}
@@ -116,7 +116,7 @@ class Database_Query_Builder_Join extends \Database_Query_Builder
 	 */
 	public function on_open()
 	{
-		$this->_on[] = array('', '', '', '(');
+		$this->_on[] = ['', '', '', '('];
 
 		return $this;
 	}
@@ -128,7 +128,7 @@ class Database_Query_Builder_Join extends \Database_Query_Builder
 	 */
 	public function on_close()
 	{
-		$this->_on[] = array('', '', '', ')');
+		$this->_on[] = ['', '', '', ')'];
 
 		return $this;
 	}
@@ -179,12 +179,12 @@ class Database_Query_Builder_Join extends \Database_Query_Builder
 			$sql .= ' AS '.$db->quote_table($this->_alias);
 		}
 
-		$conditions = array();
+		$conditions = [];
 
 		foreach ($this->_on as $condition)
 		{
 			// Split the condition
-			list($c1, $op, $c2, $chaining) = $condition;
+			[$c1, $op, $c2, $chaining] = $condition;
 
 			$c_string = $c1 . $op . $c2;
 
@@ -210,7 +210,7 @@ class Database_Query_Builder_Join extends \Database_Query_Builder
 				if ($op)
 				{
 					// Make the operator uppercase and spaced
-					$op = ' '.strtoupper($op);
+					$op = ' '.strtoupper((string) $op);
 				}
 
 				// Quote each of the identifiers used for the condition
@@ -228,15 +228,13 @@ class Database_Query_Builder_Join extends \Database_Query_Builder
 	}
 
 	/**
-	 * Resets the join values.
-	 *
-	 * @return  $this
-	 */
-	public function reset()
+     * Resets the join values.
+     */
+    public function reset(): void
 	{
 		$this->_type = null;
 		$this->_table = null;
 		$this->_alias = null;
-		$this->_on = array();
+		$this->_on = [];
 	}
 }

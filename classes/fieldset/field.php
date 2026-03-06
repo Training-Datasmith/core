@@ -20,22 +20,22 @@ namespace Fuel\Core;
  * @package   Fuel
  * @category  Core
  */
-class Fieldset_Field
+class Fieldset_Field implements \Stringable
 {
 	/**
 	 * @var  Fieldset  Fieldset this field belongs to
 	 */
-	protected $fieldset;
+	protected ?\Fuel\Core\Fieldset $fieldset;
 
 	/**
 	 * @var  string  Name of this field
 	 */
-	protected $name = '';
+	protected string $name;
 
 	/**
 	 * @var  string  Base name of this field
 	 */
-	protected $basename = '';
+	protected string $basename;
 
 	/**
 	 * @var  string  Field type for form generation, false to prevent it showing
@@ -60,17 +60,17 @@ class Fieldset_Field
 	/**
 	 * @var  array  Rules for validation
 	 */
-	protected $rules = array();
+	protected $rules = [];
 
 	/**
 	 * @var  array  Attributes for form generation
 	 */
-	protected $attributes = array();
+	protected array $attributes = [];
 
 	/**
 	 * @var  array  Options, only available for select, radio & checkbox types
 	 */
-	protected $options = array();
+	protected $options = [];
 
 	/**
 	 * @var  string  Template for form building
@@ -80,19 +80,17 @@ class Fieldset_Field
 	/**
 	 * @var  array  overwrites for default error messages
 	 */
-	protected $error_messages = array();
+	protected $error_messages = [];
 
 	/**
-	 * Constructor
-	 *
-	 * @param  string    $name
-	 * @param  string    $label
-	 * @param  array     $attributes
-	 * @param  array     $rules
-	 * @param  Fieldset  $fieldset
-	 * @throws \RuntimeException
-	 */
-	public function __construct($name, $label = '', array $attributes = array(), array $rules = array(), $fieldset = null)
+     * Constructor
+     *
+     * @param  string    $name
+     * @param  string    $label
+     * @param  Fieldset  $fieldset
+     * @throws \RuntimeException
+     */
+    public function __construct($name, $label = '', array $attributes = [], array $rules = [], $fieldset = null)
 	{
 		$this->name = (string) $name;
 
@@ -132,16 +130,15 @@ class Fieldset_Field
 
 		foreach ($rules as $rule)
 		{
-			call_fuel_func_array(array($this, 'add_rule'), (array) $rule);
+			call_fuel_func_array($this->add_rule(...), (array) $rule);
 		}
 	}
 
 	/**
-	 * @param   Fieldset        $fieldset  Fieldset to assign the field to
-	 * @return  Fieldset_Field
-	 * @throws  \RuntimeException
-	 */
-	public function set_fieldset(Fieldset $fieldset)
+     * @param   Fieldset        $fieldset  Fieldset to assign the field to
+     * @throws  \RuntimeException
+     */
+    public function set_fieldset(Fieldset $fieldset): static
 	{
 		// if we currently have a fieldset
 		if ($this->fieldset)
@@ -169,7 +166,7 @@ class Fieldset_Field
 	 * @param   bool    $update
 	 * @return  Fieldset_Field  this, to allow chaining
 	 */
-	public function set_name($name, $update = true)
+	public function set_name($name, $update = true): static
 	{
 		if ($update and $this->fieldset and $this->fieldset->field($name))
 		{
@@ -186,7 +183,7 @@ class Fieldset_Field
 		// add this field to the fieldset
 		if ($update and $this->fieldset)
 		{
-			$this->fieldset->add_after($this, '', array(), array(), $current);
+			$this->fieldset->add_after($this, '', [], [], $current);
 		}
 
 		// and delete the current one
@@ -207,7 +204,7 @@ class Fieldset_Field
 	 * @param   string  $label
 	 * @return  Fieldset_Field  this, to allow chaining
 	 */
-	public function set_label($label)
+	public function set_label($label): static
 	{
 		$this->label = $label;
 		$this->set_attribute('label', $label);
@@ -221,7 +218,7 @@ class Fieldset_Field
 	 * @param   string  $type
 	 * @return  Fieldset_Field  this, to allow chaining
 	 */
-	public function set_type($type)
+	public function set_type($type): static
 	{
 		$this->type = $type;
 		$this->set_attribute('type', $type);
@@ -236,7 +233,7 @@ class Fieldset_Field
 	 * @param   bool    $repopulate
 	 * @return  Fieldset_Field  this, to allow chaining
 	 */
-	public function set_value($value, $repopulate = false)
+	public function set_value($value, $repopulate = false): static
 	{
 		// Repopulation is handled slightly different in some cases
 		if ($repopulate)
@@ -264,7 +261,7 @@ class Fieldset_Field
 	 * @param   string          $description
 	 * @return  Fieldset_Field  this, to allow chaining
 	 */
-	public function set_description($description)
+	public function set_description($description): static
 	{
 		$this->description = strval($description);
 
@@ -277,7 +274,7 @@ class Fieldset_Field
 	 * @param   string          $template
 	 * @return  Fieldset_Field  this, to allow chaining
 	 */
-	public function set_template($template = null)
+	public function set_template($template = null): static
 	{
 		$this->template = $template;
 
@@ -285,13 +282,12 @@ class Fieldset_Field
 	}
 
 	/**
-	 * Overwrite a default error message
-	 *
-	 * @param   string  $rule
-	 * @param   string  $msg
-	 * @return  Fieldset_Field
-	 */
-	public function set_error_message($rule, $msg)
+     * Overwrite a default error message
+     *
+     * @param   string  $rule
+     * @param   string  $msg
+     */
+    public function set_error_message($rule, $msg): static
 	{
 		empty($rule) and $rule = 0;
 		$this->error_messages[$rule] = strval($msg);
@@ -307,16 +303,11 @@ class Fieldset_Field
 	 */
 	public function get_error_message($rule)
 	{
-		if (isset($this->error_messages[$rule]))
-		{
-			return $this->error_messages[$rule];
-		}
-		elseif (isset($this->error_messages[0]))
-		{
-			return $this->error_messages[0];
-		}
+		if (isset($this->error_messages[$rule])) {
+            return $this->error_messages[$rule];
+        }
 
-		return null;
+		return $this->error_messages[0] ?? null;
 	}
 
 	/**
@@ -326,10 +317,10 @@ class Fieldset_Field
 	 * @param   string|Callback	either a validation rule or full callback
 	 * @return  Fieldset_Field  this, to allow chaining
 	 */
-	public function add_rule($callback)
+	public function add_rule($callback): static
 	{
 		$args = array_slice(func_get_args(), 1);
-		$this->rules[] = array($callback, $args);
+		$this->rules[] = [$callback, $args];
 
 		// Set required setting for forms when rule was applied
 		if ($callback === 'required')
@@ -347,7 +338,7 @@ class Fieldset_Field
 	 * @param   bool	whether to also reset related attributes
 	 * @return  Fieldset_Field  this, to allow chaining
 	 */
-	public function delete_rule($callback, $set_attr = true)
+	public function delete_rule($callback, $set_attr = true): static
 	{
 		foreach($this->rules as $index => $rule)
 		{
@@ -373,9 +364,9 @@ class Fieldset_Field
 	 * @param   mixed   new value or null to unset
 	 * @return  Fieldset_Field  this, to allow chaining
 	 */
-	public function set_attribute($attr, $value = null)
+	public function set_attribute($attr, $value = null): static
 	{
-		$attr = is_array($attr) ? $attr : array($attr => $value);
+		$attr = is_array($attr) ? $attr : [$attr => $value];
 		foreach ($attr as $key => $value)
 		{
 			if ($value === null)
@@ -407,7 +398,7 @@ class Fieldset_Field
 
 		if (is_array($key))
 		{
-			$output = array();
+			$output = [];
 			foreach ($key as $k)
 			{
 				$output[$k] = array_key_exists($k, $this->attributes) ? $this->attributes[$k] : $default;
@@ -426,7 +417,7 @@ class Fieldset_Field
 	 * @param   bool            Whether or not to replace the current options
 	 * @return  Fieldset_Field  this, to allow chaining
 	 */
-	public function set_options($value, $label = null, $replace_options = false)
+	public function set_options($value, $label = null, $replace_options = false): static
 	{
 		if ( ! is_array($value))
 		{
@@ -434,7 +425,7 @@ class Fieldset_Field
 			return $this;
 		}
 
-		$merge = function(&$array, $new, $merge)
+		$merge = function(array &$array, $new, $merge): void
 		{
 			foreach ($new as $k => $v)
 			{
@@ -455,22 +446,18 @@ class Fieldset_Field
 	}
 
 	/**
-	 * Magic get method to allow getting class properties but still having them protected
-	 * to disallow writing.
-	 *
-	 * @return  mixed
-	 */
-	public function __get($property)
+     * Magic get method to allow getting class properties but still having them protected
+     * to disallow writing.
+     */
+    public function __get(string $property): mixed
 	{
 		return $this->$property;
 	}
 
 	/**
-	 * Build the field
-	 *
-	 * @return  string
-	 */
-	public function __toString()
+     * Build the field
+     */
+    public function __toString(): string
 	{
 		try
 		{
@@ -497,7 +484,7 @@ class Fieldset_Field
 	 *
 	 * @return Fieldset_Field
 	 */
-	public function add($name, $label = '', array $attributes = array(), array $rules = array())
+	public function add($name, $label = '', array $attributes = [], array $rules = [])
 	{
 		return $this->fieldset()->add($name, $label, $attributes, $rules);
 	}
@@ -507,7 +494,7 @@ class Fieldset_Field
 	 *
 	 * @return Fieldset_Field
 	 */
-	public function add_before($name, $label = '', array $attributes = array(), array $rules = array(), $fieldname = null)
+	public function add_before($name, $label = '', array $attributes = [], array $rules = [], $fieldname = null)
 	{
 		return $this->fieldset()->add_before($name, $label, $attributes, $rules, $fieldname);
 	}
@@ -517,7 +504,7 @@ class Fieldset_Field
 	 *
 	 * @return Fieldset_Field
 	 */
-	public function add_after($name, $label = '', array $attributes = array(), array $rules = array(), $fieldname = null)
+	public function add_after($name, $label = '', array $attributes = [], array $rules = [], $fieldname = null)
 	{
 		return $this->fieldset()->add_after($name, $label, $attributes, $rules, $fieldname);
 	}
@@ -535,7 +522,7 @@ class Fieldset_Field
 		if ($form->get_config('auto_id', false) === true and $this->get_attribute('id') == '')
 		{
 			$auto_id = $form->get_config('auto_id_prefix', '')
-				.str_replace(array('[', ']'), array('-', ''), $this->name);
+				.str_replace(['[', ']'], ['-', ''], $this->name);
 			$this->set_attribute('id', $auto_id);
 		}
 
@@ -549,7 +536,7 @@ class Fieldset_Field
 			case 'checkbox':
 				if ($this->options)
 				{
-					$build_field = array();
+					$build_field = [];
 					$i = 0;
 					foreach ($this->options as $value => $label)
 					{
@@ -573,7 +560,7 @@ class Fieldset_Field
 						{
 							$attributes['id'] = null;
 						}
-						$build_field[$form->label($label, null, array('for' => $attributes['id']))] = $this->type == 'radio'
+						$build_field[$form->label($label, null, ['for' => $attributes['id']])] = $this->type == 'radio'
 							? $form->radio($attributes)
 							: $form->checkbox($attributes);
 
@@ -627,8 +614,8 @@ class Fieldset_Field
 	{
 		$form = $this->fieldset()->form();
 
-		$required_mark = $this->get_attribute('required', null) ? $form->get_config('required_mark', null) : null;
-		$label = $this->label ? $form->label($this->label, null, array('id' => 'label_'.$this->name, 'for' => $this->get_attribute('id', null), 'class' => $form->get_config('label_class', null))) : '';
+		$required_mark = $this->get_attribute('required') ? $form->get_config('required_mark', null) : null;
+		$label = $this->label ? $form->label($this->label, null, ['id' => 'label_'.$this->name, 'for' => $this->get_attribute('id'), 'class' => $form->get_config('label_class', null)]) : '';
 		$error_template = $form->get_config('error_template', '');
 		$error_msg = ($form->get_config('inline_errors') && $this->error()) ? str_replace('{error_msg}', $this->error(), $error_template) : '';
 		$error_class = $this->error() ? $form->get_config('error_class') : '';
@@ -637,7 +624,7 @@ class Fieldset_Field
 		{
 			$label = $this->label ? str_replace('{label}', $this->label, $form->get_config('group_label', '<span>{label}</span>')) : '';
 			$template = $this->template ?: $form->get_config('multi_field_template', "\t\t<tr>\n\t\t\t<td class=\"{error_class}\">{group_label}{required}</td>\n\t\t\t<td class=\"{error_class}\">{fields}\n\t\t\t\t{field} {label}<br />\n{fields}\t\t\t{error_msg}\n\t\t\t</td>\n\t\t</tr>\n");
-			if ($template && preg_match('#\{fields\}(.*)\{fields\}#Dus', $template, $match) > 0)
+			if ($template && preg_match('#\{fields\}(.*)\{fields\}#Dus', (string) $template, $match) > 0)
 			{
 				$build_fields = '';
 				foreach ($build_field as $lbl => $bf)
@@ -649,9 +636,8 @@ class Fieldset_Field
 				}
 
 				$template = str_replace($match[0], '{fields}', $template);
-				$template = str_replace(array('{group_label}', '{required}', '{fields}', '{error_msg}', '{error_class}', '{description}'), array($label, $required_mark, $build_fields, $error_msg, $error_class, $this->description), $template);
 
-				return $template;
+				return str_replace(['{group_label}', '{required}', '{fields}', '{error_msg}', '{error_class}', '{description}'], [$label, $required_mark, $build_fields, $error_msg, $error_class, $this->description], $template);
 			}
 
 			// still here? wasn't a multi field template available, try the normal one with imploded $build_field
@@ -681,21 +667,21 @@ class Fieldset_Field
 		// hidden fields need special treatment
 		if ($this->type == 'hidden')
 		{
-			$template = str_replace(array('{label}', '{required}', '{field}', '{error_msg}', '{error_class}', '{description}', '{field_id}'),
-				array($label, '', $build_field, '', '" style="display:none;', $this->description, $field_id),
+			$template = str_replace(['{label}', '{required}', '{field}', '{error_msg}', '{error_class}', '{description}', '{field_id}'],
+				[$label, '', $build_field, '', '" style="display:none;', $this->description, $field_id],
 				$template);
 
 		}
 		elseif ($this->type == 'checkbox')
 		{
-			$template = str_replace(array('{label}', '{required}', '{field}', '{error_msg}', '{error_class}', '{description}', '{field_id}'),
-				array($label, $required_mark, $build_field, $error_msg, $error_class, $this->description, $field_id.'" style="text-align:center;'),
+			$template = str_replace(['{label}', '{required}', '{field}', '{error_msg}', '{error_class}', '{description}', '{field_id}'],
+				[$label, $required_mark, $build_field, $error_msg, $error_class, $this->description, $field_id.'" style="text-align:center;'],
 				$template);
 		}
 		else
 		{
-			$template = str_replace(array('{label}', '{required}', '{field}', '{error_msg}', '{error_class}', '{description}', '{field_id}'),
-				array($label, $required_mark, $build_field, $error_msg, $error_class, $this->description, $field_id),
+			$template = str_replace(['{label}', '{required}', '{field}', '{error_msg}', '{error_class}', '{description}', '{field_id}'],
+				[$label, $required_mark, $build_field, $error_msg, $error_class, $this->description, $field_id],
 				$template);
 
 		}

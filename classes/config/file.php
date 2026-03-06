@@ -17,9 +17,7 @@ namespace Fuel\Core;
  */
 abstract class Config_File implements Config_Interface
 {
-	protected $file;
-
-	protected $vars = array();
+	protected array $vars;
 
 	/**
 	 * Sets up the file to be parsed and variables
@@ -27,16 +25,14 @@ abstract class Config_File implements Config_Interface
 	 * @param   string  $file  Config file name
 	 * @param   array   $vars  Variables to parse in the file
 	 */
-	public function __construct($file = null, $vars = array())
+	public function __construct(protected $file = null, $vars = [])
 	{
-		$this->file = $file;
-
-		$this->vars = array(
+		$this->vars = [
 			'APPPATH' => APPPATH,
 			'COREPATH' => COREPATH,
 			'PKGPATH' => PKGPATH,
 			'DOCROOT' => DOCROOT,
-		) + $vars;
+		] + $vars;
 	}
 
 	/**
@@ -49,7 +45,7 @@ abstract class Config_File implements Config_Interface
 	public function load($overwrite = false, $cache = true)
 	{
 		$paths = $this->find_file($cache);
-		$config = array();
+		$config = [];
 
 		foreach ($paths as $path)
 		{
@@ -94,7 +90,7 @@ abstract class Config_File implements Config_Interface
 	 * @param   array  $array  array to be prepped
 	 * @return  array  prepped array
 	 */
-	protected function prep_vars(&$array)
+	protected function prep_vars(array &$array)
 	{
 		static $replacements = false;
 
@@ -102,7 +98,7 @@ abstract class Config_File implements Config_Interface
 		{
 			foreach ($this->vars as $i => $v)
 			{
-				$replacements['#^('.preg_quote($v).'){1}(.*)?#'] = "%".$i."%$2";
+				$replacements['#^('.preg_quote((string) $v).'){1}(.*)?#'] = "%".$i."%$2";
 			}
 		}
 
@@ -130,7 +126,7 @@ abstract class Config_File implements Config_Interface
 	{
 		if (($this->file[0] === '/' or (isset($this->file[1]) and $this->file[1] === ':')) and is_file($this->file))
 		{
-			$paths = array($this->file);
+			$paths = [$this->file];
 		}
 		else
 		{
@@ -166,13 +162,13 @@ abstract class Config_File implements Config_Interface
 
 		if ( ! $path = \Finder::search('config', $this->file, $this->ext))
 		{
-			if ($pos = strripos($this->file, '::'))
+			if ($pos = strripos((string) $this->file, '::'))
 			{
 				// get the namespace path
-				if ($path = \Autoloader::namespace_path('\\'.ucfirst(substr($this->file, 0, $pos))))
+				if ($path = \Autoloader::namespace_path('\\'.ucfirst(substr((string) $this->file, 0, $pos))))
 				{
 					// strip the namespace from the filename
-					$this->file = substr($this->file, $pos+2);
+					$this->file = substr((string) $this->file, $pos+2);
 
 					// strip the classes directory as we need the module root
 					$path = substr($path, 0, -8).'config'.DS.$this->file.$this->ext;
@@ -211,7 +207,7 @@ abstract class Config_File implements Config_Interface
 			catch (\PhpErrorException $e)
 			{
 				// if we get something else then a chmod error, bail out
-				if (substr($e->getMessage(), 0, 8) !== 'chmod():')
+				if (!str_starts_with($e->getMessage(), 'chmod():'))
 				{
 					throw new $e;
 				}

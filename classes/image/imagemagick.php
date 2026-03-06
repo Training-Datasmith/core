@@ -14,10 +14,10 @@ namespace Fuel\Core;
 
 class Image_Imagemagick extends \Image_Driver
 {
-	protected $image_temp = null;
-	protected $accepted_extensions = array('png', 'gif', 'jpg', 'jpeg');
-	protected $sizes_cache = null;
-	protected $im_path = null;
+	protected $image_temp;
+	protected $accepted_extensions = ['png', 'gif', 'jpg', 'jpeg'];
+	protected $sizes_cache;
+	protected $im_path;
 
 	public function load($filename, $return_data = false, $force_extension = false)
 	{
@@ -38,14 +38,12 @@ class Image_Imagemagick extends \Image_Driver
 			unlink($this->image_temp);
 		}
 		$this->debug('Temp file: '.$this->image_temp);
-		if ( ! is_dir($this->config['temp_dir']))
-		{
-			throw new \RuntimeException("The temp directory that was given does not exist.");
-		}
-		elseif (!touch($this->config['temp_dir'] . $this->config['temp_append'] . '_touch'))
-		{
-			throw new \RuntimeException("Could not write in the temp directory.");
-		}
+        if (! is_dir($this->config['temp_dir'])) {
+            throw new \RuntimeException("The temp directory that was given does not exist.");
+        }
+		if (!touch($this->config['temp_dir'] . $this->config['temp_append'] . '_touch')) {
+            throw new \RuntimeException("Could not write in the temp directory.");
+        }
 		$this->exec('convert', "-auto-orient '".$image_fullpath."'[0] '".$this->image_temp."'");
 
 		return $this;
@@ -104,7 +102,7 @@ class Image_Imagemagick extends \Image_Driver
 		$this->exec('convert', $image.' -auto-orient '.$arg.' '.$image);
 	}
 
-	protected function _watermark($filename, $position, $padding = array(5,5))
+	protected function _watermark($filename, $position, $padding = [5,5])
 	{
 		$values = parent::_watermark($filename, $position, $padding);
 		if ($values == false)
@@ -189,11 +187,11 @@ class Image_Imagemagick extends \Image_Driver
 			}
 
 			$output = $this->exec('identify', "-format '%w %h' '".$filename."'[0]");
-			list($width, $height) = explode(" ", $output[0]);
-			$return = (object) array(
+			[$width, $height] = explode(" ", (string) $output[0]);
+			$return = (object) [
 				'width' => $width,
 				'height' => $height,
-			);
+			];
 
 			if ($is_loaded_file)
 			{
@@ -250,13 +248,13 @@ class Image_Imagemagick extends \Image_Driver
 		if(($filetype == 'jpeg' or $filetype == 'jpg') and $this->config['quality'] != 100)
 		{
 			$quality = "'".$this->config['quality']."%'";
-			$this->exec('convert', $image.' -auto-orient -quality '.$quality.' '.strtolower($filetype).':-', true);
+			$this->exec('convert', $image.' -auto-orient -quality '.$quality.' '.strtolower((string) $filetype).':-', true);
 		}
-		elseif (substr($this->image_temp, -1 * strlen($filetype)) != $filetype)
+		elseif (substr((string) $this->image_temp, -1 * strlen((string) $filetype)) != $filetype)
 		{
 			if ( ! $this->config['debug'])
 			{
-				$this->exec('convert', $image.' -auto-orient '.strtolower($filetype).':-', true);
+				$this->exec('convert', $image.' -auto-orient '.strtolower((string) $filetype).':-', true);
 			}
 		}
 		else

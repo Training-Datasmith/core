@@ -17,33 +17,33 @@ import('phpquickprofiler/phpquickprofiler', 'vendor');
 
 class Profiler
 {
-	protected static $profiler = null;
+	protected static $profiler;
 
-	protected static $query = null;
+	protected static $query;
 
-	public static function init()
+	public static function init(): void
 	{
 		if ( ! static::$profiler)
 		{
 			static::$profiler = new \PhpQuickProfiler(FUEL_START_TIME);
-			static::$profiler->queries = array();
+			static::$profiler->queries = [];
 			static::$profiler->queryCount = 0;
 			static::mark(__METHOD__.' Start');
 			\Fuel::$profiling = true;
 		}
 	}
 
-	public static function mark($label)
+	public static function mark($label): void
 	{
 		static::$profiler and \Console::logSpeed($label);
 	}
 
-	public static function mark_memory($var = false, $name = 'PHP')
+	public static function mark_memory($var = false, $name = 'PHP'): void
 	{
 		static::$profiler and \Console::logMemory($var, $name);
 	}
 
-	public static function console($text)
+	public static function console($text): void
 	{
 		static::$profiler and \Console::log($text);
 	}
@@ -53,21 +53,21 @@ class Profiler
 		return static::$profiler ? static::$profiler->display(static::$profiler, $return) : '';
 	}
 
-	public static function start($dbname, $sql, $stacktrace = array())
+	public static function start($dbname, $sql, $stacktrace = [])
 	{
 		if (static::$profiler)
 		{
-			static::$query = array(
+			static::$query = [
 				'sql' => \Security::htmlentities($sql),
 				'time' => static::$profiler->getMicroTime(),
 				'stacktrace' => $stacktrace,
 				'dbname' => $dbname,
-			);
+			];
 			return true;
 		}
 	}
 
-	public static function stop($text)
+	public static function stop($text): void
 	{
 		if (static::$profiler)
 		{
@@ -77,16 +77,16 @@ class Profiler
 		}
 	}
 
-	public static function delete($text)
+	public static function delete($text): void
 	{
 		static::$query = null;
 	}
 
-	public static function app_total()
+	public static function app_total(): array
 	{
-		return array(
+		return [
 			microtime(true) - FUEL_START_TIME,
 			memory_get_peak_usage() - FUEL_START_MEM,
-		);
+		];
 	}
 }

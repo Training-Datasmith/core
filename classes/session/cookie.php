@@ -19,13 +19,13 @@ class Session_Cookie extends \Session_Driver
 	/**
 	 * array of driver config defaults
 	 */
-	protected static $_defaults = array(
+	protected static $_defaults = [
 		'cookie_name'  => 'fuelcid',
-	);
+	];
 
 	// --------------------------------------------------------------------
 
-	public function __construct($config = array())
+	public function __construct($config = [])
 	{
 		parent::__construct($config);
 
@@ -130,7 +130,7 @@ class Session_Cookie extends \Session_Driver
 			$this->keys['updated'] = $this->time->get_timestamp();
 
 			// then update the cookie
-			$this->_set_cookie(array($this->keys, $this->data, $this->flash));
+			$this->_set_cookie([$this->keys, $this->data, $this->flash]);
 		}
 
 		return $this;
@@ -146,7 +146,7 @@ class Session_Cookie extends \Session_Driver
 	 */
 	public function _validate_config($config)
 	{
-		$validated = array();
+		$validated = [];
 
 		foreach ($config as $name => $item)
 		{

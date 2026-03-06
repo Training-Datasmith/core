@@ -29,16 +29,15 @@ class Debug
 
 	protected static $js_displayed = false;
 
-	protected static $files = array();
+	protected static $files = [];
 
 	/**
-	 * Quick and nice way to output a mixed variable to the browser
-	 *
-	 * @static
-	 * @access	public
-	 * @return	string
-	 */
-	public static function dump()
+     * Quick and nice way to output a mixed variable to the browser
+     *
+     * @static
+     * @access	public
+     */
+    public static function dump(): void
 	{
 		if (\Fuel::$is_cli)
 		{
@@ -58,7 +57,7 @@ class Debug
 				if (isset($trace['file']))
 				{
 					// If being called from within, show the file above in the backtrack
-					if (strpos($trace['file'], 'core/classes/debug.php') !== false)
+					if (str_contains($trace['file'], 'core/classes/debug.php'))
 					{
 						$callee = $backtrace[$stack+1];
 						$label = \Inflector::humanize($backtrace[$stack+1]['function']);
@@ -102,18 +101,17 @@ JS;
 	}
 
 	/**
-	 * Quick and nice way to output a mixed variable to the browser
-	 *
-	 * @static
-	 * @access	public
-	 * @return	string
-	 */
-	public static function inspect()
+     * Quick and nice way to output a mixed variable to the browser
+     *
+     * @static
+     * @access	public
+     */
+    public static function inspect(): void
 	{
 		$backtrace = debug_backtrace();
 
 		// If being called from within, show the file above in the backtrack
-		if (strpos($backtrace[0]['file'], 'core/classes/debug.php') !== false)
+		if (str_contains($backtrace[0]['file'], 'core/classes/debug.php'))
 		{
 			$callee = $backtrace[1];
 			$label = \Inflector::humanize($backtrace[1]['function']);
@@ -161,7 +159,7 @@ JS;
 	 * @param	string	$scope
 	 * @return	string	the formatted string.
 	 */
-	public static function format($name, $var, $level = 0, $indent_char = '&nbsp;&nbsp;&nbsp;&nbsp;', $scope = '')
+	public static function format($name, $var, $level = 0, $indent_char = '&nbsp;&nbsp;&nbsp;&nbsp;', $scope = ''): string
 	{
 		$return = str_repeat($indent_char, $level);
 		if (is_array($var))
@@ -252,7 +250,7 @@ JS;
 			$id = 'fuel_debug_'.mt_rand();
 			$rvar = new \ReflectionObject($var);
 			$vars = $rvar->getProperties();
-			$return .= "<i>{$scope}</i> <strong>{$name}</strong> (Object #".$matches[2]."): ".get_class($var);
+			$return .= "<i>{$scope}</i> <strong>{$name}</strong> (Object #".$matches[2]."): ".$var::class;
 			if (count($vars) > 0 and static::$max_nesting_level > $level)
 			{
 				$return .= " <a href=\"javascript:fuel_debug_toggle('$id');\" title=\"Click to ".(static::$js_toggle_open ? "close" : "open")."\">&crarr;</a>\n";
@@ -311,10 +309,10 @@ JS;
 	 * @param	int			$padding	the amount of line padding
 	 * @return	array
 	 */
-	public static function file_lines($filepath, $line_num, $highlight = true, $padding = 5)
+	public static function file_lines($filepath, $line_num, $highlight = true, $padding = 5): string|array
 	{
 		// deal with eval'd code and runtime-created function
-		if (strpos($filepath, 'eval()\'d code') !== false or strpos($filepath, 'runtime-created function') !== false)
+		if (str_contains($filepath, 'eval()\'d code') or str_contains($filepath, 'runtime-created function'))
 		{
 			return '';
 		}
@@ -342,8 +340,8 @@ JS;
 
 		if ($highlight)
 		{
-			$to_replace = array('<code>', '</code>', '<span style="color: #0000BB">&lt;?php&nbsp;', "\n");
-			$replace_with = array('', '', '<span style="color: #0000BB">', '');
+			$to_replace = ['<code>', '</code>', '<span style="color: #0000BB">&lt;?php&nbsp;', "\n"];
+			$replace_with = ['', '', '<span style="color: #0000BB">', ''];
 
 			foreach ($debug_lines as & $line)
 			{
@@ -398,10 +396,7 @@ JS;
 
 			return $str;
 		}
-		else
-		{
-			return static::dump($trace);
-		}
+        return static::dump($trace);
 	}
 
 	/**
@@ -500,15 +495,13 @@ JS;
 	}
 
 	/**
-	 * Benchmark anything that is callable
-	 *
-	 * @access public
-	 * @param	callable	$callable
-	 * @param	array		$params
-	 * @static
-	 * @return	array
-	 */
-	public static function benchmark($callable, array $params = array())
+     * Benchmark anything that is callable
+     *
+     * @access public
+     * @param	callable	$callable
+     * @static
+     */
+    public static function benchmark($callable, array $params = []): array
 	{
 		// get the before-benchmark time
 		if (function_exists('getrusage'))
@@ -519,7 +512,7 @@ JS;
 		}
 		else
 		{
-			list($usec, $sec) = explode(" ", microtime());
+			[$usec, $sec] = explode(" ", microtime());
 			$utime_before = ((float) $usec + (float) $sec);
 			$stime_before = 0;
 		}
@@ -536,16 +529,16 @@ JS;
 		}
 		else
 		{
-			list($usec, $sec) = explode(" ", microtime());
+			[$usec, $sec] = explode(" ", microtime());
 			$utime_after = ((float) $usec + (float) $sec);
 			$stime_after = 0;
 		}
 
-		return array(
+		return [
 			'user' => sprintf('%1.6f', $utime_after - $utime_before),
 			'system' => sprintf('%1.6f', $stime_after - $stime_before),
 			'result' => $result,
-		);
+		];
 	}
 
 }

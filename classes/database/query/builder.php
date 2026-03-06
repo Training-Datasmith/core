@@ -25,7 +25,7 @@ abstract class Database_Query_Builder extends \Database_Query
 	 */
 	protected function _compile_join(\Database_Connection$db, array $joins)
 	{
-		$statements = array();
+		$statements = [];
 
 		foreach ($joins as $join)
 		{
@@ -78,7 +78,7 @@ abstract class Database_Query_Builder extends \Database_Query
 					}
 
 					// Split the condition
-					list($column, $op, $value) = $condition;
+					[$column, $op, $value] = $condition;
 
 					// Support DB::expr() as where clause
 					if ($column instanceOf Database_Expression and $op === null and $value === null)
@@ -102,12 +102,12 @@ abstract class Database_Query_Builder extends \Database_Query
 						}
 
 						// Database operators are always uppercase
-						$op = strtoupper($op);
+						$op = strtoupper((string) $op);
 
 						if (($op === 'BETWEEN' OR $op === 'NOT BETWEEN') AND is_array($value))
 						{
 							// BETWEEN always has exactly two arguments
-							list($min, $max) = $value;
+							[$min, $max] = $value;
 
 							if (is_string($min) AND array_key_exists($min, $this->_parameters))
 							{
@@ -158,11 +158,11 @@ abstract class Database_Query_Builder extends \Database_Query
 	 */
 	protected function _compile_set(\Database_Connection$db, array $values)
 	{
-		$set = array();
+		$set = [];
 		foreach ($values as $group)
 		{
 			// Split the set
-			list($column, $value) = $group;
+			[$column, $value] = $group;
 
 			// Quote the column name
 			$column = $db->quote_identifier($column);
@@ -189,13 +189,13 @@ abstract class Database_Query_Builder extends \Database_Query
 	 */
 	protected function _compile_order_by(\Database_Connection $db, array $columns)
 	{
-		$sort = array();
+		$sort = [];
 
 		foreach ($columns as $group)
 		{
-			list($column, $direction) = $group;
+			[$column, $direction] = $group;
 
-			$direction = strtoupper($direction);
+			$direction = strtoupper((string) $direction);
 			if ( ! empty($direction))
 			{
 				// Make the direction uppercase

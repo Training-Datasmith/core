@@ -38,7 +38,7 @@ class Database_MySQL_Connection extends \Database_PDO_Connection
 		$q->execute();
 		$result = $q->fetchAll();
 
-		$tables = array();
+		$tables = [];
 		foreach ($result as $row)
 		{
 			$tables[] = reset($row);
@@ -71,10 +71,10 @@ class Database_MySQL_Connection extends \Database_PDO_Connection
 		$result = $q->fetchAll(\PDO::FETCH_ASSOC);
 
 		// unify the result
-		$indexes = array();
+		$indexes = [];
 		foreach ($result as $row)
 		{
-			$index = array(
+			$index = [
 				'name' => $row['Key_name'],
 				'column' => $row['Column_name'],
 				'order' => $row['Seq_in_index'],
@@ -83,7 +83,7 @@ class Database_MySQL_Connection extends \Database_PDO_Connection
 				'unique' => $row['Non_unique'] == 0 ? true : false,
 				'null' => $row['Null'] == 'YES' ? true : false,
 				'ascending' => $row['Collation'] == 'A' ? true : false,
-			);
+			];
 
 			$indexes[] = $index;
 		}
@@ -106,7 +106,7 @@ class Database_MySQL_Connection extends \Database_PDO_Connection
 		}
 
 		// add the charset to the DSN if needed
-		if ($this->_config['charset'] and strpos($this->_config['connection']['dsn'], ';charset=') === false)
+		if ($this->_config['charset'] and !str_contains((string) $this->_config['connection']['dsn'], ';charset='))
 		{
 			$this->_config['connection']['dsn'] .= ';charset='.$this->_config['charset'];
 		}

@@ -36,12 +36,11 @@ class Validation
 	protected static $active_field;
 
 	/**
-	* Gets a new instance of the Validation class.
-	*
-	* @param   string      The name or instance of the Fieldset to link to
-	* @return  Validation
-	*/
-	public static function forge($fieldset = 'default')
+     * Gets a new instance of the Validation class.
+     *
+     * @param   string      The name or instance of the Fieldset to link to
+     */
+    public static function forge($fieldset = 'default'): static
 	{
 		if (is_string($fieldset))
 		{
@@ -107,22 +106,22 @@ class Validation
 	/**
 	 * @var  array  available after validation started running: contains given input values
 	 */
-	protected $input = array();
+	protected $input = [];
 
 	/**
 	 * @var  array  contains values of fields that validated successfully
 	 */
-	protected $validated = array();
+	protected $validated = [];
 
 	/**
 	 * @var  array  contains Validation_Error instances of encountered errors
 	 */
-	protected $errors = array();
+	protected $errors = [];
 
 	/**
 	 * @var  array  contains a list of classnames and objects that may contain validation methods
 	 */
-	protected $callables = array();
+	protected array $callables;
 
 	/**
 	 * @var  bool  $global_input_fallback  whether to fall back to Input::param
@@ -132,7 +131,7 @@ class Validation
 	/**
 	 * @var  array  contains validation error messages, will overwrite those from lang files
 	 */
-	protected $error_messages = array();
+	protected $error_messages = [];
 
 	protected function __construct($fieldset)
 	{
@@ -143,10 +142,10 @@ class Validation
 		}
 		else
 		{
-			$this->fieldset = \Fieldset::forge($fieldset, array('validation_instance' => $this));
+			$this->fieldset = \Fieldset::forge($fieldset, ['validation_instance' => $this]);
 		}
 
-		$this->callables = array($this);
+		$this->callables = [$this];
 		$this->global_input_fallback = \Config::get('validation.global_input_fallback', true);
 	}
 
@@ -183,17 +182,17 @@ class Validation
 				$rule = substr($rule, 0, $pos);
 
 				// deal with rules that have comma's in the rule parameter
-				if (in_array($rule, array('match_pattern')))
+				if (in_array($rule, ['match_pattern']))
 				{
-					call_fuel_func_array(array($field, 'add_rule'), array_merge(array($rule), array($param[1])));
+					call_fuel_func_array($field->add_rule(...), array_merge([$rule], [$param[1]]));
 				}
-				elseif (in_array($rule, array('valid_string')))
+				elseif (in_array($rule, ['valid_string']))
 				{
-					call_fuel_func_array(array($field, 'add_rule'), array_merge(array($rule), array(explode(',', $param[1]))));
+					call_fuel_func_array($field->add_rule(...), array_merge([$rule], [explode(',', $param[1])]));
 				}
 				else
 				{
-					call_fuel_func_array(array($field, 'add_rule'), array_merge(array($rule), explode(',', $param[1])));
+					call_fuel_func_array($field->add_rule(...), array_merge([$rule], explode(',', $param[1])));
 				}
 			}
 			else
@@ -213,7 +212,7 @@ class Validation
 	 * @param   string
 	 * @return  Validation  this, to allow chaining
 	 */
-	public function set_message($rule, $message)
+	public function set_message($rule, $message): static
 	{
 		if ($message !== null)
 		{
@@ -253,7 +252,7 @@ class Validation
 	 * @param   string|Object  $class  Classname or object
 	 * @return  Validation     this, to allow chaining
 	 */
-	public function add_callable($class)
+	public function add_callable($class): static
 	{
 		if ( ! (is_object($class) || class_exists($class)))
 		{
@@ -294,7 +293,7 @@ class Validation
 	 * @param   string|Object  $class  Classname or object
 	 * @return  Validation     this, to allow chaining
 	 */
-	public function remove_callable($class)
+	public function remove_callable($class): static
 	{
 		if (($key = array_search($class, $this->callables, true)))
 		{
@@ -325,7 +324,7 @@ class Validation
 	 * @param   bool   $allow_partial   will skip validation of values it can't find or are null
 	 * @return  bool   $temp_callables  whether validation succeeded
 	 */
-	public function run($input = null, $allow_partial = false, $temp_callables = array())
+	public function run($input = null, $allow_partial = false, $temp_callables = [])
 	{
 		if (is_null($input) and \Input::method() != 'POST')
 		{
@@ -343,16 +342,16 @@ class Validation
 
 		static::set_active($this);
 
-		$this->validated = array();
-		$this->errors = array();
-		$this->input = $input ?: array();
+		$this->validated = [];
+		$this->errors = [];
+		$this->input = $input ?: [];
 		$fields = $this->field(null, true);
 		foreach($fields as $field)
 		{
 			static::set_active_field($field);
 
 			// convert form field array's to Fuel dotted notation
-			$name = str_replace(array('[', ']'), array('.', ''), $field->name);
+			$name = str_replace(['[', ']'], ['.', ''], $field->name);
 
 			$value = $this->input($name);
 			if (($allow_partial === true and $value === null)
@@ -368,7 +367,7 @@ class Validation
 					$params    = $rule[1];
 					$this->_run_rule($callback, $value, $params, $field);
 				}
-				if (strpos($name, '.') !== false)
+				if (str_contains($name, '.'))
 				{
 					\Arr::set($this->validated, $name, $value);
 				}
@@ -403,7 +402,7 @@ class Validation
 	 * @param   string|array  $callback  short rule to be called on Validation callables array or full callback
 	 * @return  array|bool    rule array or false when it fails to find something callable
 	 */
-	protected function _find_rule($callback)
+	protected function _find_rule($callback): array|false
 	{
 		// Rules are validated and only accepted when given as an array consisting of
 		// array(callback, params) or just callbacks in an array.
@@ -414,43 +413,39 @@ class Validation
 			{
 				if (method_exists($callback_class, $callback_method))
 				{
-					return array($callback => array($callback_class, $callback_method));
+					return [$callback => [$callback_class, $callback_method]];
 				}
 			}
 		}
-
-		// when no callable function was found, try regular callbacks
-		if (is_callable($callback))
-		{
-			if ($callback instanceof \Closure)
+        // when no callable function was found, try regular callbacks
+        if (is_callable($callback)) {
+            if ($callback instanceof \Closure)
 			{
 				$callback_name = 'closure';
 			}
 			elseif (is_array($callback))
 			{
 				$callback_name = preg_replace('#^([a-z_]*\\\\)*#i', '',
-					is_object($callback[0]) ? get_class($callback[0]) : $callback[0]).':'.$callback[1];
+					is_object($callback[0]) ? $callback[0]::class : $callback[0]).':'.$callback[1];
 			}
 			else
 			{
 				$callback_name = preg_replace('#^([a-z_]*\\\\)*#i', '', str_replace('::', ':', $callback));
 			}
-			return array($callback_name => $callback);
-		}
-		elseif (is_array($callback) and is_callable(reset($callback)))
-		{
-			return $callback;
-		}
-		else
-		{
-			$string = ! is_array($callback)
+            return [$callback_name => $callback];
+        }
+
+		// when no callable function was found, try regular callbacks
+		if (is_array($callback) and is_callable(reset($callback))) {
+            return $callback;
+        }
+        $string = ! is_array($callback)
 					? $callback
 					: (is_object(@$callback[0])
-						? get_class(@$callback[0]).'->'.@$callback[1]
+						? (@$callback[0])::class.'->'.@$callback[1]
 						: @$callback[0].'::'.@$callback[1]);
-			\Errorhandler::notice('Invalid rule "'.$string.'" passed to Validation, not used.');
-			return false;
-		}
+        \Errorhandler::notice('Invalid rule "'.$string.'" passed to Validation, not used.');
+        return false;
 	}
 
 	/**
@@ -471,16 +466,14 @@ class Validation
 			return;
 		}
 
-		$output = call_fuel_func_array(reset($rule), array_merge(array($value), $params));
+		$output = call_fuel_func_array(reset($rule), array_merge([$value], $params));
+        if ($output === false and ($value !== false or key($rule) == 'required')) {
+            throw new \Validation_Error($field, $value, $rule, $params);
+        }
 
-		if ($output === false and ($value !== false or key($rule) == 'required'))
-		{
-			throw new \Validation_Error($field, $value, $rule, $params);
-		}
-		elseif ($output !== true)
-		{
-			$value = $output;
-		}
+		if ($output !== true) {
+            $value = $output;
+        }
 	}
 
 	/**
@@ -498,19 +491,19 @@ class Validation
 		}
 
 		// key transformation from form array to dot notation
-		if (strpos($key, '[') !== false)
+		if (str_contains($key, '['))
 		{
-			$key = str_replace(array('[', ']'), array('.', ''), $key);
+			$key = str_replace(['[', ']'], ['.', ''], $key);
 		}
 
 		// if we don't have this key
 		if ( ! array_key_exists($key, $this->input))
 		{
 			// it might be in dot-notation
-			if (strpos($key, '.') !== false)
+			if (str_contains($key, '.'))
 			{
 				// check the input first
-				if (($result = \Arr::get($this->input, $key, null)) !== null)
+				if (($result = \Arr::get($this->input, $key)) !== null)
 				{
 					$this->input[$key] = $result;
 				}
@@ -580,7 +573,7 @@ class Validation
 	{
 		if ($field === null)
 		{
-			$messages = array();
+			$messages = [];
 			foreach ($this->error() as $field => $e)
 			{
 				$messages[$field] = $e->get_message();
@@ -599,15 +592,15 @@ class Validation
 	 * @param   array  $options  uses keys open_list, close_list, open_error, close_error & no_errors
 	 * @return  string
 	 */
-	public function show_errors($options = array())
+	public function show_errors($options = [])
 	{
-		$default = array(
+		$default = [
 			'open_list'    => \Config::get('validation.open_list', '<ul>'),
 			'close_list'   => \Config::get('validation.close_list', '</ul>'),
 			'open_error'   => \Config::get('validation.open_error', '<li>'),
 			'close_error'  => \Config::get('validation.close_error', '</li>'),
 			'no_errors'    => \Config::get('validation.no_errors', ''),
-		);
+		];
 		$options = array_merge($default, $options);
 
 		if (empty($this->errors))
@@ -620,9 +613,8 @@ class Validation
 		{
 			$output .= $options['open_error'].$e->get_message().$options['close_error'];
 		}
-		$output .= $options['close_list'];
 
-		return $output;
+		return $output . $options['close_list'];
 	}
 
 	/**
@@ -634,7 +626,7 @@ class Validation
 	 * @param   Validation_Error  	$error	error for the field
 	 * @return  Validation 			this, to allow chaining
 	 */
-	protected function add_error($name = null, $error = null)
+	protected function add_error($name = null, $error = null): static
 	{
 		if($name !== null and $error !== null)
 		{
@@ -645,28 +637,25 @@ class Validation
 	}
 
 	/**
-	 * Alias for $this->fieldset->add()
-	 *
-	 * @param  string  $name
-	 * @param  string  $label
-	 * @param  array   $attributes
-	 * @param  array   $rules
-	 * @return Fieldset_Field
-	 */
-	public function add($name, $label = '', array $attributes = array(), array $rules = array())
+     * Alias for $this->fieldset->add()
+     *
+     * @param  string  $name
+     * @param  string  $label
+     * @return Fieldset_Field
+     */
+    public function add($name, $label = '', array $attributes = [], array $rules = [])
 	{
 		return $this->fieldset->add($name, $label, $attributes, $rules);
 	}
 
 	/**
-	 * Alias for $this->fieldset->add_model()
-	 *
-	 * @param   string|Object  $class
-	 * @param   array|Object   $instance
-	 * @param   string         $method
-	 * @return  Validation
-	 */
-	public function add_model($class, $instance = null, $method = 'set_form_fields')
+     * Alias for $this->fieldset->add_model()
+     *
+     * @param   string|Object  $class
+     * @param   array|Object   $instance
+     * @param   string         $method
+     */
+    public function add_model($class, $instance = null, $method = 'set_form_fields'): static
 	{
 		$this->fieldset->add_model($class, $instance, $method);
 
@@ -686,45 +675,41 @@ class Validation
 	}
 
 	/* -------------------------------------------------------------------------------
-	 * The validation methods
-	 * ------------------------------------------------------------------------------- */
-
-	/**
-	 * Required
-	 *
-	 * Value may not be empty
-	 *
-	 * @param   mixed  $val
-	 * @return  bool
-	 */
-	public function _validation_required($val)
+     * The validation methods
+     * ------------------------------------------------------------------------------- */
+    /**
+     * Required
+     *
+     * Value may not be empty
+     *
+     * @param   mixed  $val
+     */
+    public function _validation_required($val): bool
 	{
-		return ! $this->_empty($val);
+		return ! static::_empty($val);
 	}
 
 	/**
-	 * Special empty method because 0 and '0' are non-empty values
-	 *
-	 * @param   mixed  $val
-	 * @return  bool
-	 */
-	public static function _empty($val)
+     * Special empty method because 0 and '0' are non-empty values
+     *
+     * @param   mixed  $val
+     */
+    public static function _empty($val): bool
 	{
-		return ($val === false or $val === null or $val === '' or $val === array());
+		return ($val === false or $val === null or $val === '' or $val === []);
 	}
 
 	/**
-	 * Match value against comparison input
-	 *
-	 * @param   mixed  $val
-	 * @param   mixed  $compare
-	 * @param   bool   $strict   whether to do type comparison
-	 * @return  bool
-	 */
-	public function _validation_match_value($val, $compare, $strict = false)
+     * Match value against comparison input
+     *
+     * @param   mixed  $val
+     * @param   mixed  $compare
+     * @param   bool   $strict   whether to do type comparison
+     */
+    public function _validation_match_value($val, $compare, $strict = false): bool
 	{
 		// first try direct match
-		if ($this->_empty($val) || $val === $compare || ( ! $strict && $val == $compare))
+		if (static::_empty($val) || $val === $compare || ( ! $strict && $val == $compare))
 		{
 			return true;
 		}
@@ -746,113 +731,122 @@ class Validation
 	}
 
 	/**
-	 * Match PRCE pattern
-	 *
-	 * @param   string  $val
-	 * @param   string  $pattern  a PRCE regex pattern
-	 * @return  bool
-	 */
-	public function _validation_match_pattern($val, $pattern)
-	{
-		return $this->_empty($val) || preg_match($pattern, $val) > 0;
-	}
+     * Match PRCE pattern
+     *
+     * @param   string  $val
+     * @param   string  $pattern  a PRCE regex pattern
+     */
+    public function _validation_match_pattern($val, $pattern): bool
+    {
+        if (static::_empty($val)) {
+            return true;
+        }
+        return preg_match($pattern, $val) > 0;
+    }
 
 	/**
-	 * Match specific other submitted field string value
-	 * (must be both strings, check is type sensitive)
-	 *
-	 * @param   string  $val
-	 * @param   string  $field
-	 * @return  bool
-	 * @throws  \Validation_Error
-	 */
-	public function _validation_match_field($val, $field)
+     * Match specific other submitted field string value
+     * (must be both strings, check is type sensitive)
+     *
+     * @param   string  $val
+     * @param   string  $field
+     * @throws  \Validation_Error
+     */
+    public function _validation_match_field($val, $field): bool
 	{
 		if ($this->input($field) !== $val)
 		{
-			$validating = $this->active_field();
-			throw new \Validation_Error($validating, $val, array('match_field' => array($field)), array($this->field($field)->label));
+			$validating = static::active_field();
+			throw new \Validation_Error($validating, $val, ['match_field' => [$field]], [$this->field($field)->label]);
 		}
 
 		return true;
 	}
 
 	/**
-	 * Match against an array of values
-	 *
-	 * @param   string  $val
-	 * @param   array   $collection
-	 * @param   bool    $strict      whether to do type comparison
-	 * @return  bool
-	 */
-	public function _validation_match_collection($val, $collection = array(), $strict = false)
+     * Match against an array of values
+     *
+     * @param   string  $val
+     * @param   array   $collection
+     * @param   bool    $strict      whether to do type comparison
+     */
+    public function _validation_match_collection($val, $collection = [], $strict = false): bool
 	{
 		if ( ! is_array($collection))
 		{
 			$collection = func_get_args();
 			array_shift($collection);
 		}
-
-		return $this->_empty($val) || in_array($val, $collection, $strict);
+        if (static::_empty($val)) {
+            return true;
+        }
+        return in_array($val, $collection, $strict);
 	}
 
 	/**
-	 * Minimum string length
-	 *
-	 * @param   string  $val
-	 * @param   int     $length
-	 * @return  bool
-	 */
-	public function _validation_min_length($val, $length)
-	{
-		return $this->_empty($val) || \Str::length($val) >= $length;
-	}
+     * Minimum string length
+     *
+     * @param   string  $val
+     * @param   int     $length
+     */
+    public function _validation_min_length($val, $length): bool
+    {
+        if (static::_empty($val)) {
+            return true;
+        }
+        return \Str::length($val) >= $length;
+    }
 
 	/**
-	 * Maximum string length
-	 *
-	 * @param   string  $val
-	 * @param   int     $length
-	 * @return  bool
-	 */
-	public function _validation_max_length($val, $length)
-	{
-		return $this->_empty($val) || \Str::length($val) <= $length;
-	}
+     * Maximum string length
+     *
+     * @param   string  $val
+     * @param   int     $length
+     */
+    public function _validation_max_length($val, $length): bool
+    {
+        if (static::_empty($val)) {
+            return true;
+        }
+        return \Str::length($val) <= $length;
+    }
 
 	/**
-	 * Exact string length
-	 *
-	 * @param   string  $val
-	 * @param   int     $length
-	 * @return  bool
-	 */
-	public function _validation_exact_length($val, $length)
-	{
-		return $this->_empty($val) || \Str::length($val) == $length;
-	}
+     * Exact string length
+     *
+     * @param   string  $val
+     * @param   int     $length
+     */
+    public function _validation_exact_length($val, $length): bool
+    {
+        if (static::_empty($val)) {
+            return true;
+        }
+        return \Str::length($val) == $length;
+    }
 
 	/**
-	 * Validate email using PHP's filter_var()
-	 *
-	 * @param   string  $val
-	 * @return  bool
-	 */
-	public function _validation_valid_email($val)
-	{
-		return $this->_empty($val) || filter_var($val, FILTER_VALIDATE_EMAIL);
-	}
+     * Validate email using PHP's filter_var()
+     *
+     * @param   string  $val
+     */
+    public function _validation_valid_email($val): bool
+    {
+        if (static::_empty($val)) {
+            return true;
+        }
+        return (bool) filter_var($val, FILTER_VALIDATE_EMAIL);
+    }
 
 	/**
-	 * Validate email using PHP's filter_var()
-	 *
-	 * @param   string  $val
-	 * @param   string  $separator
-	 * @return  bool
-	 */
-	public function _validation_valid_emails($val, $separator = ',')
+     * Validate email using PHP's filter_var()
+     *
+     * @param   string  $val
+     * @param   string  $separator
+     */
+    public function _validation_valid_emails($val, $separator = ','): bool
 	{
-		if ($this->_empty($val))
+		if (static::_empty($val))
 		{
 			return true;
 		}
@@ -870,26 +864,27 @@ class Validation
 	}
 
 	/**
-	 * Validate URL using PHP's filter_var()
-	 *
-	 * @param   string  $val
-	 * @return  bool
-	 */
-	public function _validation_valid_url($val)
-	{
-		return $this->_empty($val) || filter_var($val, FILTER_VALIDATE_URL);
-	}
+     * Validate URL using PHP's filter_var()
+     *
+     * @param   string  $val
+     */
+    public function _validation_valid_url($val): bool
+    {
+        if (static::_empty($val)) {
+            return true;
+        }
+        return (bool) filter_var($val, FILTER_VALIDATE_URL);
+    }
 
 	/**
-	 * Validate IP using PHP's filter_var()
-	 *
-	 * @param   string  $val
-	 * @param   string  ipv4|ipv6
-	 * @return  bool
-	 */
-	public function _validation_valid_ip($val, $flag = null)
+     * Validate IP using PHP's filter_var()
+     *
+     * @param   string  $val
+     * @param   string  ipv4|ipv6
+     */
+    public function _validation_valid_ip($val, $flag = null): bool
 	{
-		switch (strtolower($flag))
+		switch (strtolower((string) $flag))
 		{
 			case 'ipv4':
 				$flag = FILTER_FLAG_IPV4;
@@ -898,8 +893,10 @@ class Validation
 				$flag = FILTER_FLAG_IPV6;
 				break;
 		}
-
-		return $this->_empty($val) || filter_var($val, FILTER_VALIDATE_IP, $flag);
+        if (static::_empty($val)) {
+            return true;
+        }
+        return (bool) filter_var($val, FILTER_VALIDATE_IP, $flag);
 	}
 
 	/**
@@ -909,9 +906,9 @@ class Validation
 	 * @param   string|array  $flags  either a named filter or combination of flags
 	 * @return  bool
 	 */
-	public function _validation_valid_string($val, $flags = array('alpha', 'utf8'))
+	public function _validation_valid_string($val, $flags = ['alpha', 'utf8'])
 	{
-		if ($this->_empty($val))
+		if (static::_empty($val))
 		{
 			return true;
 		}
@@ -920,39 +917,39 @@ class Validation
 		{
 			if ($flags == 'alpha')
 			{
-				$flags = array('alpha', 'utf8');
+				$flags = ['alpha', 'utf8'];
 			}
 			elseif ($flags == 'alpha_numeric')
 			{
-				$flags = array('alpha', 'utf8', 'numeric');
+				$flags = ['alpha', 'utf8', 'numeric'];
 			}
 			elseif ($flags == 'specials')
 			{
-				$flags = array('specials', 'utf8');
+				$flags = ['specials', 'utf8'];
 			}
 			elseif ($flags == 'url_safe')
 			{
-				$flags = array('alpha', 'numeric', 'dashes');
+				$flags = ['alpha', 'numeric', 'dashes'];
 			}
 			elseif ($flags == 'integer' or $flags == 'numeric')
 			{
-				$flags = array('numeric');
+				$flags = ['numeric'];
 			}
 			elseif ($flags == 'float')
 			{
-				$flags = array('numeric', 'dots');
+				$flags = ['numeric', 'dots'];
 			}
 			elseif ($flags == 'quotes')
 			{
-				$flags = array('singlequotes', 'doublequotes');
+				$flags = ['singlequotes', 'doublequotes'];
 			}
 			elseif ($flags == 'slashes')
 			{
-				$flags = array('forwardslashes', 'backslashes');
+				$flags = ['forwardslashes', 'backslashes'];
 			}
 			elseif ($flags == 'all')
 			{
-				$flags = array('alpha', 'utf8', 'numeric', 'specials', 'spaces', 'newlines', 'tabs', 'punctuation', 'singlequotes', 'doublequotes', 'dashes', 'forwardslashes', 'backslashes', 'brackets', 'braces');
+				$flags = ['alpha', 'utf8', 'numeric', 'specials', 'spaces', 'newlines', 'tabs', 'punctuation', 'singlequotes', 'doublequotes', 'dashes', 'forwardslashes', 'backslashes', 'brackets', 'braces'];
 			}
 			else
 			{
@@ -984,56 +981,58 @@ class Validation
 	}
 
 	/**
-	 * Checks whether numeric input has a minimum value
-	 *
-	 * @param   string|float|int  $val
-	 * @param   float|int         $min_val
-	 * @return  bool
-	 */
-	public function _validation_numeric_min($val, $min_val)
+     * Checks whether numeric input has a minimum value
+     *
+     * @param   string|float|int  $val
+     * @param   float|int         $min_val
+     */
+    public function _validation_numeric_min($val, $min_val): bool
+    {
+        if (static::_empty($val)) {
+            return true;
+        }
+        return floatval($val) >= floatval($min_val);
+    }
+
+	/**
+     * Checks whether numeric input has a maximum value
+     *
+     * @param   string|float|int  $val
+     * @param   float|int         $max_val
+     */
+    public function _validation_numeric_max($val, $max_val): bool
+    {
+        if (static::_empty($val)) {
+            return true;
+        }
+        return floatval($val) <= floatval($max_val);
+    }
+
+	/**
+     * Checks whether numeric input is between a minimum and a maximum value
+     *
+     * @param   string|float|int  $val
+     * @param   float|int         $min_val
+     * @param   float|int         $max_val
+     */
+    public function _validation_numeric_between($val, $min_val, $max_val): bool
 	{
-		return $this->_empty($val) || floatval($val) >= floatval($min_val);
+		return static::_empty($val) or (floatval($val) >= floatval($min_val) and floatval($val) <= floatval($max_val));
 	}
 
 	/**
-	 * Checks whether numeric input has a maximum value
-	 *
-	 * @param   string|float|int  $val
-	 * @param   float|int         $max_val
-	 * @return  bool
-	 */
-	public function _validation_numeric_max($val, $max_val)
+     * Conditionally requires completion of current field based on completion of another field
+     *
+     * @param   mixed   $val
+     * @param   string  $field
+     * @throws  \Validation_Error
+     */
+    public function _validation_required_with($val, $field): bool
 	{
-		return $this->_empty($val) || floatval($val) <= floatval($max_val);
-	}
-
-	/**
-	 * Checks whether numeric input is between a minimum and a maximum value
-	 *
-	 * @param   string|float|int  $val
-	 * @param   float|int         $min_val
-	 * @param   float|int         $max_val
-	 * @return  bool
-	 */
-	public function _validation_numeric_between($val, $min_val, $max_val)
-	{
-		return $this->_empty($val) or (floatval($val) >= floatval($min_val) and floatval($val) <= floatval($max_val));
-	}
-
-	/**
-	 * Conditionally requires completion of current field based on completion of another field
-	 *
-	 * @param   mixed   $val
-	 * @param   string  $field
-	 * @return  bool
-	 * @throws  \Validation_Error
-	 */
-	public function _validation_required_with($val, $field)
-	{
-		if ( ! $this->_empty($this->input($field)) and $this->_empty($val))
+		if ( ! static::_empty($this->input($field)) and static::_empty($val))
 		{
-			$validating = $this->active_field();
-			throw new \Validation_Error($validating, $val, array('required_with' => array($this->field($field))), array($this->field($field)->label));
+			$validating = static::active_field();
+			throw new \Validation_Error($validating, $val, ['required_with' => [$this->field($field)]], [$this->field($field)->label]);
 		}
 
 		return true;
@@ -1048,9 +1047,9 @@ class Validation
 	 * @param   bool    $strict  Whether validation checks strict
 	 * @return  bool
 	 */
-	public function _validation_valid_date($val, $format = null, $strict = true)
+	public function _validation_valid_date($val, $format = null, $strict = true): string|bool
 	{
-		if ($this->_empty($val))
+		if (static::_empty($val))
 		{
 			return true;
 		}
@@ -1070,14 +1069,8 @@ class Validation
 			{
 				return date($format, mktime($parsed['hour'] ?: 0, $parsed['minute'] ?: 0, $parsed['second'] ?: 0, $parsed['month'] ?: 1, $parsed['day'] ?: 1, $parsed['year'] ?: 1970));
 			}
-			else
-			{
-				return true;
-			}
+            return true;
 		}
-		else
-		{
-			return false;
-		}
+        return false;
 	}
 }

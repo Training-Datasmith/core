@@ -23,12 +23,12 @@ namespace Fuel\Core;
 
 class Request_Soap extends \Request_Driver
 {
-	protected static $wsdl_settings = array('wsdl', 'classmap', 'cache_wsdl');
-	protected static $non_wsdl_settings = array('location', 'uri', 'style', 'use');
-	protected static $generic_settings = array(
+	protected static $wsdl_settings = ['wsdl', 'classmap', 'cache_wsdl'];
+	protected static $non_wsdl_settings = ['location', 'uri', 'style', 'use'];
+	protected static $generic_settings = [
 		'soap_version', 'compression', 'encoding', 'trace', 'connection_timeout',
 		'typemap', 'user_agent', 'stream_context', 'features',
-	);
+	];
 
 	/**
 	 * @var  \SoapClient	holds the SoapClient object used for the connection
@@ -41,14 +41,13 @@ class Request_Soap extends \Request_Driver
 	protected $function = '';
 
 	/**
-	 * Extends parent constructor to detect availability of cURL
-	 *
-	 * @param   string  $resource
-	 * @param   array   $options
-	 * @throws  \FuelException
-	 * @throws  \RequestException
-	 */
-	public function __construct($resource, array $options)
+     * Extends parent constructor to detect availability of cURL
+     *
+     * @param   string  $resource
+     * @throws  \FuelException
+     * @throws  \RequestException
+     */
+    public function __construct($resource, array $options)
 	{
 		// check if we have libcurl available
 		if ( ! class_exists('SoapClient'))
@@ -127,7 +126,7 @@ class Request_Soap extends \Request_Driver
 		return $this->connection;
 	}
 
-	public function execute(array $additional_params = array())
+	public function execute(array $additional_params = [])
 	{
 		if (empty($this->function))
 		{
@@ -139,11 +138,11 @@ class Request_Soap extends \Request_Driver
 		// Execute the request & and hide all output
 		try
 		{
-			$body = $this->connection()->__soapCall($this->function, $this->params, array(), $this->get_headers(), $headers);
+			$body = $this->connection()->__soapCall($this->function, $this->params, [], $this->get_headers(), $headers);
 			$this->response_info = $headers;
 
 			$mime = $this->response_info('content_type', 'application/soap+xml');
-			$this->set_response($body, $this->response_info('http_code', 200), $mime, $headers, isset($this->headers['Accept']) ? $this->headers['Accept'] : null);
+			$this->set_response($body, $this->response_info('http_code', 200), $mime, $headers, $this->headers['Accept'] ?? null);
 
 			$this->set_defaults();
 			return $this;
@@ -259,14 +258,13 @@ class Request_Soap extends \Request_Driver
 	}
 
 	/**
-	 * Set cookie for subsequent requests
-	 *
-	 * @param   string  $name
-	 * @param   string  $value
-	 * @return  void
-	 * @throws  \RequestException
-	 */
-	public function set_cookie($name, $value = null)
+     * Set cookie for subsequent requests
+     *
+     * @param   string  $name
+     * @param   string  $value
+     * @throws  \RequestException
+     */
+    public function set_cookie($name, $value = null): void
 	{
 		is_null($value)
 			? $this->connection()->__setCookie($name)
@@ -279,7 +277,7 @@ class Request_Soap extends \Request_Driver
 	 * @param   string  $location
 	 * @return  string  the old endpoint
 	 */
-	public function set_location($location)
+	public function set_location($location): void
 	{
 		$this->connection()->__setLocation($location);
 	}

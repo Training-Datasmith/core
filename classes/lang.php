@@ -19,19 +19,19 @@ class Lang
 	/**
 	 * @var    array    $loaded_files    array of loaded files
 	 */
-	public static $loaded_files = array();
+	public static $loaded_files = [];
 
 	/**
 	 * @var  array  language lines
 	 */
-	public static $lines = array();
+	public static $lines = [];
 
 	/**
 	 * @var  array  language(s) to fall back on when loading a file from the current lang fails
 	 */
 	public static $fallback;
 
-	public static function _init()
+	public static function _init(): void
 	{
 		static::$fallback = (array) \Config::get('language_fallback', 'en');
 	}
@@ -87,7 +87,7 @@ class Lang
 			return static::$lines[$language][$group];
 		}
 
-		$lang = array();
+		$lang = [];
 		if (is_array($file))
 		{
 			$lang = $file;
@@ -124,14 +124,14 @@ class Lang
 			{
 				$lang = $file->load($overwrite);
 			}
-			catch (\LangException $e)
+			catch (\LangException)
 			{
-				$lang = array();
+				$lang = [];
 			}
 			$group = $group === true ? $file->group() : $group;
 		}
 
-		isset(static::$lines[$language]) or static::$lines[$language] = array();
+		isset(static::$lines[$language]) or static::$lines[$language] = [];
 		if ($group === null)
 		{
 			static::$lines[$language] = $overwrite ? array_merge(static::$lines[$language], $lang) : \Arr::merge(static::$lines[$language], $lang);
@@ -141,11 +141,11 @@ class Lang
 			$group = ($group === true) ? $file : $group;
 			if ($overwrite)
 			{
-				\Arr::set(static::$lines[$language], $group, array_merge(\Arr::get(static::$lines[$language], $group, array()), $lang));
+				\Arr::set(static::$lines[$language], $group, array_merge(\Arr::get(static::$lines[$language], $group, []), $lang));
 			}
 			else
 			{
-				\Arr::set(static::$lines[$language], $group, \Arr::merge(\Arr::get(static::$lines[$language], $group, array()), $lang));
+				\Arr::set(static::$lines[$language], $group, \Arr::merge(\Arr::get(static::$lines[$language], $group, []), $lang));
 			}
 		}
 
@@ -169,8 +169,7 @@ class Lang
 		if ( ! is_null($language))
 		{
 			$file = explode('::', $file);
-			end($file);
-			$file[key($file)] = $language.DS.end($file);
+			$file[array_key_last($file)] = $language.DS.end($file);
 			$file = implode('::', $file);
 		}
 
@@ -210,7 +209,7 @@ class Lang
 	 * @param   string|null  $language  name of the language to get, null for the configured language
 	 * @return  mixed                   either the line or default when not found
 	 */
-	public static function get($line, array $params = array(), $default = null, $language = null)
+	public static function get($line, array $params = [], $default = null, $language = null)
 	{
 		($language === null) and $language = static::get_lang();
 
@@ -226,13 +225,13 @@ class Lang
 	 * @param    string|null  $language  name of the language to set, null for the configured language
 	 * @return   void                    the \Arr::set result
 	 */
-	public static function set($line, $value, $group = null, $language = null)
+	public static function set($line, $value, $group = null, $language = null): void
 	{
 		$group === null or $line = $group.'.'.$line;
 
 		($language === null) and $language = static::get_lang();
 
-		isset(static::$lines[$language]) or static::$lines[$language] = array();
+		isset(static::$lines[$language]) or static::$lines[$language] = [];
 
 		\Arr::set(static::$lines[$language], $line, \Fuel::value($value));
 	}
@@ -261,7 +260,7 @@ class Lang
 	 * @param    bool        $reload    true to force a reload of already loaded language files
 	 * @return   bool                   success boolean, false if no language or the current was passed, true otherwise
 	 */
-	public static function set_lang($language, $reload = false)
+	public static function set_lang(?string $language, $reload = false): bool
 	{
 		// check if a language was passedd
 		if ( ! empty($language) and $language != static::get_lang())
@@ -275,9 +274,9 @@ class Lang
 				foreach (static::$loaded_files as $file => $args)
 				{
 					// reload with exactly the same arguments
-					if (strpos($file, $language.'/') !== 0)
+					if (!str_starts_with((string) $file, $language.'/'))
 					{
-						call_user_func_array('Lang::load', $args);
+						call_user_func_array(Lang::load(...), $args);
 					}
 				}
 			}

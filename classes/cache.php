@@ -20,7 +20,7 @@ class Cache
 	/**
 	 * Loads any default caching settings when available
 	 */
-	public static function _init()
+	public static function _init(): void
 	{
 		\Config::load('cache', true);
 	}
@@ -32,15 +32,15 @@ class Cache
 	 * @param   array  $config        Either an array of settings or the storage driver to be used
 	 * @return  Cache_Storage_Driver  The new cache object
 	 */
-	public static function forge($identifier, $config = array())
+	public static function forge($identifier, $config = [])
 	{
 		// load the default config
-		$defaults = \Config::get('cache', array());
+		$defaults = \Config::get('cache', []);
 
 		// $config can be either an array of config settings or the name of the storage driver
 		if ( ! empty($config) and ! is_array($config) and ! is_null($config))
 		{
-			$config = array('driver' => $config);
+			$config = ['driver' => $config];
 		}
 
 		// Overwrite default values with given config
@@ -51,7 +51,7 @@ class Cache
 			throw new \FuelException('No cache driver given or no default cache driver set.');
 		}
 
-		$class = '\\Cache_Storage_'.ucfirst($config['driver']);
+		$class = '\\Cache_Storage_'.ucfirst((string) $config['driver']);
 
 		// Convert the name to a string when necessary
 		$identifier = call_user_func($class.'::stringify_identifier', $identifier);
@@ -70,7 +70,7 @@ class Cache
 	 * @param  array $dependencies   Contains the identifiers of caches this one will depend on (not supported by all drivers!)
 	 * @return Cache_Storage_Driver  The new Cache object
 	 */
-	public static function set($identifier, $contents = null, $expiration = false, $dependencies = array())
+	public static function set($identifier, $contents = null, $expiration = false, $dependencies = [])
 	{
 		$contents = \Fuel::value($contents);
 
@@ -88,7 +88,7 @@ class Cache
 	 * @param   array         $dependencies Contains the identifiers of caches this one will depend on (not supported by all drivers!)
 	 * @return  mixed
 	 */
-	public static function call($identifier, $callback, $args = array(), $expiration = null, $dependencies = array())
+	public static function call($identifier, $callback, $args = [], $expiration = null, $dependencies = [])
 	{
 		$cache = static::forge($identifier);
 		return $cache->call($callback, $args, $expiration, $dependencies);

@@ -25,7 +25,7 @@ class Event_Instance
 	/**
 	 * @var	array	An array of listeners
 	 */
-	protected $_events = array();
+	protected $_events = [];
 
 	// --------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ class Event_Instance
 	 *
 	 * @param  array  $events  events array
 	 */
-	public function __construct(array $events = array())
+	public function __construct(array $events = [])
 	{
 		foreach($events as $event => $callback)
 		{
@@ -43,15 +43,12 @@ class Event_Instance
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * Register
-	 *
-	 * Registers a Callback for a given event
-	 *
-	 * @return	void
-	 */
-	public function register()
+    /**
+     * Register
+     *
+     * Registers a Callback for a given event
+     */
+    public function register(): bool
 	{
 		// get any arguments passed
 		$callback = func_get_args();
@@ -60,7 +57,7 @@ class Event_Instance
 		if (isset($callback[0]) and is_string($callback[0]) and isset($callback[1]) and is_callable($callback[1]))
 		{
 			// make sure we have an array for this event
-			isset($this->_events[$callback[0]]) or $this->_events[$callback[0]] = array();
+			isset($this->_events[$callback[0]]) or $this->_events[$callback[0]] = [];
 
 			// store the callback on the call stack
 			if (empty($callback[2]))
@@ -75,11 +72,8 @@ class Event_Instance
 			// and report success
 			return true;
 		}
-		else
-		{
-			// can't register the event
-			return false;
-		}
+        // can't register the event
+        return false;
 	}
 
 	// --------------------------------------------------------------------
@@ -91,7 +85,7 @@ class Event_Instance
 	 * @param   mixed    $callback  callback to remove [optional, null for all]
 	 * @return  boolean  whether one or all callbacks have been removed
 	 */
- 	public function unregister($event, $callback = null)
+ 	public function unregister($event, $callback = null): bool
 	{
 		if (isset($this->_events[$event]))
 		{
@@ -135,7 +129,7 @@ class Event_Instance
 	 */
 	public function trigger($event, $data = '', $return_type = 'string', $reversed = false)
 	{
-		$calls = array();
+		$calls = [];
 
 		// check if we have events registered
 		if ($this->has_events($event))
@@ -172,7 +166,7 @@ class Event_Instance
 	 * @param	string	$event	The name of the event
 	 * @return	bool	Whether the event has listeners
 	 */
-	public function has_events($event)
+	public function has_events($event): bool
 	{
 		if (isset($this->_events[$event]) and count($this->_events[$event]) > 0)
 		{
@@ -197,16 +191,14 @@ class Event_Instance
 		switch ($return_type)
 		{
 			case 'array':
-				return $calls;
-				break;
+            default:
+                return $calls;
 			case 'json':
 				return json_encode($calls);
-				break;
 			case 'none':
 				return null;
 			case 'serialized':
 				return serialize($calls);
-				break;
 			case 'string':
 				$str = '';
 				foreach ($calls as $call)
@@ -214,10 +206,6 @@ class Event_Instance
 					$str .= $call;
 				}
 				return $str;
-				break;
-			default:
-				return $calls;
-				break;
 		}
 	}
 }

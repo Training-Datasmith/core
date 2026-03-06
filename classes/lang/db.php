@@ -17,13 +17,11 @@ namespace Fuel\Core;
  */
 class Lang_Db implements Lang_Interface
 {
-	protected $identifier;
-
 	protected $ext = '.db';
 
-	protected $languages = array();
+	protected array $languages;
 
-	protected $vars = array();
+	protected array $vars;
 
 	protected $database;
 
@@ -36,21 +34,19 @@ class Lang_Db implements Lang_Interface
 	 * @param   array   $languages  Languages to scan for the lang file
 	 * @param   array   $vars  Variables to parse in the data retrieved
 	 */
-	public function __construct($identifier = null, $languages = array(), $vars = array())
+	public function __construct(protected $identifier = null, $languages = [], $vars = [])
 	{
-		$this->identifier = $identifier;
-
 		// we need the highest priority language last in the list
 		$this->languages = array_reverse($languages);
 
-		$this->vars = array(
+		$this->vars = [
 			'APPPATH' => APPPATH,
 			'COREPATH' => COREPATH,
 			'PKGPATH' => PKGPATH,
 			'DOCROOT' => DOCROOT,
-		) + $vars;
+		] + $vars;
 
-		$this->database = \Config::get('lang.database', null);
+		$this->database = \Config::get('lang.database');
 		$this->table = \Config::get('lang.table_name', 'lang');
 	}
 
@@ -63,7 +59,7 @@ class Lang_Db implements Lang_Interface
 	 */
 	public function load($overwrite = false)
 	{
-		$lang = array();
+		$lang = [];
 
 		foreach ($this->languages as $language)
 		{
@@ -130,7 +126,7 @@ class Lang_Db implements Lang_Interface
 	 * @param   array  $array  array to be prepped
 	 * @return  array  prepped array
 	 */
-	protected function prep_vars(&$array)
+	protected function prep_vars(array &$array)
 	{
 		static $replacements = false;
 
@@ -138,7 +134,7 @@ class Lang_Db implements Lang_Interface
 		{
 			foreach ($this->vars as $i => $v)
 			{
-				$replacements['#^('.preg_quote($v).'){1}(.*)?#'] = "%".$i."%$2";
+				$replacements['#^('.preg_quote((string) $v).'){1}(.*)?#'] = "%".$i."%$2";
 			}
 		}
 
@@ -162,10 +158,10 @@ class Lang_Db implements Lang_Interface
 	 * @param   $contents  $contents    language array to save
 	 * @return  bool       DB result
 	 */
-	public function save($identifier, $contents)
+	public function save($identifier, $contents): bool
 	{
 		// get the language and the identifier
-		list($language, $identifier) = explode(DS, $identifier, 2);
+		[$language, $identifier] = explode(DS, $identifier, 2);
 		$identifier = basename($identifier, '.db');
 
 		// prep the contents
@@ -173,12 +169,12 @@ class Lang_Db implements Lang_Interface
 		$contents = serialize($contents);
 
 		// update the config in the database
-		$result = \DB::update($this->table)->set(array('lang' => $contents, 'hash' => uniqid()))->where('identifier', '=', $identifier)->where('language', '=', $language)->execute($this->database);
+		$result = \DB::update($this->table)->set(['lang' => $contents, 'hash' => uniqid()])->where('identifier', '=', $identifier)->where('language', '=', $language)->execute($this->database);
 
 		// if there wasn't an update, do an insert
 		if ($result === 0)
 		{
-			list($notused, $result) = \DB::insert($this->table)->set(array('identifier' => $identifier, 'language' => $language, 'lang' => $contents, 'hash' => uniqid()))->execute($this->database);
+			[$notused, $result] = \DB::insert($this->table)->set(['identifier' => $identifier, 'language' => $language, 'lang' => $contents, 'hash' => uniqid()])->execute($this->database);
 		}
 
 		return $result === 1;

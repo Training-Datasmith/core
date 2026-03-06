@@ -105,31 +105,30 @@ class Fuel
 
 	public static $is_test = false;
 
-	public static $volatile_paths = array();
+	public static $volatile_paths = [];
 
-	protected static $_paths = array();
+	protected static $_paths = [];
 
-	protected static $packages = array();
+	protected static $packages = [];
 
 	final private function __construct() { }
 
 	/**
-	 * Initializes the framework.  This can only be called once.
-	 *
-	 * @access	public
-	 * @return	void
-	 */
-	public static function init($config)
+     * Initializes the framework.  This can only be called once.
+     *
+     * @access	public
+     */
+    public static function init($config): void
 	{
 		if (static::$initialized)
 		{
 			throw new \FuelException("You can't initialize Fuel more than once.");
 		}
 
-		static::$_paths = array(APPPATH, COREPATH);
+		static::$_paths = [APPPATH, COREPATH];
 
 		// Is Fuel running on the command line?
-		static::$is_cli = (bool) defined('STDIN');
+		static::$is_cli = defined('STDIN');
 
 		\Config::load($config);
 
@@ -199,20 +198,6 @@ class Fuel
 		// like it was in versions before 1.7
 		class_exists('Redis', false) or class_alias('Redis_Db', 'Redis');
 
-		// BC FIX FOR PHP < 7.0 to make the error class available
-		if (PHP_VERSION_ID < 70000)
-		{
-			// alias the error class to the new errorhandler
-			class_alias('\Fuel\Core\Errorhandler', '\Fuel\Core\Error');
-
-			// does the app have an overloaded Error class?
-			if (class_exists('Error') and is_subclass_of('Error', '\Fuel\Core\Error'))
-			{
-				// then alias that too
-				class_alias('Error', 'Errorhandler');
-			}
-		}
-
 		static::$initialized = true;
 
 		// Run Input Filtering
@@ -228,13 +213,12 @@ class Fuel
 	}
 
 	/**
-	 * Cleans up Fuel execution, ends the output buffering, and outputs the
-	 * buffer contents.
-	 *
-	 * @access	public
-	 * @return	void
-	 */
-	public static function finish()
+     * Cleans up Fuel execution, ends the output buffering, and outputs the
+     * buffer contents.
+     *
+     * @access	public
+     */
+    public static function finish(): void
 	{
 		// caching enabled? then save the finder cache
 		if (\Config::get('caching', false))
@@ -261,7 +245,7 @@ class Fuel
 					{
 						$content = 'return '.var_export(\Profiler::output(true), true);
 					}
-					fwrite($handle, $content);
+					fwrite($handle, (string) $content);
 					fclose($handle);
 				}
 			}
@@ -308,7 +292,7 @@ class Fuel
 	 *
 	 * @return  string  the base url
 	 */
-	protected static function generate_base_url()
+	protected static function generate_base_url(): string
 	{
 		$base_url = '';
 		if(\Input::server('http_host'))
@@ -317,7 +301,7 @@ class Fuel
 		}
 		if (\Input::server('script_name'))
 		{
-			$common = get_common_path(array(\Input::server('request_uri'), \Input::server('script_name')));
+			$common = get_common_path([\Input::server('request_uri'), \Input::server('script_name')]);
 			$base_url .= $common;
 		}
 
@@ -341,9 +325,9 @@ class Fuel
 	 *
 	 * @param  array  what to autoload
 	 */
-	public static function always_load($array = null)
+	public static function always_load($array = null): void
 	{
-		is_null($array) and	$array = \Config::get('always_load', array());
+		is_null($array) and	$array = \Config::get('always_load', []);
 
 		isset($array['packages']) and \Package::load($array['packages']);
 
@@ -401,31 +385,31 @@ class Fuel
 	 * @param   string  the filepath
 	 * @return  string  the clean path
 	 */
-	public static function clean_path($path)
+	public static function clean_path($path): string|array
 	{
 		// framework default paths
-		static $paths = array(
+		static $paths = [
 			'APPPATH/' => APPPATH,
 			'COREPATH/' => COREPATH,
 			'PKGPATH/' => PKGPATH,
 			'DOCROOT/' => DOCROOT,
 			'VENDORPATH/' => VENDORPATH,
-		);
+		];
 
 		// storage for the search/replace strings
-		static $search = array();
-		static $replace = array();
+		static $search = [];
+		static $replace = [];
 
 		// only do this once
 		if (empty($search))
 		{
 			// additional paths configured than need cleaning
-			$extra = \Config::get('security.clean_paths', array());
+			$extra = \Config::get('security.clean_paths', []);
 
 			foreach ($paths + $extra as $r => $s)
 			{
-				$search[] = rtrim($s, DS).DS;
-				$replace[] = rtrim($r, DS).DS;
+				$search[] = rtrim((string) $s, DS).DS;
+				$replace[] = rtrim((string) $r, DS).DS;
 			}
 		}
 

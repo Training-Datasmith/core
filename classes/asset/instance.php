@@ -28,26 +28,26 @@ class Asset_Instance
 	/**
 	 * @var  array  the asset paths to be searched
 	 */
-	protected $_asset_paths = array(
-		'css' => array(),
-		'js'  => array(),
-		'img' => array(),
-	);
+	protected $_asset_paths = [
+		'css' => [],
+		'js'  => [],
+		'img' => [],
+	];
 
 	/**
 	 * @var  array  the sub-folders to be searched
 	 */
-	protected $_path_folders = array(
+	protected $_path_folders = [
 		'css' => 'css/',
 		'js'  => 'js/',
 		'img' => 'img/',
-	);
+	];
 
 	/**
 	 * @var  array  custom type renderers
 	 */
-	protected $_renderers = array(
-	);
+	protected $_renderers = [
+	];
 
 	/**
 	 * @var  string  the URL to be prepended to all assets
@@ -57,46 +57,44 @@ class Asset_Instance
 	/**
 	 * @var  bool  whether to append the file mtime to the url
 	 */
-	protected $_add_mtime = true;
+	protected bool $_add_mtime;
 
 	/**
 	 * @var  array  holds the groups of assets
 	 */
-	protected $_groups = array();
+	protected $_groups = [];
 
 	/**
 	 * @var  string  prefix for generated output to provide proper indentation
 	 */
-	protected $_indent = '';
+	protected string $_indent;
 
 	/**
 	 * @var  bool  if true, directly renders the output of no group name is given
 	 */
-	protected $_auto_render = true;
+	protected bool $_auto_render;
 
 	/**
 	 * @var  bool  if true the 'not found' exception will not be thrown and the asset is ignored.
 	 */
-	protected $_fail_silently = false;
+	protected bool $_fail_silently;
 
 	/**
 	 * @var  bool  if true, will always true to resolve assets. if false, it will only try to resolve if the asset url is relative.
 	 */
-	protected $_always_resolve = false;
+	protected bool $_always_resolve;
 
 	/**
-	 * Parse the config and initialize the object instance
-	 *
-	 * @param	array $config
-	 */
-	public function __construct(Array $config)
+     * Parse the config and initialize the object instance
+     */
+    public function __construct(Array $config)
 	{
 		// look for global search path folders
 		foreach ($config as $key => $value)
 		{
 			if (\Str::ends_with($key, '_dir'))
 			{
-				$key = substr($key, 0, -4);
+				$key = substr((string) $key, 0, -4);
 				$this->_path_folders[$key] = $this->_unify_path($value);
 			}
 		}
@@ -110,7 +108,7 @@ class Asset_Instance
 		// per-type search paths
 		foreach ($config['folders'] as $type => $folders)
 		{
-			is_array($folders) or $folders = array($folders);
+			is_array($folders) or $folders = [$folders];
 
 			foreach ($folders as $path)
 			{
@@ -120,7 +118,7 @@ class Asset_Instance
 
 		$this->_add_mtime = (bool) $config['add_mtime'];
 		$this->_asset_url = $config['url'];
-		$this->_indent = str_repeat($config['indent_with'], $config['indent_level']);
+		$this->_indent = str_repeat((string) $config['indent_with'], $config['indent_level']);
 		$this->_auto_render = (bool) $config['auto_render'];
 		$this->_fail_silently = (bool) $config['fail_silently'];
 		$this->_always_resolve = (bool) $config['always_resolve'];
@@ -134,7 +132,7 @@ class Asset_Instance
 	 * @return	mixed
 	 * @throws	\BadMethodCallException
 	 */
-	public function __call($method, $args)
+	public function __call(string $method, array $args)
 	{
 		// check if we can render this type
 		if ( ! isset($this->_path_folders[$method]))
@@ -146,7 +144,7 @@ class Asset_Instance
 		array_unshift($args, $method);
 
 		// call assettype to store the info
-		return call_user_func_array(array($this, 'assettype'), $args);
+		return call_user_func_array($this->assettype(...), $args);
 	}
 
 	/**
@@ -158,9 +156,9 @@ class Asset_Instance
 	 *
 	 * @return  object   current instance
 	 */
-	public function add_type($type, $path = null, $renderer = null)
+	public function add_type(string $type, $path = null, $renderer = null): static
 	{
-		isset($this->_asset_paths[$type]) or $this->_asset_paths[$type] = array();
+		isset($this->_asset_paths[$type]) or $this->_asset_paths[$type] = [];
 		isset($this->_path_folders[$type]) or $this->_path_folders[$type] = $type.'/';
 
 		if ( ! is_null($path))
@@ -190,7 +188,7 @@ class Asset_Instance
 	 * @param	string	$type  optional path type (js, css or img)
 	 * @return	object	current instance
 	 */
-	public function add_path($path, $type = null)
+	public function add_path($path, $type = null): static
 	{
 		is_null($type) and $type = $this->_path_folders;
 		empty($path) and $path = DOCROOT;
@@ -209,7 +207,7 @@ class Asset_Instance
 			// create the asset type if it doesn't exist
 			if ( ! isset($this->_asset_paths[$type]))
 			{
-				$this->_asset_paths[$type] = array();
+				$this->_asset_paths[$type] = [];
 				$this->_path_folders[$type] = $type.'/';
 			}
 
@@ -226,7 +224,7 @@ class Asset_Instance
 	 * @param	string	$type  optional path type (js, css or img)
 	 * @return	object	current instance
 	 */
-	public function remove_path($path, $type = null)
+	public function remove_path($path, $type = null): static
 	{
 		is_null($type) and $type = $this->_path_folders;
 
@@ -268,7 +266,7 @@ class Asset_Instance
 	 * @param	boolean	       $raw    whether to return the raw file or not when group is not set (optional)
 	 * @return	string|object  Rendered asset or current instance when adding to group
 	 */
-	public function assettype($type, $files = array(), $attr = array(), $group = null, $raw = false)
+	public function assettype($type, $files = [], $attr = [], $group = null, $raw = false)
 	{
 		static $temp_group = 50000000;
 
@@ -304,7 +302,7 @@ class Asset_Instance
 	 * @param	string	$folder  The sub-folder to look in (optional)
 	 * @return	mixed	Either the path to the file or false if not found
 	 */
-	public function find_file($file, $type, $folder = '')
+	public function find_file($file, $type, $folder = ''): string|false
 	{
 		foreach ($this->_asset_paths[$type] as $path)
 		{
@@ -332,11 +330,11 @@ class Asset_Instance
 	 * @param	string	$folder  The sub-folder to look in (optional)
 	 * @return	mixed	Either the path to the file or false if not found
 	 */
-	public function get_file($file, $type, $folder = '')
+	public function get_file($file, $type, $folder = ''): string|false
 	{
 		if ($file = $this->find_file($file, $type, $folder))
 		{
-			strpos($file, DOCROOT) === 0 and $file = substr($file, strlen(DOCROOT));
+			str_starts_with((string) $file, DOCROOT) and $file = substr((string) $file, strlen(DOCROOT));
 
 			return $this->_asset_url.$file;
 		}
@@ -355,7 +353,7 @@ class Asset_Instance
 	 * @return	string	the group's output
 	 * @throws	\FuelException
 	 */
-	public function render($group = null, $raw = false)
+	public function render($group = null, $raw = false): string
 	{
 		// determine the group to render
 		is_null($group) and $group = '_default_';
@@ -365,10 +363,10 @@ class Asset_Instance
 			isset($this->_groups[$group]) and $group = $this->_groups[$group];
 		}
 
-		is_array($group) or $group = array();
+		is_array($group) or $group = [];
 
 		// storage for the result
-		$result = array();
+		$result = [];
 
 		// pre-define known types so the order is correct
 		foreach($this->_path_folders as $type => $unused)
@@ -377,7 +375,7 @@ class Asset_Instance
 		}
 
 		// loop over the group entries
-		foreach ($group as $key => $item)
+		foreach ($group as $item)
 		{
 			// determine file name and inline status
 			$type = $item['type'];
@@ -392,10 +390,10 @@ class Asset_Instance
 			}
 
 			// only do a file search if the asset is not a URL
-			if ( ! preg_match('|^(\w+:)?//|', $filename))
+			if ( ! preg_match('|^(\w+:)?//|', (string) $filename))
 			{
 				// and only if the asset is local to the applications base_url
-				if ($this->_always_resolve or ! preg_match('|^(\w+:)?//|', $this->_asset_url) or strpos($this->_asset_url, \Config::get('base_url')) === 0)
+				if ($this->_always_resolve or ! preg_match('|^(\w+:)?//|', $this->_asset_url) or str_starts_with($this->_asset_url, \Config::get('base_url')))
 				{
 					if ( ! ($file = $this->find_file($filename, $type)))
 					{
@@ -476,75 +474,55 @@ class Asset_Instance
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * CSS tag renderer
-	 *
-	 * @param	$file
-	 * @param	$attr
-	 * @param	$inline
-	 * @return	string
-	 */
-	protected function render_css($file, $attr, $inline)
+    /**
+     * CSS tag renderer
+     *
+     * @param	$file
+     * @param	$attr
+     * @param	$inline
+     */
+    protected function render_css(string $file, array $attr, $inline): string
 	{
-		// storage for the result
-		$result = '';
-
 		// make sure we have a type
 		isset($attr['type']) or $attr['type'] = 'text/css';
 
 		// render inline. or not
 		if ($inline)
 		{
-			$result = html_tag('style', $attr, PHP_EOL.$file.PHP_EOL).PHP_EOL;
+			return html_tag('style', $attr, PHP_EOL.$file.PHP_EOL).PHP_EOL;
 		}
-		else
-		{
-			if ( ! isset($attr['rel']) or empty($attr['rel']))
+        if ( ! isset($attr['rel']) or empty($attr['rel']))
 			{
 				$attr['rel'] = 'stylesheet';
 			}
-			$attr['href'] = $file;
-
-			$result = $this->_indent.html_tag('link', $attr).PHP_EOL;
-		}
+        $attr['href'] = $file;
 
 		// return the result
-		return $result;
+		return $this->_indent.html_tag('link', $attr).PHP_EOL;
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * JS tag renderer
-	 *
-	 * @param	$file
-	 * @param	$attr
-	 * @param	$inline
-	 * @return	string
-	 */
-	protected function render_js($file, $attr, $inline)
+    /**
+     * JS tag renderer
+     *
+     * @param	$file
+     * @param	$attr
+     * @param	$inline
+     */
+    protected function render_js(string $file, array $attr, $inline): string
 	{
-		// storage for the result
-		$result = '';
-
 		// make sure we have a type
 		isset($attr['type']) or $attr['type'] = 'text/javascript';
 
 		// render inline. or not
 		if ($inline)
 		{
-			$result = html_tag('script', $attr, PHP_EOL.$file.PHP_EOL).PHP_EOL;
+			return html_tag('script', $attr, PHP_EOL.$file.PHP_EOL).PHP_EOL;
 		}
-		else
-		{
-			$attr['src'] = $file;
-
-			$result = $this->_indent.html_tag('script', $attr, '').PHP_EOL;
-		}
+        $attr['src'] = $file;
 
 		// return the result
-		return $result;
+		return $this->_indent.html_tag('script', $attr, '').PHP_EOL;
 	}
 
 	// --------------------------------------------------------------------
@@ -557,19 +535,14 @@ class Asset_Instance
 	 * @param	$inline
 	 * @return	string
 	 */
-	protected function render_img($file, $attr, $inline)
+	protected function render_img($file, array $attr, $inline)
 	{
-		// storage for the result
-		$result = '';
-
 		// render the image
 		$attr['src'] = $file;
-		$attr['alt'] = isset($attr['alt']) ? $attr['alt'] : '';
-
-		$result = html_tag('img', $attr );
+		$attr['alt'] ??= '';
 
 		// return the result
-		return $result;
+		return html_tag('img', $attr );
 	}
 
 	// --------------------------------------------------------------------
@@ -590,7 +563,7 @@ class Asset_Instance
 	{
 		if ( ! is_array($assets))
 		{
-			$assets = array($assets);
+			$assets = [$assets];
 		}
 
 		foreach ($assets as $key => $asset)
@@ -601,34 +574,32 @@ class Asset_Instance
 				continue;
 			}
 
-			$this->_groups[$group][] = array(
+			$this->_groups[$group][] = [
 				'type'	=>	$type,
 				'file'	=>	$asset,
 				'raw'	=>	$raw,
 				'attr'	=>	(array) $attr,
-			);
+			];
 		}
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * Unify the path
-	 *
-	 * make sure the directory separator in the path is correct for the
-	 * platform used, is terminated with a directory separator, and all
-	 * relative path references are removed
-	 *
-	 * @param	string	$path      The path
-	 * @param	mixed	$ds        Optional directory separator
-	 * @param	boolean	$trailing  Optional whether to add trailing directory separator
-	 * @return	string
-	 */
-	protected function _unify_path($path, $ds = null, $trailing = true)
+    /**
+     * Unify the path
+     *
+     * make sure the directory separator in the path is correct for the
+     * platform used, is terminated with a directory separator, and all
+     * relative path references are removed
+     *
+     * @param	string	$path      The path
+     * @param	mixed	$ds        Optional directory separator
+     * @param	boolean	$trailing  Optional whether to add trailing directory separator
+     */
+    protected function _unify_path($path, $ds = null, $trailing = true): string
 	{
 		$ds === null and $ds = DS;
 
-		return rtrim(str_replace(array('\\', '/'), $ds, $path), $ds).($trailing ? $ds : '');
+		return rtrim(str_replace(['\\', '/'], $ds, $path), $ds).($trailing ? $ds : '');
 	}
 
 }

@@ -69,7 +69,7 @@ class Database_SQLite_Connection extends \Database_PDO_Connection
 		$q->execute();
 		$result = $q->fetchAll();
 
-		$tables = array();
+		$tables = [];
 		foreach ($result as $row)
 		{
 			$tables[] = reset($row);
@@ -93,7 +93,7 @@ class Database_SQLite_Connection extends \Database_PDO_Connection
 		$result = $q->fetchAll();
 
 		$count = 0;
-		$columns = array();
+		$columns = [];
 		foreach ($result as $row)
 		{
 			$column = $this->datatype($row['type']);
@@ -119,7 +119,7 @@ class Database_SQLite_Connection extends \Database_PDO_Connection
 	 *
 	 * @param string $charset
 	 */
-	public function set_charset($charset)
+	public function set_charset($charset): void
 	{
 		// Make sure the database is connected
 		$this->_connection or $this->connect();

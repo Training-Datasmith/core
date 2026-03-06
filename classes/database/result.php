@@ -16,16 +16,6 @@ namespace Fuel\Core;
 abstract class Database_Result implements \Countable, \Iterator, \Sanitization
 {
 	/**
-	 * @var  string Executed SQL for this result
-	 */
-	protected $_query;
-
-	/**
-	 * @var  resource  $_result raw result resource
-	 */
-	protected $_result;
-
-	/**
 	 * @var  array  $_results cached result data
 	 */
 	protected $_results;
@@ -56,24 +46,18 @@ abstract class Database_Result implements \Countable, \Iterator, \Sanitization
 	protected $_sanitization_enabled = false;
 
 	/**
-	 * Sets the total number of rows and stores the result locally.
-	 *
-	 * @param  mixed   $result     query result
-	 * @param  string  $sql        SQL query
-	 * @param  mixed   $as_object  object
-	 */
-	public function __construct($result, $sql, $as_object = null)
+     * Sets the total number of rows and stores the result locally.
+     *
+     * @param mixed $_result query result
+     * @param string $_query SQL query
+     * @param  mixed   $as_object  object
+     */
+    public function __construct(protected $_result, protected $_query, $as_object = null)
 	{
-		// Store the result locally
-		$this->_result = $result;
-
-		// Store the SQL locally
-		$this->_query = $sql;
-
 		if (is_object($as_object))
 		{
 			// Get the object class name
-			$as_object = get_class($as_object);
+			$as_object = $as_object::class;
 		}
 
 		// Results as objects or associative arrays
@@ -81,11 +65,9 @@ abstract class Database_Result implements \Countable, \Iterator, \Sanitization
 	}
 
 	/**
-	 * Result destruction cleans up all open result sets.
-	 *
-	 * @return  void
-	 */
-	abstract public function __destruct();
+     * Result destruction cleans up all open result sets.
+     */
+    abstract public function __destruct();
 
 	/**
 	 * Get a cached database result from the current result iterator.
@@ -115,7 +97,7 @@ abstract class Database_Result implements \Countable, \Iterator, \Sanitization
 	 */
 	public function as_array($key = null, $value = null)
 	{
-		$results = array();
+		$results = [];
 
 		if ($key === null and $value === null)
 		{
@@ -215,14 +197,10 @@ abstract class Database_Result implements \Countable, \Iterator, \Sanitization
 				// sanitize the data if needed
 				if ( ! $this->_sanitization_enabled)
 				{
-					$result = $this->_row->$name;
-				}
-				else
-				{
-					$result = \Security::clean($this->_row->$name, null, 'security.output_filter');
+					return $this->_row->$name;
 				}
 
-				return $result;
+				return \Security::clean($this->_row->$name, null, 'security.output_filter');
 			}
 		}
 		else
@@ -232,14 +210,10 @@ abstract class Database_Result implements \Countable, \Iterator, \Sanitization
 				// sanitize the data if needed
 				if ( ! $this->_sanitization_enabled)
 				{
-					$result = $this->_row[$name];
-				}
-				else
-				{
-					$result = \Security::clean($this->_row[$name], null, 'security.output_filter');
+					return $this->_row[$name];
 				}
 
-				return $result;
+				return \Security::clean($this->_row[$name], null, 'security.output_filter');
 			}
 		}
 
@@ -323,7 +297,7 @@ abstract class Database_Result implements \Countable, \Iterator, \Sanitization
 	/**
 	 * Implements [Iterator::next], moves to the next row.
 	 */
-	public function next()
+	public function next(): void
 	{
 		++$this->_current_row;
 	}
@@ -331,7 +305,7 @@ abstract class Database_Result implements \Countable, \Iterator, \Sanitization
 	/**
 	 * Implements [Iterator::rewind], sets the current row to -1.
 	 */
-	public function rewind()
+	public function rewind(): void
 	{
 		// first row is zero, not one!
 		$this->_current_row = -1;

@@ -23,22 +23,22 @@ namespace Fuel\Core;
  * @category  Core
  * @link      http://docs.fuelphp.com/classes/view.html
  */
-class View
+class View implements \Stringable
 {
 	/**
 	 * @var  array  Global view data
 	 */
-	protected static $global_data = array();
+	protected static $global_data = [];
 
 	/**
 	 * @var  array  Holds a list of specific filter rules for global variables
 	 */
-	protected static $global_filter = array();
+	protected static $global_filter = [];
 
 	/**
 	 * @var  array  Current active search paths
 	 */
-	protected $request_paths = array();
+	protected $request_paths = [];
 
 	/**
 	 * @var  bool  Whether to auto-filter the view's data
@@ -53,17 +53,17 @@ class View
 	/**
 	 * @var  array  Holds a list of specific filter rules for local variables
 	 */
-	protected $local_filter = array();
+	protected $local_filter = [];
 
 	/**
 	 * @var  string  The view's filename
 	 */
-	protected $file_name = null;
+	protected $file_name;
 
 	/**
 	 * @var  array  The view's data
 	 */
-	protected $data = array();
+	protected $data = [];
 
 	/**
 	 * @var  string  The view file extension
@@ -73,25 +73,24 @@ class View
 	/**
 	 * @var  Request  active request when the View was created
 	 */
-	protected $active_request = null;
+	protected $active_request;
 
 	/**
 	 * @var  string  active language at the time the object was created
 	 */
-	protected $active_language = null;
+	protected $active_language;
 
 	/**
-	 * Returns a new View object. If you do not define the "file" parameter,
-	 * you must call [static::set_filename].
-	 *
-	 *     $view = View::forge($file);
-	 *
-	 * @param   string  $file         view filename
-	 * @param   object  $data         array of values
-	 * @param   bool    $auto_filter
-	 * @return  View
-	 */
-	public static function forge($file = null, $data = null, $auto_filter = null)
+     * Returns a new View object. If you do not define the "file" parameter,
+     * you must call [static::set_filename].
+     *
+     *     $view = View::forge($file);
+     *
+     * @param   string  $file         view filename
+     * @param   object  $data         array of values
+     * @param   bool    $auto_filter
+     */
+    public static function forge($file = null, $data = null, $auto_filter = null): static
 	{
 		return new static($file, $data, $auto_filter);
 	}
@@ -158,16 +157,15 @@ class View
 	}
 
 	/**
-	 * Magic method, searches for the given variable and returns its value.
-	 * Local variables will be returned before global variables.
-	 *
-	 *     $value = $view->foo;
-	 *
-	 * @param   string  $key  variable name
-	 * @return  mixed
-	 * @throws  \OutOfBoundsException
-	 */
-	public function & __get($key)
+     * Magic method, searches for the given variable and returns its value.
+     * Local variables will be returned before global variables.
+     *
+     *     $value = $view->foo;
+     *
+     * @param   string  $key  variable name
+     * @throws  \OutOfBoundsException
+     */
+    public function & __get(string $key): mixed
 	{
 		return $this->get($key);
 	}
@@ -181,7 +179,7 @@ class View
 	 * @param   mixed   $value  value
 	 * @return  void
 	 */
-	public function __set($key, $value)
+	public function __set(string $key, mixed $value)
 	{
 		$this->set($key, $value);
 	}
@@ -196,7 +194,7 @@ class View
 	 * @param   string  $key  variable name
 	 * @return  boolean
 	 */
-	public function __isset($key)
+	public function __isset(string $key)
 	{
 		return (isset($this->data[$key]) or isset(static::$global_data[$key]));
 	}
@@ -209,18 +207,17 @@ class View
 	 * @param   string  $key  variable name
 	 * @return  void
 	 */
-	public function __unset($key)
+	public function __unset(string $key)
 	{
 		unset($this->data[$key], static::$global_data[$key]);
 	}
 
 	/**
-	 * Magic method, returns the output of [static::render].
-	 *
-	 * @return  string
-	 * @uses    View::render
-	 */
-	public function __toString()
+     * Magic method, returns the output of [static::render].
+     *
+     * @uses    View::render
+     */
+    public function __toString(): string
 	{
 		try
 		{
@@ -243,9 +240,9 @@ class View
 	 * @param   bool  $file_override  File override
 	 * @return  string
 	 */
-	protected function process_file($file_override = false)
+	protected function process_file($file_override = false): string|false
 	{
-		$clean_room = function($__file_name, array $__data)
+		$clean_room = function($__file_name, array $__data): string|false
 		{
 			extract($__data, EXTR_REFS);
 
@@ -289,10 +286,10 @@ class View
 	 * @param   string  $scope  local/glocal/all
 	 * @return  array   view data
 	 */
-	protected function get_data($scope = 'all')
+	protected function get_data($scope = 'all'): array
 	{
 		$filter_closures = $this->filter_closures;
-		$clean_it = function ($data, $rules, $auto_filter) use ($filter_closures)
+		$clean_it = function ($data, array $rules, $auto_filter) use ($filter_closures)
 		{
 			foreach ($data as $key => &$value)
 			{
@@ -311,7 +308,7 @@ class View
 			return $data;
 		};
 
-		$data = array();
+		$data = [];
 
 		if ( ! empty($this->data)  and ($scope === 'all' or $scope === 'local'))
 		{
@@ -354,17 +351,16 @@ class View
 	}
 
 	/**
-	 * Sets a global variable, similar to [static::set], except that the
-	 * variable will be accessible to all views.
-	 *
-	 *     View::set_global($name, $value);
-	 *
-	 * @param   string  $key     variable name or an array of variables
-	 * @param   mixed   $value   value
-	 * @param   bool    $filter  whether to filter the data or not
-	 * @return  void
-	 */
-	public static function set_global($key, $value = null, $filter = null)
+     * Sets a global variable, similar to [static::set], except that the
+     * variable will be accessible to all views.
+     *
+     *     View::set_global($name, $value);
+     *
+     * @param   string  $key     variable name or an array of variables
+     * @param   mixed   $value   value
+     * @param   bool    $filter  whether to filter the data or not
+     */
+    public static function set_global($key, $value = null, $filter = null): void
 	{
 		if (is_array($key))
 		{
@@ -388,17 +384,16 @@ class View
 	}
 
 	/**
-	 * Assigns a global variable by reference, similar to [static::bind], except
-	 * that the variable will be accessible to all views.
-	 *
-	 *     View::bind_global($key, $value);
-	 *
-	 * @param   string  $key     variable name
-	 * @param   mixed   $value   referenced variable
-	 * @param   bool    $filter  whether to filter the data or not
-	 * @return  void
-	 */
-	public static function bind_global($key, &$value, $filter = null)
+     * Assigns a global variable by reference, similar to [static::bind], except
+     * that the variable will be accessible to all views.
+     *
+     *     View::bind_global($key, $value);
+     *
+     * @param   string  $key     variable name
+     * @param   mixed   $value   referenced variable
+     * @param   bool    $filter  whether to filter the data or not
+     */
+    public static function bind_global($key, &$value, $filter = null): void
 	{
 		if ($filter !== null)
 		{
@@ -428,27 +423,26 @@ class View
 	}
 
 	/**
-	 * Sets the view filename.
-	 *
-	 *     $view->set_filename($file);
-	 *
-	 * @param   string  $file    view filename
-	 * @param   bool    $prefix  whether or not to reverse the search
-	 * @return  View
-	 * @throws  \FuelException
-	 */
-	public function set_filename($file, $reverse = false)
+     * Sets the view filename.
+     *
+     *     $view->set_filename($file);
+     *
+     * @param   string  $file    view filename
+     * @param   bool    $prefix  whether or not to reverse the search
+     * @throws  \FuelException
+     */
+    public function set_filename($file, $reverse = false): static
 	{
 		// reset the filename
 		$this->file_name = null;
 
 		// define the list of files to search
-		$searches = array(
-			array('file' => $file, 'extension' => $this->extension),
-		);
+		$searches = [
+			['file' => $file, 'extension' => $this->extension],
+		];
 
 		// if the file contains a dot, is it an extension of a part of the filename?
-		if (strpos($file, '.') !== false)
+		if (str_contains($file, '.'))
 		{
 			// strip the extension from it
 			$pathinfo = pathinfo($file);
@@ -456,17 +450,17 @@ class View
 			// add the result to the search list
 			if ($reverse)
 			{
-				array_unshift($searches, array(
+				array_unshift($searches, [
 					'file' => substr($file, 0, strlen($pathinfo['extension'])*-1 - 1),
 					 'extension' => $pathinfo['extension'],
-				));
+				]);
 			}
 			else
 			{
-				$searches[] = array(
+				$searches[] = [
 					'file' => substr($file, 0, strlen($pathinfo['extension'])*-1 - 1),
 					 'extension' => $pathinfo['extension'],
-				);
+				];
 			}
 		}
 
@@ -513,22 +507,18 @@ class View
 	 */
 	public function &get($key = null, $default = null)
 	{
-		if (func_num_args() === 0 or $key === null)
-		{
-			return $this->data;
-		}
-		elseif (strpos($key, '.') === false)
-		{
-			if (array_key_exists($key, $this->data))
-			{
-				return $this->data[$key];
-			}
-			elseif (array_key_exists($key, static::$global_data))
-			{
-				return static::$global_data[$key];
-			}
-		}
-		else
+		if (func_num_args() === 0 or $key === null) {
+            return $this->data;
+        }
+        if (!str_contains((string) $key, '.')) {
+            if (array_key_exists($key, $this->data)) {
+                return $this->data[$key];
+            }
+            if (array_key_exists($key, static::$global_data)) {
+                return static::$global_data[$key];
+            }
+        }
+        else
 		{
 			if (($result = \Arr::get($this->data, $key, \Arr::get(static::$global_data, $key, '__KEY__LOOKUP__MISS__'))) !== '__KEY__LOOKUP__MISS__')
 			{
@@ -540,12 +530,9 @@ class View
 		{
 			throw new \OutOfBoundsException('View variable is not set: '.$key);
 		}
-		else
-		{
-			// assign it first, you can't return a return value by reference directly!
-			$default = \Fuel::value($default);
-			return $default;
-		}
+        // assign it first, you can't return a return value by reference directly!
+        $default = \Fuel::value($default);
+        return $default;
 	}
 
 	/**
@@ -565,7 +552,7 @@ class View
 	 * @param   bool     $filter  whether to filter the data or not
 	 * @return  $this
 	 */
-	public function set($key, $value = null, $filter = null)
+	public function set($key, $value = null, $filter = null): static
 	{
 		if (is_array($key))
 		{
@@ -581,7 +568,7 @@ class View
 				$this->local_filter[$key] = $filter;
 			}
 
-			if (strpos($key, '.') === false)
+			if (!str_contains($key, '.'))
 			{
 				$this->data[$key] = $value;
 			}
@@ -623,7 +610,7 @@ class View
 	 * @param   bool     $filter  Whether to filter the var on output
 	 * @return  $this
 	 */
-	public function bind($key, &$value, $filter = null)
+	public function bind($key, &$value, $filter = null): static
 	{
 		if ($filter !== null)
 		{

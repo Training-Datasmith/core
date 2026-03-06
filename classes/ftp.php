@@ -26,27 +26,29 @@ class FtpFileAccessException extends \FuelException {}
  */
 class Ftp
 {
-	public static $initialized = false;
+	/**
+     * @var true
+     */
+    public static $initialized = false;
 
 	protected $_hostname  = 'localhost';
 	protected $_username  = '';
 	protected $_password  = '';
-	protected $_port      = 21;
-	protected $_timeout   = 90;
-	protected $_passive   = true;
-	protected $_debug     = false;
+	protected int $_port;
+	protected int $_timeout;
+	protected bool $_passive;
+	protected bool $_debug;
 	protected $_conn_id   = false;
 
 	/**
-	 * Returns a new Ftp object. If you do not define the "file" parameter,
-	 *
-	 *     $ftp = static::forge('group');
-	 *
-	 * @param   string|array  $config   The name of the config group to use, or a configuration array.
-	 * @param   bool          $connect  Automatically connect to this server.
-	 * @return  Ftp
-	 */
-	public static function forge($config = 'default', $connect = true)
+     * Returns a new Ftp object. If you do not define the "file" parameter,
+     *
+     *     $ftp = static::forge('group');
+     *
+     * @param   string|array  $config   The name of the config group to use, or a configuration array.
+     * @param   bool          $connect  Automatically connect to this server.
+     */
+    public static function forge($config = 'default', $connect = true): static
 	{
 		$ftp = new static($config);
 
@@ -71,7 +73,7 @@ class Ftp
 			$config_arr = \Config::get('ftp.'.$config);
 
 			// Check that it exists
-			if ( ! is_array($config_arr) or $config_arr === array())
+			if ( ! is_array($config_arr) or $config_arr === [])
 			{
 				throw new \UnexpectedValueException('You have specified an invalid ftp connection group: '.$config);
 			}
@@ -80,7 +82,7 @@ class Ftp
 		}
 
 		// Prep the hostname
-		$this->_hostname = preg_replace('|.+?://|', '', $config['hostname']);
+		$this->_hostname = preg_replace('|.+?://|', '', (string) $config['hostname']);
 		$this->_username = $config['username'];
 		$this->_password = $config['password'];
 		$this->_timeout  = ! empty($config['timeout']) ? (int) $config['timeout'] : 90;
@@ -100,7 +102,7 @@ class Ftp
 	 * @return	\Ftp
 	 * @throws	\FtpConnectionException
 	 */
-	public function connect()
+	public function connect(): false|self
 	{
 		if($this->_ssl_mode === true)
 		{
@@ -156,13 +158,10 @@ class Ftp
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * Validates the connection ID
-	 *
-	 * @return	bool
-	 */
-	protected function _is_conn()
+    /**
+     * Validates the connection ID
+     */
+    protected function _is_conn(): bool
 	{
 		if ( ! is_resource($this->_conn_id))
 		{
@@ -176,22 +175,19 @@ class Ftp
 	}
 
 	// --------------------------------------------------------------------
-
-
-	/**
-	 * Change directory
-	 *
-	 * The second parameter lets us momentarily turn off debugging so that
-	 * this function can be used to test for the existence of a folder
-	 * without throwing an error.  There's no FTP equivalent to is_dir()
-	 * so we do it by trying to change to a particular directory.
-	 * Internally, this parameter is only used by the "mirror" function below.
-	 *
-	 * @param	string $path
-	 * @return	bool
-	 * @throws \FtpFileAccessException
-	 */
-	public function change_dir($path = '')
+    /**
+     * Change directory
+     *
+     * The second parameter lets us momentarily turn off debugging so that
+     * this function can be used to test for the existence of a folder
+     * without throwing an error.  There's no FTP equivalent to is_dir()
+     * so we do it by trying to change to a particular directory.
+     * Internally, this parameter is only used by the "mirror" function below.
+     *
+     * @param	string $path
+     * @throws \FtpFileAccessException
+     */
+    public function change_dir($path = ''): bool
 	{
 		if ($path == '' or ! $this->_is_conn())
 		{
@@ -213,16 +209,14 @@ class Ftp
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * Create a directory
-	 *
-	 * @param	string	$path
-	 * @param	string	$permissions
-	 * @return	bool
-	 * @throws \FtpFileAccessException
-	 */
-	public function mkdir($path, $permissions = null)
+    /**
+     * Create a directory
+     *
+     * @param	string	$path
+     * @param	string	$permissions
+     * @throws \FtpFileAccessException
+     */
+    public function mkdir($path, $permissions = null): bool
 	{
 		if ( ! $this->_is_conn())
 		{
@@ -250,18 +244,16 @@ class Ftp
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * Upload a file to the server
-	 *
-	 * @param	string	$local_path
-	 * @param	string	$remote_path
-	 * @param	string	$mode
-	 * @param	string	$permissions
-	 * @return	bool
-	 * @throws	\FtpFileAccessException
-	 */
-	public function upload($local_path, $remote_path, $mode = 'auto', $permissions = null)
+    /**
+     * Upload a file to the server
+     *
+     * @param	string	$local_path
+     * @param	string	$remote_path
+     * @param	string	$mode
+     * @param	string	$permissions
+     * @throws	\FtpFileAccessException
+     */
+    public function upload($local_path, $remote_path, $mode = 'auto', $permissions = null): bool
 	{
 		if ( ! $this->_is_conn())
 		{
@@ -304,17 +296,15 @@ class Ftp
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * Download a file from a remote server to the local server
-	 *
-	 * @param	string	$remote_path
-	 * @param	string	$local_path
-	 * @param	string	$mode
-	 * @return	bool
-	 * @throws	\FtpFileAccessException
-	 */
-	public function download($remote_path, $local_path, $mode = 'auto')
+    /**
+     * Download a file from a remote server to the local server
+     *
+     * @param	string	$remote_path
+     * @param	string	$local_path
+     * @param	string	$mode
+     * @throws	\FtpFileAccessException
+     */
+    public function download($remote_path, $local_path, $mode = 'auto'): bool
 	{
 		if ( ! $this->_is_conn())
 		{
@@ -346,17 +336,15 @@ class Ftp
     }
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * Rename (or move) a file
-	 *
-	 * @param	$old_file	string
-	 * @param	$new_file	string
-	 * @param	$move		bool
-	 * @return	bool
-	 * @throws	\FtpFileAccessException
-	 */
-	public function rename($old_file, $new_file, $move = false)
+    /**
+     * Rename (or move) a file
+     *
+     * @param	$old_file	string
+     * @param	$new_file	string
+     * @param	$move		bool
+     * @throws	\FtpFileAccessException
+     */
+    public function rename($old_file, $new_file, $move = false): bool
 	{
 		if ( ! $this->_is_conn())
 		{
@@ -394,15 +382,13 @@ class Ftp
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * Rename (or move) a file
-	 *
-	 * @param	string	$filepath
-	 * @return	bool
-	 * @throws	\FtpFileAccessException
-	 */
-	function delete_file($filepath)
+    /**
+     * Rename (or move) a file
+     *
+     * @param	string	$filepath
+     * @throws	\FtpFileAccessException
+     */
+    function delete_file($filepath): bool
 	{
 		if ( ! $this->_is_conn())
 		{
@@ -424,16 +410,14 @@ class Ftp
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * Delete a folder and recursively delete everything (including sub-folders)
-	 * contained within it.
-	 *
-	 * @param	string	$filepath
-	 * @return	bool
-	 * @throws	\FtpFileAccessException
-	 */
-	function delete_dir($filepath)
+    /**
+     * Delete a folder and recursively delete everything (including sub-folders)
+     * contained within it.
+     *
+     * @param	string	$filepath
+     * @throws	\FtpFileAccessException
+     */
+    function delete_dir($filepath): bool
 	{
 		if ( ! $this->_is_conn())
 		{
@@ -447,19 +431,18 @@ class Ftp
 
 		if ($list !== false and count($list) > 0)
 		{
-			foreach ($list as $item)
-			{
-				// If we can't delete the item it's probaly a folder so
-				// we'll recursively call delete_dir()
-				if ( ! @ftp_delete($this->_conn_id, $item))
-				{
-					// don't recurse into current of parent directory
-					if ( ! preg_match('/\/\.\.|\/\.$/', $item))
-					{
-						$this->delete_dir($item);
-					}
-				}
-			}
+			foreach ($list as $item) {
+                // If we can't delete the item it's probaly a folder so
+                // we'll recursively call delete_dir()
+                if (@ftp_delete($this->_conn_id, $item)) {
+                    continue;
+                }
+                // don't recurse into current of parent directory
+                if (preg_match('/\/\.\.|\/\.$/', (string) $item)) {
+                    continue;
+                }
+                $this->delete_dir($item);
+            }
 		}
 
 		$result = @ftp_rmdir($this->_conn_id, $filepath);
@@ -477,16 +460,14 @@ class Ftp
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * Set file permissions
-	 *
-	 * @param	string 	$path			the file path
-	 * @param	string	$permissions	the permissions
-	 * @return	bool
-	 * @throws	\FtpFileAccessException
-	 */
-	public function chmod($path, $permissions)
+    /**
+     * Set file permissions
+     *
+     * @param	string 	$path			the file path
+     * @param	string	$permissions	the permissions
+     * @throws	\FtpFileAccessException
+     */
+    public function chmod($path, $permissions): bool
 	{
 		if ( ! $this->_is_conn())
 		{
@@ -525,7 +506,7 @@ class Ftp
 	 * @param	string	$path
 	 * @return	array
 	 */
-	public function list_files($path = '.')
+	public function list_files($path = '.'): false|array
 	{
 		if ( ! $this->_is_conn())
 		{
@@ -536,19 +517,17 @@ class Ftp
 	}
 
 	// ------------------------------------------------------------------------
-
-	/**
-	 * Read a directory and recreate it remotely
-	 *
-	 * This function recursively reads a folder and everything it contains (including
-	 * sub-folders) and creates a mirror via FTP based on it.  Whatever the directory structure
-	 * of the original file path will be recreated on the server.
-	 *
-	 * @param	string	$local_path		path to source with trailing slash
-	 * @param	string	$remote_path	path to destination - include the base folder with trailing slash
-	 * @return	bool
-	 */
-	public function mirror($local_path, $remote_path)
+    /**
+     * Read a directory and recreate it remotely
+     *
+     * This function recursively reads a folder and everything it contains (including
+     * sub-folders) and creates a mirror via FTP based on it.  Whatever the directory structure
+     * of the original file path will be recreated on the server.
+     *
+     * @param	string	$local_path		path to source with trailing slash
+     * @param	string	$remote_path	path to destination - include the base folder with trailing slash
+     */
+    public function mirror(string $local_path, string $remote_path): bool
 	{
 		if ( ! $this->_is_conn())
 		{
@@ -559,7 +538,7 @@ class Ftp
 		if ($fp = @opendir($local_path))
 		{
 			// Attempt to open the remote file path.
-			if ( ! $this->change_dir($remote_path, true))
+			if ( ! $this->change_dir($remote_path))
 			{
 				// If it doesn't exist we'll attempt to create the directory
 				if ( ! $this->mkdir($remote_path) or ! $this->change_dir($remote_path))
@@ -571,11 +550,11 @@ class Ftp
 			// Recursively read the local directory
 			while (false !== ($file = readdir($fp)))
 			{
-				if (@is_dir($local_path.$file) and substr($file, 0, 1) != '.')
+				if (@is_dir($local_path.$file) and !str_starts_with($file, '.'))
 				{
 					$this->mirror($local_path.$file."/", $remote_path.$file."/");
 				}
-				elseif (substr($file, 0, 1) != ".")
+				elseif (!str_starts_with($file, "."))
 				{
 					// Get the file extension so we can se the upload type
 					$ext = pathinfo($file, PATHINFO_EXTENSION);
@@ -591,16 +570,14 @@ class Ftp
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * Set the upload type
-	 *
-	 * @param	string	$ext
-	 * @return	string
-	 */
-	protected function _settype($ext)
+    /**
+     * Set the upload type
+     *
+     * @param	string	$ext
+     */
+    protected function _settype($ext): string
 	{
-		$text_types = array(
+		$text_types = [
 			'txt',
 			'text',
 			'php',
@@ -614,7 +591,7 @@ class Ftp
 			'shtml',
 			'log',
 			'xml',
-		);
+		];
 
 		return in_array($ext, $text_types) ? 'ascii' : 'binary';
 	}
@@ -637,13 +614,10 @@ class Ftp
 	}
 
 	// ------------------------------------------------------------------------
-
-	/**
-	 * Close the connection when the class is unset
-	 *
-	 * @return	void
-	 */
-	public function  __destruct()
+    /**
+     * Close the connection when the class is unset
+     */
+    public function  __destruct()
 	{
 		$this->close();
 	}

@@ -19,10 +19,10 @@ class Session_Redis extends \Session_Driver
 	/**
 	 * array of driver config defaults
 	 */
-	protected static $_defaults = array(
+	protected static $_defaults = [
 		'cookie_name' => 'fuelrid',				// name of the session cookie for redis based sessions
 		'database'    => 'default',				// name of the redis database to use (as configured in config/db.php)
-	);
+	];
 
 	/*
 	 * @var	storage for the redis object
@@ -31,7 +31,7 @@ class Session_Redis extends \Session_Driver
 
 	// --------------------------------------------------------------------
 
-	public function __construct($config = array())
+	public function __construct($config = [])
 	{
 		parent::__construct($config);
 
@@ -179,7 +179,7 @@ class Session_Redis extends \Session_Driver
 			$this->keys['updated'] = $this->time->get_timestamp();
 
 			// session payload
-			$payload = $this->_serialize(array($this->keys, $this->data, $this->flash));
+			$payload = $this->_serialize([$this->keys, $this->data, $this->flash]);
 
 			// create the session file
 			$this->_write_redis($this->keys['session_id'], $payload);
@@ -188,11 +188,11 @@ class Session_Redis extends \Session_Driver
 			if ( isset($this->keys['previous_id']) and $this->keys['previous_id'] != $this->keys['session_id'])
 			{
 				// point the old session file to the new one, we don't want to lose the session
-				$payload = $this->_serialize(array('rotated_session_id' => $this->keys['session_id']));
+				$payload = $this->_serialize(['rotated_session_id' => $this->keys['session_id']]);
 				$this->_write_redis($this->keys['previous_id'], $payload);
 			}
 
-			$this->_set_cookie(array($this->keys['session_id']));
+			$this->_set_cookie([$this->keys['session_id']]);
 		}
 
 		return $this;
@@ -238,7 +238,7 @@ class Session_Redis extends \Session_Driver
 	 */
 	public function _validate_config($config)
 	{
-		$validated = array();
+		$validated = [];
 
 		foreach ($config as $name => $item)
 		{

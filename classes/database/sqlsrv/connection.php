@@ -17,14 +17,13 @@ namespace Fuel\Core;
 class Database_Sqlsrv_Connection extends \Database_PDO_Connection
 {
 	/**
-	 * Stores the database configuration locally and name the instance.
-	 *
-	 * [!!] This method cannot be accessed directly, you must use [static::instance].
-	 *
-	 * @param string $name
-	 * @param array  $config
-	 */
-	protected function __construct($name, array $config)
+     * Stores the database configuration locally and name the instance.
+     *
+     * [!!] This method cannot be accessed directly, you must use [static::instance].
+     *
+     * @param string $name
+     */
+    protected function __construct($name, array $config)
 	{
 		// this driver only works on Windows
 		if ( ! is_windows())
@@ -54,7 +53,7 @@ class Database_Sqlsrv_Connection extends \Database_PDO_Connection
 		// Find all table names
 		$result = $this->query(\DB::SELECT, $query, false);
 
-		$tables = array();
+		$tables = [];
 		foreach ($result as $row)
 		{
 			$tables[] = reset($row);
@@ -81,10 +80,10 @@ class Database_Sqlsrv_Connection extends \Database_PDO_Connection
 		}
 
 		$count = 0;
-		$columns = array();
+		$columns = [];
 		foreach ($result as $row)
 		{
-			list($type, $length) = $this->_parse_type($row['Type']);
+			[$type, $length] = $this->_parse_type($row['Type']);
 			$column = $this->datatype($type);
 			$column['name']             = $row['Field'];
 			$column['default']          = $row['Default'];
@@ -96,7 +95,7 @@ class Database_Sqlsrv_Connection extends \Database_PDO_Connection
 				case 'float':
 					if (isset($length))
 					{
-						list($column['numeric_precision'], $column['numeric_scale']) = explode(',', $length);
+						[$column['numeric_precision'], $column['numeric_scale']] = explode(',', $length);
 					}
 				break;
 				case 'int':
@@ -124,7 +123,7 @@ class Database_Sqlsrv_Connection extends \Database_PDO_Connection
 						case 'enum':
 						case 'set':
 							$column['collation_name'] = $row['Collation'];
-							$column['options'] = explode('\',\'', substr($length, 1, -1));
+							$column['options'] = explode('\',\'', substr((string) $length, 1, -1));
 						break;
 					}
 				break;
@@ -143,7 +142,7 @@ class Database_Sqlsrv_Connection extends \Database_PDO_Connection
 	 *
 	 * @param string $charset
 	 */
-	public function set_charset($charset)
+	public function set_charset($charset): void
 	{
 		if ($charset == 'utf8' or $charset = 'utf-8')
 		{

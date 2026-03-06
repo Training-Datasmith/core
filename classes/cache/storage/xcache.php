@@ -22,7 +22,7 @@ class Cache_Storage_Xcache extends \Cache_Storage_Driver
 	/**
 	 * @var  array  driver specific configuration
 	 */
-	protected $config = array();
+	protected $config = [];
 
 	// ---------------------------------------------------------------------
 
@@ -30,15 +30,13 @@ class Cache_Storage_Xcache extends \Cache_Storage_Driver
 	{
 		parent::__construct($identifier, $config);
 
-		$this->config = isset($config['xcache']) ? $config['xcache'] : array();
+		$this->config = $config['xcache'] ?? [];
 
 		// make sure we have an id
-		$this->config['cache_id'] = $this->_validate_config('cache_id', isset($this->config['cache_id'])
-			? $this->config['cache_id'] : 'fuel');
+		$this->config['cache_id'] = $this->_validate_config('cache_id', $this->config['cache_id'] ?? 'fuel');
 
 		// check for an expiration override
-		$this->expiration = $this->_validate_config('expiration', isset($this->config['expiration'])
-			? $this->config['expiration'] : $this->expiration);
+		$this->expiration = $this->_validate_config('expiration', $this->config['expiration'] ?? $this->expiration);
 
 		// do we have the PHP XCache extension available
 		if ( ! function_exists('xcache_set') )
@@ -60,7 +58,7 @@ class Cache_Storage_Xcache extends \Cache_Storage_Driver
 		foreach($dependencies as $dep)
 		{
 			// get the section name and identifier
-			$sections = explode('.', $dep);
+			$sections = explode('.', (string) $dep);
 			if (count($sections) > 1)
 			{
 				$identifier = array_pop($sections);
@@ -91,7 +89,7 @@ class Cache_Storage_Xcache extends \Cache_Storage_Driver
 	/**
 	 * Delete Cache
 	 */
-	public function delete()
+	public function delete(): void
 	{
 		// get the XCache key for the cache identifier
 		$key = $this->_get_key(true);
@@ -103,12 +101,11 @@ class Cache_Storage_Xcache extends \Cache_Storage_Driver
 	}
 
 	/**
-	 * Purge all caches
-	 *
-	 * @param   string  $section  limit purge to subsection
-	 * @return  bool
-	 */
-	public function delete_all($section)
+     * Purge all caches
+     *
+     * @param   string  $section  limit purge to subsection
+     */
+    public function delete_all($section): void
 	{
 		// determine the section index name
 		$section = $this->config['cache_id'].(empty($section) ? '' : '.'.$section);
@@ -118,10 +115,10 @@ class Cache_Storage_Xcache extends \Cache_Storage_Driver
 
 		if (is_array($index))
 		{
-			$dirs = array();
+			$dirs = [];
 			foreach ($index as $dir)
 			{
-				if (strpos($dir, $section) === 0)
+				if (str_starts_with((string) $dir, $section))
 				{
 					$dirs[] = $dir;
 					$list = xcache_get($dir);
@@ -147,12 +144,12 @@ class Cache_Storage_Xcache extends \Cache_Storage_Driver
 	 */
 	protected function prep_contents()
 	{
-		$properties = array(
+		$properties = [
 			'created'          => $this->created,
 			'expiration'       => $this->expiration,
 			'dependencies'     => $this->dependencies,
 			'content_handler'  => $this->content_handler,
-		);
+		];
 		$properties = '{{'.static::PROPS_TAG.'}}'.json_encode($properties).'{{/'.static::PROPS_TAG.'}}';
 
 		return $properties.$this->contents;
@@ -230,7 +227,7 @@ class Cache_Storage_Xcache extends \Cache_Storage_Driver
 		{
 			$this->unprep_contents($payload);
 		}
-		catch (\UnexpectedValueException $e)
+		catch (\UnexpectedValueException)
 		{
 			return false;
 		}
@@ -245,7 +242,7 @@ class Cache_Storage_Xcache extends \Cache_Storage_Driver
 	 * @param   mixed   $value
 	 * @return  mixed
 	 */
-	private function _validate_config($name, $value)
+	private function _validate_config(string $name, $value)
 	{
 		switch ($name)
 		{
@@ -279,10 +276,10 @@ class Cache_Storage_Xcache extends \Cache_Storage_Driver
 	protected function _get_key($remove = false)
 	{
 		// get the current index information
-		list($identifier, $sections, $index) = $this->_get_index();
+		[$identifier, $sections, $index] = $this->_get_index();
 
 		// get the key from the index
-		$key = isset($index[$identifier][0]) ? $index[$identifier][0] : false;
+		$key = $index[$identifier][0] ?? false;
 
 		if ($remove === true)
 		{
@@ -337,7 +334,7 @@ class Cache_Storage_Xcache extends \Cache_Storage_Driver
 		}
 
 		// get the cache index and return it
-		return array($identifier, $sections, xcache_get($this->config['cache_id'].$sections));
+		return [$identifier, $sections, xcache_get($this->config['cache_id'].$sections)];
 	}
 
 	/**
@@ -348,11 +345,11 @@ class Cache_Storage_Xcache extends \Cache_Storage_Driver
 	protected function _update_index($key)
 	{
 		// get the current index information
-		list($identifier, $sections, $index) = $this->_get_index();
+		[$identifier, $sections, $index] = $this->_get_index();
 
 		// store the key in the index and write the index back
-		$index[$identifier] = array($key, $this->created);
-		xcache_set($this->config['cache_id'].$sections, array_merge($index, array($identifier => array($key, $this->created))));
+		$index[$identifier] = [$key, $this->created];
+		xcache_set($this->config['cache_id'].$sections, array_merge($index, [$identifier => [$key, $this->created]]));
 
 		// get the directory index
 		$index = xcache_get($this->config['cache_id'].'__DIR__');
@@ -366,7 +363,7 @@ class Cache_Storage_Xcache extends \Cache_Storage_Driver
 		}
 		else
 		{
-			$index = array($this->config['cache_id'].$sections);
+			$index = [$this->config['cache_id'].$sections];
 		}
 
 		// update the directory index

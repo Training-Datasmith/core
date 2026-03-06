@@ -17,12 +17,12 @@ abstract class Controller_Rest extends \Controller
 	/**
 	 * @var  null|string  Set this in a controller to use a default format
 	 */
-	protected $rest_format = null;
+	protected $rest_format;
 
 	/**
 	 * @var  array  contains a list of method properties such as limit, log and level
 	 */
-	protected $methods = array();
+	protected $methods = [];
 
 	/**
 	 * @var  integer  status code to return in case a not defined action is called
@@ -37,12 +37,12 @@ abstract class Controller_Rest extends \Controller
 	/**
 	 * @var  string  authentication to be used for this controller
 	 */
-	protected $auth = null;
+	protected $auth;
 
 	/**
 	 * @var  string  the detected response format
 	 */
-	protected $format = null;
+	protected $format;
 
 	/**
 	 * @var  integer  default response http status
@@ -52,12 +52,12 @@ abstract class Controller_Rest extends \Controller
 	/**
 	 * @var  string  xml basenode name
 	 */
-	protected $xml_basenode = null;
+	protected $xml_basenode;
 
 	/**
 	 * @var  array  List all supported methods
 	 */
-	protected $_supported_formats = array(
+	protected $_supported_formats = [
 		'xml' => 'application/xml',
 		'rawxml' => 'application/xml',
 		'json' => 'application/json',
@@ -66,9 +66,9 @@ abstract class Controller_Rest extends \Controller
 		'php' => 'text/plain',
 		'html' => 'text/html',
 		'csv' => 'application/csv',
-	);
+	];
 
-	public function before()
+	public function before(): void
 	{
 		parent::before();
 
@@ -160,18 +160,12 @@ abstract class Controller_Rest extends \Controller
 			// If method is not available, set status code to 404
 			if (method_exists($this, $controller_method))
 			{
-				return call_fuel_func_array(array($this, $controller_method), $arguments);
+				return call_fuel_func_array([$this, $controller_method], $arguments);
 			}
-			else
-			{
-				$this->response->status = $this->no_method_status;
-				return;
-			}
+            $this->response->status = $this->no_method_status;
+            return;
 		}
-		else
-		{
-			$this->response(array('status'=> 0, 'error'=> 'Not Authorized'), 401);
-		}
+        $this->response(['status'=> 0, 'error'=> 'Not Authorized'], 401);
 	}
 
 	/**
@@ -183,7 +177,7 @@ abstract class Controller_Rest extends \Controller
 	 * @param   int
 	 * @return  object  Response instance
 	 */
-	protected function response($data = array(), $http_status = null)
+	protected function response($data = [], $http_status = null)
 	{
 		// set the correct response header
 		if (method_exists('Format', 'to_'.$this->format))
@@ -294,34 +288,31 @@ abstract class Controller_Rest extends \Controller
 
 			// Split the Accept header and build an array of quality scores for each format
 			$fragments = new \CachingIterator(new \ArrayIterator(preg_split('/[,;]/', $acceptable)));
-			$acceptable = array();
+			$acceptable = [];
 			$next_is_quality = false;
 			foreach ($fragments as $fragment)
 			{
 				$quality = 1;
+                // Skip the fragment if it is a quality score
+                if ($next_is_quality) {
+                    $next_is_quality = false;
+                    continue;
+                }
 				// Skip the fragment if it is a quality score
-				if ($next_is_quality)
-				{
-					$next_is_quality = false;
-					continue;
-				}
-
-				// If next fragment exists and is a quality score, set the quality score
-				elseif ($fragments->hasNext())
-				{
-					$next = $fragments->getInnerIterator()->current();
-					if (strpos($next, 'q=') === 0)
+				if ($fragments->hasNext()) {
+                    $next = $fragments->getInnerIterator()->current();
+                    if (str_starts_with($next, 'q='))
 					{
-						list($key, $quality) = explode('=', $next);
+						[$key, $quality] = explode('=', $next);
 						$next_is_quality = true;
 					}
-				}
+                }
 
 				$acceptable[$fragment] = $quality;
 			}
 
 			// Sort the formats by score in descending order
-			uasort($acceptable, function($a, $b)
+			uasort($acceptable, function($a, $b): int
 			{
 				$a = (float) $a;
 				$b = (float) $b;
@@ -329,15 +320,15 @@ abstract class Controller_Rest extends \Controller
 			});
 
 			// Check each of the acceptable formats against the supported formats
-			$find = array('\*', '/');
-			$replace = array('.*', '\/');
+			$find = ['\*', '/'];
+			$replace = ['.*', '\/'];
 			foreach ($acceptable as $pattern => $quality)
 			{
 				// The Accept header can contain wildcards in the format
 				$pattern = '/^' . str_replace($find, $replace, preg_quote($pattern)) . '$/';
 				foreach ($this->_supported_formats as $format => $mime)
 				{
-					if (preg_match($pattern, $mime))
+					if (preg_match($pattern, (string) $mime))
 					{
 						return $format;
 					}
@@ -370,16 +361,16 @@ abstract class Controller_Rest extends \Controller
 		}
 
 		// They might have sent a few, make it an array
-		if (strpos($lang, ',') !== false)
+		if (str_contains($lang, ','))
 		{
 			$langs = explode(',', $lang);
 
-			$return_langs = array();
+			$return_langs = [];
 
 			foreach ($langs as $lang)
 			{
 				// Remove weight and strip space
-				list($lang) = explode(';', $lang);
+				[$lang] = explode(';', $lang);
 				$return_langs[] = trim($lang);
 			}
 
@@ -430,9 +421,9 @@ abstract class Controller_Rest extends \Controller
 		// most other servers
 		elseif (\Input::server('HTTP_AUTHENTICATION'))
 		{
-			if (strpos(strtolower(\Input::server('HTTP_AUTHENTICATION')), 'basic') === 0)
+			if (str_starts_with(strtolower(\Input::server('HTTP_AUTHENTICATION')), 'basic'))
 			{
-				list($username, $password) = explode(':', base64_decode(substr(\Input::server('HTTP_AUTHORIZATION'), 6)));
+				[$username, $password] = explode(':', base64_decode(substr(\Input::server('HTTP_AUTHORIZATION'), 6)));
 			}
 		}
 

@@ -17,24 +17,23 @@ class ThemeException extends \FuelException {}
 /**
  * Handles loading theme views and assets.
  */
-class Theme
+class Theme implements \Stringable
 {
 	/**
 	 * All the Theme instances
 	 *
 	 * @var  array
 	 */
-	protected static $instances = array();
+	protected static $instances = [];
 
 	/**
-	 * Acts as a Multiton.  Will return the requested instance, or will create
-	 * a new named one if it does not exist.
-	 *
-	 * @param   string  $name    The instance name
-	 * @param   array   $config
-	 * @return  Theme
-	 */
-	public static function instance($name = '_default_', array $config = array())
+     * Acts as a Multiton.  Will return the requested instance, or will create
+     * a new named one if it does not exist.
+     *
+     * @param   string  $name    The instance name
+     * @return  Theme
+     */
+    public static function instance($name = '_default_', array $config = [])
 	{
 		if ( ! \array_key_exists($name, static::$instances))
 		{
@@ -45,12 +44,11 @@ class Theme
 	}
 
 	/**
-	 * Gets a new instance of the Theme class.
-	 *
-	 * @param   array  $config  Optional config override
-	 * @return  Theme
-	 */
-	public static function forge(array $config = array())
+     * Gets a new instance of the Theme class.
+     *
+     * @param   array  $config  Optional config override
+     */
+    public static function forge(array $config = []): static
 	{
 		return new static($config);
 	}
@@ -58,68 +56,68 @@ class Theme
 	/**
 	 * @var  Asset_Instance  $asset  Asset instance for this theme instance
 	 */
-	public $asset = null;
+	public $asset;
 
 	/**
 	 * @var  array  $paths  Possible locations for themes
 	 */
-	protected $paths = array();
+	protected $paths = [];
 
 	/**
 	 * @var  View  $template  View instance for this theme instance template
 	 */
-	public $template = null;
+	public $template;
 
 	/**
 	 * @var  array  $active  Currently active theme
 	 */
-	protected $active = array(
+	protected $active = [
 		'name' => null,
 		'path' => null,
 		'asset_base' => false,
 		'asset_path' => false,
-		'info' => array(),
-	);
+		'info' => [],
+	];
 
 	/**
 	 * @var  array  $fallback  Fallback theme
 	 */
-	protected $fallback = array(
+	protected $fallback = [
 		'name' => null,
 		'path' => null,
 		'asset_base' => false,
 		'asset_path' => false,
-		'info' => array(),
-	);
+		'info' => [],
+	];
 
 	/**
 	 * @var  array  $config  Theme config
 	 */
-	protected $config = array(
+	protected $config = [
 		'active' => 'default',
 		'fallback' => 'default',
-		'paths' => array(),
+		'paths' => [],
 		'assets_folder' => 'themes',
 		'view_ext' => '.html',
 		'require_info_file' => false,
 		'info_file_name' => 'themeinfo.php',
 		'use_modules' => false,
-	);
+	];
 
 	/**
 	 * @var  array  $partials	Storage for defined template partials
 	 */
-	protected $partials = array();
+	protected $partials = [];
 
 	/**
 	 * @var  array  $chrome	Storage for defined partial chrome
 	 */
-	protected $chrome = array();
+	protected $chrome = [];
 
 	/**
 	 * @var  array  $order	Order in which partial sections should be rendered
 	 */
-	protected $order = array();
+	protected $order = [];
 
 	/**
 	 * Sets up the theme object.  If a config is given, it will not use the config
@@ -127,12 +125,12 @@ class Theme
 	 *
 	 * @param   array  $config  Optional config override
 	 */
-	public function __construct(array $config = array())
+	public function __construct(array $config = [])
 	{
 		if (empty($config))
 		{
 			\Config::load('theme', true, false, true);
-			$config = \Config::get('theme', array());
+			$config = \Config::get('theme', []);
 		}
 
 		// Order of this addition is important, do not change this.
@@ -142,7 +140,7 @@ class Theme
 		$this->add_paths($this->config['paths']);
 
 		// create a unique asset instance for this theme instance...
-		$this->asset = \Asset::forge('theme_'.spl_object_hash($this), array('paths' => array()));
+		$this->asset = \Asset::forge('theme_'.spl_object_hash($this), ['paths' => []]);
 
 		// and set the active and the fallback theme
 		$this->active($this->config['active']);
@@ -150,12 +148,11 @@ class Theme
 	}
 
 	/**
-	 * Magic method, returns the output of [static::render].
-	 *
-	 * @return  string
-	 * @uses    Theme::render
-	 */
-	public function __toString()
+     * Magic method, returns the output of [static::render].
+     *
+     * @uses    Theme::render
+     */
+    public function __toString(): string
 	{
 		try
 		{
@@ -206,7 +203,7 @@ class Theme
 	 * @return  View    New View object
 	 * @throws  \ThemeException
 	 */
-	public function view($view, $data = array(), $auto_filter = null)
+	public function view($view, $data = [], $auto_filter = null)
 	{
 		if ($this->active['path'] === null)
 		{
@@ -248,7 +245,7 @@ class Theme
 		if (is_null($view))
 		{
 			// loading from a specific namespace?
-			if (strpos($presenter, '::') !== false)
+			if (str_contains($presenter, '::'))
 			{
 				$split = explode('::', $presenter, 2);
 				if (isset($split[1]))
@@ -273,7 +270,7 @@ class Theme
 	 * @return  string  Full asset URL or path if outside docroot
 	 * @throws  \ThemeException
 	 */
-	public function asset_path($path)
+	public function asset_path(string $path): string
 	{
 		if ($this->active['path'] === null)
 		{
@@ -284,10 +281,7 @@ class Theme
 		{
 			return $this->active['asset_base'].$path;
 		}
-		else
-		{
-			return $this->active['path'].$path;
-		}
+        return $this->active['path'].$path;
 	}
 
 	/**
@@ -337,7 +331,7 @@ class Theme
 	 * @param   mixed   $order
 	 * @throws  \ThemeException
 	 */
-	public function set_order($section, $order)
+	public function set_order($section, $order): void
 	{
 		$this->order[$section] = $order;
 	}
@@ -357,7 +351,7 @@ class Theme
 		}
 
 		// storage for rendered results
-		$rendered = array();
+		$rendered = [];
 
 		// make sure we have a render ordering for all defined partials
 		foreach ($this->partials as $key => $partials)
@@ -377,10 +371,10 @@ class Theme
 			$output = '';
 			if (isset($this->partials[$key]))
 			{
-				foreach ($this->partials[$key] as $index => $partial)
+				foreach ($this->partials[$key] as $partial)
 				{
 					// render the partial
-					if (is_callable(array($partial, 'render')))
+					if (is_callable([$partial, 'render']))
 					{
 						$output .= $partial->render();
 					}
@@ -422,7 +416,7 @@ class Theme
 	public function set_partial($section, $view, $overwrite = false)
 	{
 		// make sure the partial entry exists
-		array_key_exists($section, $this->partials) or $this->partials[$section] = array();
+		array_key_exists($section, $this->partials) or $this->partials[$section] = [];
 
 		// make sure the partial is a view
 		if (is_string($view))
@@ -438,7 +432,7 @@ class Theme
 		// store the partial
 		if ($overwrite)
 		{
-			$this->partials[$section] = array($name => $view);
+			$this->partials[$section] = [$name => $view];
 		}
 		else
 		{
@@ -469,23 +463,21 @@ class Theme
 	}
 
 	/**
-	 * Returns whether or not a section has partials defined
-	 *
-	 * @param   string  				$section   Name of the partial section in the template
-	 * @return  bool
-	 */
-	public function has_partials($section)
+     * Returns whether or not a section has partials defined
+     *
+     * @param   string  				$section   Name of the partial section in the template
+     */
+    public function has_partials($section): bool
 	{
 		return $this->partial_count($section) > 0;
 	}
 
 	/**
-	 * Returns the number of partials defined for a section
-	 *
-	 * @param   string  				$section   Name of the partial section in the template
-	 * @return  int
-	 */
-	public function partial_count($section)
+     * Returns the number of partials defined for a section
+     *
+     * @param   string  				$section   Name of the partial section in the template
+     */
+    public function partial_count($section): int
 	{
 		// return the defined partial count
 		return array_key_exists($section, $this->partials) ? count($this->partials[$section]) : 0;
@@ -508,7 +500,7 @@ class Theme
 			$view = $this->view($view);
 		}
 
-		$this->chrome[$section] = array('var' => $var, 'view' => $view);
+		$this->chrome[$section] = ['var' => $var, 'view' => $view];
 
 		return $view;
 	}
@@ -532,25 +524,23 @@ class Theme
 	}
 
 	/**
-	 * Adds the given path to the theme search path.
-	 *
-	 * @param   string  $path  Path to add
-	 * @return  void
-	 */
-	public function add_path($path)
+     * Adds the given path to the theme search path.
+     *
+     * @param   string  $path  Path to add
+     */
+    public function add_path($path): void
 	{
 		$this->paths[] = rtrim($path, DS).DS;
 	}
 
 	/**
-	 * Adds the given paths to the theme search path.
-	 *
-	 * @param   array  $paths  Paths to add
-	 * @return  void
-	 */
-	public function add_paths(array $paths)
+     * Adds the given paths to the theme search path.
+     *
+     * @param   array  $paths  Paths to add
+     */
+    public function add_paths(array $paths): void
 	{
-		array_walk($paths, array($this, 'add_path'));
+		array_walk($paths, $this->add_path(...));
 	}
 
 	/**
@@ -560,7 +550,7 @@ class Theme
 	 * @param   string  $theme  Theme to find
 	 * @return  string|false  Path or false if not found
 	 */
-	public function find($theme)
+	public function find(string $theme): string|false
 	{
 		foreach ($this->paths as $path)
 		{
@@ -574,13 +564,11 @@ class Theme
 	}
 
 	/**
-	 * Gets an array of all themes in all theme paths, sorted alphabetically.
-	 *
-	 * @return  array
-	 */
-	public function all()
+     * Gets an array of all themes in all theme paths, sorted alphabetically.
+     */
+    public function all(): array
 	{
-		$themes = array();
+		$themes = [];
 		foreach ($this->paths as $path)
 		{
 			foreach(new \GlobIterator($path.'*') as $theme)
@@ -612,18 +600,15 @@ class Theme
 			{
 				return $this->active['info'];
 			}
+            // find the value in the active theme info
+            if (($value = \Arr::get($this->active['info'], $var)) !== null) {
+                return $value;
+            }
 
 			// find the value in the active theme info
-			if (($value = \Arr::get($this->active['info'], $var, null)) !== null)
-			{
-				return $value;
-			}
-
-			// and if not found, check the fallback
-			elseif (($value = \Arr::get($this->fallback['info'], $var, null)) !== null)
-			{
-				return $value;
-			}
+			if (($value = \Arr::get($this->fallback['info'], $var)) !== null) {
+                return $value;
+            }
 		}
 
 		// or if we have a specific theme
@@ -641,11 +626,9 @@ class Theme
 	}
 
 	/**
-	 * Set a value in the info array
-	 *
-	 * @return  Theme
-	 */
-	public function set_info($var, $value = null, $type = 'active')
+     * Set a value in the info array
+     */
+    public function set_info($var, $value = null, $type = 'active'): static
 	{
 		if ($type == 'active')
 		{
@@ -683,10 +666,10 @@ class Theme
 		{
 			$path = $this->find($theme);
 			$name = $theme;
-			$theme = array(
+			$theme = [
 				'name' => $name,
 				'path' => $path,
-			);
+			];
 		}
 
 		if ( ! $path)
@@ -694,16 +677,13 @@ class Theme
 			throw new \ThemeException(sprintf('Could not find theme "%s".', $theme));
 		}
 
-		if (($file = $this->find_file($this->config['info_file_name'], array($theme))) == $this->config['info_file_name'])
+		if (($file = $this->find_file($this->config['info_file_name'], [$theme])) == $this->config['info_file_name'])
 		{
 			if ($this->config['require_info_file'])
 			{
 				throw new \ThemeException(sprintf('Theme "%s" is missing "%s".', $name, $this->config['info_file_name']));
 			}
-			else
-			{
-				return array();
-			}
+            return [];
 		}
 
 		return \Config::load($file, false, true);
@@ -736,7 +716,7 @@ class Theme
 			throw new \ThemeException(sprintf('Could not find theme "%s".', $theme['name']));
 		}
 
-		if ( ! ($file = $this->find_file($this->config['info_file_name'], array($theme))))
+		if ( ! ($file = $this->find_file($this->config['info_file_name'], [$theme])))
 		{
 			throw new \ThemeException(sprintf('Theme "%s" is missing "%s".', $theme['name'], $this->config['info_file_name']));
 		}
@@ -745,14 +725,13 @@ class Theme
 	}
 
 	/**
-	 * Enable or disable the use of modules. If enabled, every theme view loaded
-	 * will be prefixed with the module name, so you don't have to hardcode the
-	 * module name as a view file prefix
-	 *
-	 * @param	bool|string  $enable  enable if true or string, disable if false
-	 * @return	Theme
-	 */
-	public function use_modules($enable = true)
+     * Enable or disable the use of modules. If enabled, every theme view loaded
+     * will be prefixed with the module name, so you don't have to hardcode the
+     * module name as a view file prefix
+     *
+     * @param	bool|string  $enable  enable if true or string, disable if false
+     */
+    public function use_modules($enable = true): static
 	{
 		$this->config['use_modules'] = $enable;
 
@@ -774,7 +753,7 @@ class Theme
 	{
 		if ($themes === null)
 		{
-			$themes = array($this->active, $this->fallback);
+			$themes = [$this->active, $this->fallback];
 		}
 
 		// determine the path prefix and optionally the module path
@@ -799,24 +778,21 @@ class Theme
 				: $this->config['view_ext'];
 
 			$file = pathinfo($view, PATHINFO_DIRNAME)
-				? (str_replace(array('/', DS), DS, pathinfo($view, PATHINFO_DIRNAME)).DS)
+				? (str_replace(['/', DS], DS, pathinfo($view, PATHINFO_DIRNAME)).DS)
 				: '';
 			$file .= pathinfo($view, PATHINFO_FILENAME);
 
 			if (empty($theme['find_file']))
 			{
-				if ($module_path and ! empty($theme['name']) and is_file($path = $module_path.$theme['name'].DS.$file.$ext))
-				{
-					return $path;
-				}
-				elseif (is_file($path = $theme['path'].$path_prefix.$file.$ext))
-				{
-					return $path;
-				}
-				elseif (is_file($path = $theme['path'].$file.$ext))
-				{
-					return $path;
-				}
+				if ($module_path and ! empty($theme['name']) and is_file($path = $module_path.$theme['name'].DS.$file.$ext)) {
+                    return $path;
+                }
+                if (is_file($path = $theme['path'].$path_prefix.$file.$ext)) {
+                    return $path;
+                }
+                if (is_file($path = $theme['path'].$file.$ext)) {
+                    return $path;
+                }
 			}
 			else
 			{
@@ -876,10 +852,10 @@ class Theme
 				throw new \ThemeException(sprintf('Theme "%s" could not be found.', $theme));
 			}
 
-			$theme = array(
+			$theme = [
 				'name' => $theme,
 				'path' => $path,
-			);
+			];
 		}
 		else
 		{
@@ -898,10 +874,10 @@ class Theme
 		if ( ! isset($theme['asset_base']))
 		{
 			// determine the asset location and base URL
-			$assets_folder = rtrim($this->config['assets_folder'], DS).'/';
+			$assets_folder = rtrim((string) $this->config['assets_folder'], DS).'/';
 
 			// all theme files are inside the docroot
-			if (strpos($path, DOCROOT) === 0 and is_dir($path.$assets_folder))
+			if (str_starts_with($path, DOCROOT) and is_dir($path.$assets_folder))
 			{
 				$theme['asset_path'] = $path.$assets_folder;
 				$theme['asset_base'] = str_replace(DOCROOT, '', $theme['asset_path']);
@@ -914,7 +890,7 @@ class Theme
 			}
 		}
 
-		if ( ! isset($theme['asset_path']) and strpos($theme['asset_base'], '://') === false)
+		if ( ! isset($theme['asset_path']) and !str_contains($theme['asset_base'], '://'))
 		{
 			$theme['asset_path'] = DOCROOT.$theme['asset_base'];
 		}
@@ -924,7 +900,7 @@ class Theme
 		$theme['asset_path'] = str_replace(DS, '/', $theme['asset_path']);
 
 		// but if on windows, file paths require a backslash
-		if (strpos($theme['asset_base'], '://') === false and DS !== '/')
+		if (!str_contains($theme['asset_base'], '://') and DS !== '/')
 		{
 			$theme['asset_path'] = str_replace('/', DS, $theme['asset_path']);
 		}

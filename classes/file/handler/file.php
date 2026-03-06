@@ -15,16 +15,6 @@ namespace Fuel\Core;
 class File_Handler_File
 {
 	/**
-	 * @var	string	path to the file
-	 */
-	protected $path;
-
-	/**
-	 * @var	File_Area
-	 */
-	protected $area;
-
-	/**
 	 * @var	Resource	file resource
 	 */
 	protected $resource;
@@ -34,13 +24,22 @@ class File_Handler_File
 	 */
 	protected $readonly = false;
 
-	protected function __construct($path, array $config, File_Area $area, $content = array())
-	{
-		$this->path = $path;
-		$this->area = $area;
-	}
+	/**
+     * @param string $path
+     */
+    protected function __construct(
+        /**
+         * @var	string	path to the file
+         */
+        protected $path,
+        array $config,
+        protected \Fuel\Core\File_Area $area,
+        $content = []
+    )
+    {
+    }
 
-	public static function forge($path, array $config = array(), File_Area $area = null, $content = array())
+	public static function forge($path, array $config = [], File_Area $area = null, $content = []): static
 	{
 		$obj = new static($path, $config, \File::instance($area), $content);
 
@@ -79,7 +78,7 @@ class File_Handler_File
 	{
 		$info = pathinfo($this->path);
 
-		$new_name = str_replace(array('..', '/', '\\'), array('', '', ''), $new_name);
+		$new_name = str_replace(['..', '/', '\\'], ['', '', ''], $new_name);
 		$extension = $new_extension === false
 			? $info['extension']
 			: ltrim($new_extension, '.');
@@ -137,7 +136,7 @@ class File_Handler_File
 	public function update($new_content)
 	{
 		$info = pathinfo($this->path);
-		return $this->area->update($info['dirname'], $info['basename'], $new_content, $this);
+		return $this->area->update($info['dirname'], $info['basename'], $new_content);
 	}
 
 	/**

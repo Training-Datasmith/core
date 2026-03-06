@@ -12,43 +12,40 @@
 
 namespace Fuel\Core;
 
-class Pagination
+class Pagination implements \Stringable
 {
 	/**
 	 * @var	array	Pagination instances
 	 */
-	protected static $_instances = array();
+	protected static $_instances = [];
 
 	/**
 	 * @var	array	Pagination default instance
 	 */
-	protected static $_instance = null;
+	protected static $_instance;
 
 	/**
-	 * Init
-	 *
-	 * Loads in the config and sets the variables
-	 *
-	 * @return	void
-	 */
-	public static function _init()
+     * Init
+     *
+     * Loads in the config and sets the variables
+     */
+    public static function _init(): void
 	{
 		\Config::load('pagination', true);
 		\Lang::load('pagination', true);
 	}
 
 	/**
-	 * Static access to the default instance
-	 *
-	 * @param 	string	$name
-	 * @param 	array	$arguments
-	 * @return	mixed
-	 * @throws	\BadMethodCallException if the request method does not exist
-	 */
-	public static function __callStatic($name, $arguments)
+     * Static access to the default instance
+     *
+     * @param 	array	$arguments
+     * @return	mixed
+     * @throws	\BadMethodCallException if the request method does not exist
+     */
+    public static function __callStatic(string $name, array $arguments)
 	{
 		// old pre-1.4 mapping to new instance methods
-		static $mapping = array(
+		static $mapping = [
 			'get'          => '__get',
 			'set'          => '__set',
 			'set_config'   => '__set',
@@ -56,14 +53,14 @@ class Pagination
 			'page_links'   => 'pages_render',
 			'prev_link'    => 'previous',
 			'next_link'    => 'next',
-		);
+		];
 
 		array_key_exists($name, $mapping) and $name = $mapping[$name];
 
 		// call the method on the default instance
 		if ($instance = static::instance() and method_exists($instance, $name))
 		{
-			return call_fuel_func_array(array($instance, $name), $arguments);
+			return call_fuel_func_array([$instance, $name], $arguments);
 		}
 
 		throw new \BadMethodCallException('The pagination class doesn\'t have a method called "'.$name.'"');
@@ -76,7 +73,7 @@ class Pagination
 	 * @param	array $config
 	 * @return	\Pagination	a new pagination instance
 	 */
-	public static function forge($name = 'default', $config = array())
+	public static function forge($name = 'default', $config = [])
 	{
 		if ($exists = static::instance($name))
 		{
@@ -125,7 +122,7 @@ class Pagination
 	/**
 	 * instance configuration values
 	 */
-	protected $config = array(
+	protected $config = [
 		'current_page'            => null,
 		'offset'                  => 0,
 		'per_page'                => 10,
@@ -138,12 +135,12 @@ class Pagination
 		'pagination_url'          => null,
 		'link_offset'             => 0.5,
 		'default_page'            => 'first',
-	);
+	];
 
 	/**
 	 * instance template values
 	 */
-	protected $template = array(
+	protected $template = [
 		'wrapper'                 => "<div class=\"pagination\">\n\t{pagination}\n</div>\n",
 		'first'                   => "<span class=\"first\">\n\t{link}\n</span>\n",
 		'first-marker'            => "&laquo;&laquo;",
@@ -169,26 +166,26 @@ class Pagination
 		'last-link'               => "\t\t<a href=\"{uri}\">{page}</a>\n",
 		'last-inactive'           => "",
 		'last-inactive-link'      => "",
-	);
+	];
 
 	/**
 	 * raw pagination results
 	 */
-	protected $raw_results = array();
+	protected $raw_results = [];
 
 	/**
 	 * @param	array $config
 	 */
-	public function __construct($config = array())
+	public function __construct($config = [])
 	{
 		// make sure config is an array
-		is_array($config) or $config = array('name' => $config);
+		is_array($config) or $config = ['name' => $config];
 
 		// and we have a template name
 		array_key_exists('name', $config) or $config['name'] = \Config::get('pagination.active', 'default');
 
 		// merge the config passed with the defined configuration
-		$config = array_merge(\Config::get('pagination.'.$config['name'], array()), $config);
+		$config = array_merge(\Config::get('pagination.'.$config['name'], []), $config);
 
 		// don't need the template name anymore
 		unset($config['name']);
@@ -204,39 +201,32 @@ class Pagination
 	}
 
 	/**
-	 * configuration value getter
-	 * @param	$name
-	 * @return	mixed
-	 */
-	public function __get($name)
+     * configuration value getter
+     * @param	$name
+     */
+    public function __get(string $name): mixed
 	{
 		// use the calculated page if no current_page is passed
 		if ($name === 'current_page' and $this->config[$name] === null)
 		{
 			$name = 'calculated_page';
 		}
+        if (array_key_exists($name, $this->config)) {
+            return $this->config[$name];
+        }
 
-		if (array_key_exists($name, $this->config))
-		{
-			return $this->config[$name];
-		}
-		elseif (array_key_exists($name, $this->template))
-		{
-			return $this->template[$name];
-		}
-		else
-		{
-			return null;
-		}
+		if (array_key_exists($name, $this->template)) {
+            return $this->template[$name];
+        }
+        return null;
 	}
 
 	/**
-	 * configuration value setter
-	 *
-	 * @param	$name
-	 * @param	mixed $value
-	 */
-	public function __set($name, $value = null)
+     * configuration value setter
+     *
+     * @param	$name
+     */
+    public function __set(string $name, mixed $value = null)
 	{
 		// set the config value
 		$this->_set($name, $value);
@@ -248,9 +238,9 @@ class Pagination
 	/**
 	 * Render the pagination when the object is cast to string
 	 */
-	public function __toString()
+	public function __toString(): string
 	{
-		return $this->render();
+		return (string) $this->render();
 	}
 
 	/**
@@ -259,15 +249,15 @@ class Pagination
 	 * @param	mixed $raw
 	 * @return	mixed	HTML Markup for page number links, or an array of raw pagination data
 	 */
-	public function render($raw = false)
+	public function render($raw = false): array|string
 	{
 		// no links if we only have one page
 		if ($this->config['total_pages'] == 1)
 		{
-			return $raw ? array() : '';
+			return $raw ? [] : '';
 		}
 
-		$this->raw_results = array();
+		$this->raw_results = [];
 
 		$html = str_replace(
 			'{pagination}',
@@ -324,19 +314,19 @@ class Pagination
 			{
 				$html .= str_replace(
 				    '{link}',
-				    str_replace(array('{uri}', '{page}'), array('#', $i), $this->template['active-link']),
+				    str_replace(['{uri}', '{page}'], ['#', $i], $this->template['active-link']),
 				    $this->template['active']
 				);
-				$this->raw_results[] = array('uri' => '#', 'title' => $i, 'type' => 'active');
+				$this->raw_results[] = ['uri' => '#', 'title' => $i, 'type' => 'active'];
 			}
 			else
 			{
 				$html .= str_replace(
 				    '{link}',
-				    str_replace(array('{uri}', '{page}'), array($this->_make_link($i), $i), $this->template['regular-link']),
+				    str_replace(['{uri}', '{page}'], [$this->_make_link($i), $i], $this->template['regular-link']),
 				    $this->template['regular']
 				);
-				$this->raw_results[] = array('uri' => $this->_make_link($i), 'title' => $i, 'type' => 'regular');
+				$this->raw_results[] = ['uri' => $this->_make_link($i), 'title' => $i, 'type' => 'regular'];
 			}
 		}
 
@@ -349,7 +339,7 @@ class Pagination
 	 * @param	string	$marker optional text to display in the link
 	 * @return	string	Markup for the 'first' page number link
 	 */
-	public function first($marker = null)
+	public function first($marker = null): string|array
 	{
 		$html = '';
 
@@ -361,19 +351,19 @@ class Pagination
 			{
 				$html = str_replace(
 					'{link}',
-					str_replace(array('{uri}', '{page}'), array($this->_make_link(1), $marker), $this->template['first-link']),
+					str_replace(['{uri}', '{page}'], [$this->_make_link(1), $marker], $this->template['first-link']),
 					$this->template['first']
 				);
-				$this->raw_results['first'] = array('uri' => $this->_make_link(1), 'title' => $marker, 'type' => 'first');
+				$this->raw_results['first'] = ['uri' => $this->_make_link(1), 'title' => $marker, 'type' => 'first'];
 			}
 			else
 			{
 				$html = str_replace(
 					'{link}',
-					str_replace(array('{uri}', '{page}'), array('#', $marker), $this->template['first-inactive-link']),
+					str_replace(['{uri}', '{page}'], ['#', $marker], $this->template['first-inactive-link']),
 					$this->template['first-inactive']
 				);
-				$this->raw_results['first'] = array('uri' => '#', 'title' => $marker, 'type' => 'first-inactive');
+				$this->raw_results['first'] = ['uri' => '#', 'title' => $marker, 'type' => 'first-inactive'];
 			}
 		}
 
@@ -386,7 +376,7 @@ class Pagination
 	 * @param	string $marker	optional text to display in the link
 	 * @return	string	Markup for the 'previous' page number link
 	 */
-	public function previous($marker = null)
+	public function previous($marker = null): string|array
 	{
 		$html = '';
 
@@ -398,10 +388,10 @@ class Pagination
 			{
 				$html = str_replace(
 				    '{link}',
-				    str_replace(array('{uri}', '{page}'), array('#', $marker), $this->template['previous-inactive-link']),
+				    str_replace(['{uri}', '{page}'], ['#', $marker], $this->template['previous-inactive-link']),
 				    $this->template['previous-inactive']
 				);
-				$this->raw_results['previous'] = array('uri' => '#', 'title' => $marker, 'type' => 'previous-inactive');
+				$this->raw_results['previous'] = ['uri' => '#', 'title' => $marker, 'type' => 'previous-inactive'];
 			}
 			else
 			{
@@ -410,10 +400,10 @@ class Pagination
 
 				$html = str_replace(
 				    '{link}',
-				    str_replace(array('{uri}', '{page}'), array($this->_make_link($previous_page), $marker), $this->template['previous-link']),
+				    str_replace(['{uri}', '{page}'], [$this->_make_link($previous_page), $marker], $this->template['previous-link']),
 				    $this->template['previous']
 				);
-				$this->raw_results['previous'] = array('uri' => $this->_make_link($previous_page), 'title' => $marker, 'type' => 'previous');
+				$this->raw_results['previous'] = ['uri' => $this->_make_link($previous_page), 'title' => $marker, 'type' => 'previous'];
 			}
 		}
 
@@ -426,7 +416,7 @@ class Pagination
 	 * @param	string	$marker optional text to display in the link
 	 * @return	string	Markup for the 'next' page number link
 	 */
-	public function next($marker = null)
+	public function next($marker = null): string|array
 	{
 		$html = '';
 
@@ -438,10 +428,10 @@ class Pagination
 			{
 				$html = str_replace(
 				    '{link}',
-				    str_replace(array('{uri}', '{page}'), array('#', $marker), $this->template['next-inactive-link']),
+				    str_replace(['{uri}', '{page}'], ['#', $marker], $this->template['next-inactive-link']),
 				    $this->template['next-inactive']
 				);
-				$this->raw_results['next'] = array('uri' => '#', 'title' => $marker, 'type' => 'next-inactive');
+				$this->raw_results['next'] = ['uri' => '#', 'title' => $marker, 'type' => 'next-inactive'];
 			}
 			else
 			{
@@ -449,10 +439,10 @@ class Pagination
 
 				$html = str_replace(
 				    '{link}',
-				    str_replace(array('{uri}', '{page}'), array($this->_make_link($next_page), $marker), $this->template['next-link']),
+				    str_replace(['{uri}', '{page}'], [$this->_make_link($next_page), $marker], $this->template['next-link']),
 				    $this->template['next']
 				);
-				$this->raw_results['next'] = array('uri' => $this->_make_link($next_page), 'title' => $marker, 'type' => 'next');
+				$this->raw_results['next'] = ['uri' => $this->_make_link($next_page), 'title' => $marker, 'type' => 'next'];
 			}
 		}
 
@@ -465,7 +455,7 @@ class Pagination
 	 * @param	string $marker optional text to display in the link
 	 * @return	string	Markup for the 'last' page number link
 	 */
-	public function last($marker = null)
+	public function last($marker = null): string|array
 	{
 		$html = '';
 
@@ -477,19 +467,19 @@ class Pagination
 			{
 				$html = str_replace(
 					'{link}',
-					str_replace(array('{uri}', '{page}'), array($this->_make_link($this->config['total_pages']), $marker), $this->template['last-link']),
+					str_replace(['{uri}', '{page}'], [$this->_make_link($this->config['total_pages']), $marker], $this->template['last-link']),
 					$this->template['last']
 				);
-				$this->raw_results['last'] = array('uri' => $this->_make_link($this->config['total_pages']), 'title' => $marker, 'type' => 'last');
+				$this->raw_results['last'] = ['uri' => $this->_make_link($this->config['total_pages']), 'title' => $marker, 'type' => 'last'];
 			}
 			else
 			{
 				$html = str_replace(
 					'{link}',
-					str_replace(array('{uri}', '{page}'), array('#', $marker), $this->template['last-inactive-link']),
+					str_replace(['{uri}', '{page}'], ['#', $marker], $this->template['last-inactive-link']),
 					$this->template['last-inactive']
 				);
-				$this->raw_results['last'] = array('uri' => '#', 'title' => $marker, 'type' => 'last-inactive');
+				$this->raw_results['last'] = ['uri' => '#', 'title' => $marker, 'type' => 'last-inactive'];
 			}
 		}
 
@@ -514,7 +504,7 @@ class Pagination
 			}
 			else
 			{
-				$this->config['calculated_page'] = (int) \Request::main()->uri->get_segment($this->config['uri_segment'], null);
+				$this->config['calculated_page'] = (int) \Request::main()->uri->get_segment($this->config['uri_segment']);
 			}
 		}
 
@@ -562,7 +552,7 @@ class Pagination
 	/**
 	 * Generate a pagination link
 	 */
-	protected function _make_link($page)
+	protected function _make_link($page): string|array
 	{
 		// make sure we have a valid page number
 		empty($page) and $page = 1;
@@ -576,7 +566,7 @@ class Pagination
 		}
 
 		// was a placeholder defined in the url?
-		if (strpos($this->config['pagination_url'], '{page}') === false)
+		if (!str_contains($this->config['pagination_url'], '{page}'))
 		{
 			// break the url in bits so we can insert it
 			$url = parse_url($this->config['pagination_url']);
@@ -588,7 +578,7 @@ class Pagination
 			}
 			else
 			{
-				$url['query'] = array();
+				$url['query'] = [];
 			}
 
 			// make sure we don't destroy any fragments
@@ -605,7 +595,7 @@ class Pagination
 			if (is_numeric($this->config['uri_segment']))
 			{
 				// get the URL segments
-				$segs = isset($url['path']) ? explode('/', trim($url['path'], '/')) : array();
+				$segs = isset($url['path']) ? explode('/', trim($url['path'], '/')) : [];
 
 				// do we have enough segments to insert? we can't fill in any blanks...
 				if (count($segs) < $this->config['uri_segment'] - 1)
@@ -628,7 +618,7 @@ class Pagination
 			unset($url['query']);
 			empty($url['scheme']) or $url['scheme'] .= '://';
 			empty($url['port']) or $url['host'] .= ':';
-			$this->config['pagination_url'] = implode($url).$query;
+			$this->config['pagination_url'] = implode('', $url).$query;
 		}
 
 		// return the page link

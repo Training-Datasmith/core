@@ -13,13 +13,8 @@
 
 namespace Fuel\Core;
 
-class Database_Query
+class Database_Query implements \Stringable
 {
-	/**
-	 * @var  int  Query type
-	 */
-	protected $_type;
-
 	/**
 	 * @var  int  Cache lifetime
 	 */
@@ -28,7 +23,7 @@ class Database_Query
 	/**
 	 * @var  string  Cache key
 	 */
-	protected $_cache_key = null;
+	protected $_cache_key;
 
 	/**
 	 * @var  boolean  Cache all results
@@ -38,17 +33,12 @@ class Database_Query
 	/**
 	 * @var  boolean  To allow restore of the global caching status
 	 */
-	protected $_caching = null;
-
-	/**
-	 * @var  string  SQL statement
-	 */
-	protected $_sql;
+	protected $_caching;
 
 	/**
 	 * @var  array  Quoted query parameters
 	 */
-	protected $_parameters = array();
+	protected $_parameters = [];
 
 	/**
 	 * @var  bool  Return results as associative arrays or objects
@@ -58,26 +48,22 @@ class Database_Query
 	/**
 	 * @var  Database_Connection  Connection to use when compiling the SQL
 	 */
-	protected $_connection = null;
+	protected $_connection;
 
 	/**
-	 * Creates a new SQL query of the specified type.
-	 *
-	 * @param string $sql   query string
-	 * @param integer $type query type: DB::SELECT, DB::INSERT, etc
-	*/
-	public function __construct($sql, $type = null)
-	{
-		$this->_type = $type;
-		$this->_sql = $sql;
-	}
+     * Creates a new SQL query of the specified type.
+     *
+     * @param string $_sql query string
+     * @param integer $_type query type: DB::SELECT, DB::INSERT, etc
+     */
+    public function __construct(protected $_sql, protected $_type = null)
+    {
+    }
 
 	/**
-	 * Return the SQL query string.
-	 *
-	 * @return  string
-	 */
-	final public function __toString()
+     * Return the SQL query string.
+     */
+    final public function __toString(): string
 	{
 		try
 		{
@@ -109,7 +95,7 @@ class Database_Query
 	 *
 	 * @return  $this
 	 */
-	public function cached($lifetime = null, $cache_key = null, $cache_all = true)
+	public function cached($lifetime = null, $cache_key = null, $cache_all = true): static
 	{
 		$this->_lifetime = $lifetime;
 		$this->_cache_all = (bool) $cache_all;
@@ -124,7 +110,7 @@ class Database_Query
 	 *
 	 * @return  $this
 	 */
-	public function caching($bool = null)
+	public function caching($bool = null): static
 	{
 		if (is_bool($bool) or is_null($bool))
 		{
@@ -140,7 +126,7 @@ class Database_Query
 	 *
 	 * @return  $this
 	 */
-	public function as_assoc()
+	public function as_assoc(): static
 	{
 		$this->_as_object = false;
 
@@ -154,7 +140,7 @@ class Database_Query
 	 *
 	 * @return  $this
 	 */
-	public function as_object($class = true)
+	public function as_object($class = true): static
 	{
 		$this->_as_object = $class;
 
@@ -169,7 +155,7 @@ class Database_Query
 	 *
 	 * @return  $this
 	 */
-	public function param($param, $value)
+	public function param($param, $value): static
 	{
 		// Add or overload a new parameter
 		$this->_parameters[$param] = $value;
@@ -185,7 +171,7 @@ class Database_Query
 	 *
 	 * @return $this
 	 */
-	public function bind($param, & $var)
+	public function bind($param, & $var): static
 	{
 		// Bind a value to a variable
 		$this->_parameters[$param] =& $var;
@@ -200,7 +186,7 @@ class Database_Query
 	 *
 	 * @return  $this
 	 */
-	public function parameters(array $params)
+	public function parameters(array $params): static
 	{
 		// Merge the new parameters in
 		$this->_parameters = $params + $this->_parameters;
@@ -215,7 +201,7 @@ class Database_Query
 	 *
 	 * @return  $this
 	 */
-	public function set_connection($db)
+	public function set_connection($db): static
 	{
 		if ( ! $db instanceof \Database_Connection)
 		{
@@ -228,14 +214,12 @@ class Database_Query
 	}
 
 	/**
-	 * Compile the SQL query and return it. Replaces any parameters with their
-	 * given values.
-	 *
-	 * @param   mixed $db Database instance or instance name
-	 *
-	 * @return  string
-	 */
-	public function compile($db = null)
+     * Compile the SQL query and return it. Replaces any parameters with their
+     * given values.
+     *
+     * @param   mixed $db Database instance or instance name
+     */
+    public function compile($db = null): string
 	{
 		if ($this->_connection !== null and $db === null)
 		{
@@ -254,13 +238,13 @@ class Database_Query
 		if ( ! empty($this->_parameters))
 		{
 			// Quote all of the values
-			$values = array_map(array($db, 'quote'), $this->_parameters);
+			$values = array_map([$db, 'quote'], $this->_parameters);
 
 			// Replace the values in the SQL
 			$sql = \Str::tr($sql, $values);
 		}
 
-		return trim($sql);
+		return trim((string) $sql);
 	}
 
 	/**
@@ -294,28 +278,13 @@ class Database_Query
 		{
 			// get the SQL statement type without having to duplicate the entire statement
 			$stmt = preg_split('/[\s]+/', ltrim(substr($sql, 0, 11), '('), 2);
-			switch(strtoupper(reset($stmt)))
-			{
-				case 'DESCRIBE':
-				case 'EXECUTE':
-				case 'EXPLAIN':
-				case 'SELECT':
-				case 'SHOW':
-					$this->_type = \DB::SELECT;
-					break;
-				case 'INSERT':
-				case 'REPLACE':
-					$this->_type = \DB::INSERT;
-					break;
-				case 'UPDATE':
-					$this->_type = \DB::UPDATE;
-					break;
-				case 'DELETE':
-					$this->_type = \DB::DELETE;
-					break;
-				default:
-					$this->_type = 0;
-			}
+			$this->_type = match (strtoupper(reset($stmt))) {
+                'DESCRIBE', 'EXECUTE', 'EXPLAIN', 'SELECT', 'SHOW' => \DB::SELECT,
+                'INSERT', 'REPLACE' => \DB::INSERT,
+                'UPDATE' => \DB::UPDATE,
+                'DELETE' => \DB::DELETE,
+                default => 0,
+            };
 		}
 
 		// fetch the result caching flag
@@ -330,7 +299,7 @@ class Database_Query
 			{
 				return $db->cache($cache->get(), $sql, $this->_as_object);
 			}
-			catch (\CacheNotFoundException $e) {}
+			catch (\CacheNotFoundException) {}
 		}
 
 		// Execute the query

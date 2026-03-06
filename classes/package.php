@@ -31,7 +31,7 @@ class Package
 	/**
 	 * @var  array  $packages  Holds all the loaded package information.
 	 */
-	protected static $packages = array();
+	protected static $packages = [];
 
 	/**
 	 * Loads the given package.  If a path is not given, if will search through
@@ -68,8 +68,8 @@ class Package
 		// if no path is given, try to locate the package
 		if ($path === null)
 		{
-			$paths = \Config::get('package_paths', array());
-			empty($paths) and $paths = array(PKGPATH);
+			$paths = \Config::get('package_paths', []);
+			empty($paths) and $paths = [PKGPATH];
 
 			if ( ! empty($paths))
 			{
@@ -97,12 +97,11 @@ class Package
 	}
 
 	/**
-	 * Unloads a package from the stack.
-	 *
-	 * @param   string  $package  The package name
-	 * @return  void
-	 */
-	public static function unload($package)
+     * Unloads a package from the stack.
+     *
+     * @param   string  $package  The package name
+     */
+    public static function unload($package): void
 	{
 		\Finder::instance()->remove_path(static::$packages[$package]);
 		unset(static::$packages[$package]);
@@ -137,20 +136,16 @@ class Package
 		{
 			return static::$packages[$package];
 		}
-		else
-		{
-			$paths = \Config::get('package_paths', array());
-			empty($paths) and $paths = array(PKGPATH);
-			$package = strtolower($package);
-
-			foreach ($paths as $path)
+        $paths = \Config::get('package_paths', []);
+        empty($paths) and $paths = [PKGPATH];
+        $package = strtolower($package);
+        foreach ($paths as $path)
 			{
 				if (is_dir($path.$package))
 				{
 					return $path.$package.DS;
 				}
 			}
-		}
 
 		return false;
 	}

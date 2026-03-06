@@ -20,12 +20,12 @@ class Config_Memcached implements Config_Interface
 	/**
 	 * @var array of driver config defaults
 	 */
-	protected static $config = array(
+	protected static $config = [
 		'identifier' => 'config',
-		'servers' => array(
-			array('host' => '127.0.0.1', 'port' => 11211, 'weight' => 100),
-		),
-	);
+		'servers' => [
+			['host' => '127.0.0.1', 'port' => 11211, 'weight' => 100],
+		],
+	];
 
 	/**
 	 * @var \Memcached	storage for the memcached object
@@ -37,9 +37,9 @@ class Config_Memcached implements Config_Interface
 	 *
 	 * @throws \FuelException
 	 */
-	public static function _init()
+	public static function _init(): void
 	{
-		static::$config = array_merge(static::$config, \Config::get('config.memcached', array()));
+		static::$config = array_merge(static::$config, \Config::get('config.memcached', []));
 
 		if (static::$memcached === false)
 		{
@@ -68,13 +68,9 @@ class Config_Memcached implements Config_Interface
 		}
 	}
 
-	// --------------------------------------------------------------------
-
-	protected $identifier;
-
 	protected $ext = '.mem';
 
-	protected $vars = array();
+	protected array $vars;
 
 	/**
 	 * Sets up the file to be parsed and variables
@@ -82,16 +78,14 @@ class Config_Memcached implements Config_Interface
 	 * @param   string  $identifier  Config identifier name
 	 * @param   array   $vars        Variables to parse in the data retrieved
 	 */
-	public function __construct($identifier = null, $vars = array())
+	public function __construct(protected $identifier = null, $vars = [])
 	{
-		$this->identifier = $identifier;
-
-		$this->vars = array(
+		$this->vars = [
 			'APPPATH' => APPPATH,
 			'COREPATH' => COREPATH,
 			'PKGPATH' => PKGPATH,
 			'DOCROOT' => DOCROOT,
-		) + $vars;
+		] + $vars;
 	}
 
 	/**
@@ -106,7 +100,7 @@ class Config_Memcached implements Config_Interface
 		// fetch the config data from the Memcached server
 		$result = static::$memcached->get(static::$config['identifier'].'_'.$this->identifier);
 
-		return $result === false ? array() : $result;
+		return $result === false ? [] : $result;
 	}
 
 	/**
@@ -142,7 +136,7 @@ class Config_Memcached implements Config_Interface
 	 * @param   array  $array  array to be prepped
 	 * @return  array  prepped array
 	 */
-	protected function prep_vars(&$array)
+	protected function prep_vars(array &$array)
 	{
 		static $replacements = false;
 
@@ -150,7 +144,7 @@ class Config_Memcached implements Config_Interface
 		{
 			foreach ($this->vars as $i => $v)
 			{
-				$replacements['#^('.preg_quote($v).'){1}(.*)?#'] = "%".$i."%$2";
+				$replacements['#^('.preg_quote((string) $v).'){1}(.*)?#'] = "%".$i."%$2";
 			}
 		}
 
@@ -173,7 +167,7 @@ class Config_Memcached implements Config_Interface
 	 * @param   $contents  $contents    config array to save
 	 * @throws  \FuelException
 	 */
-	public function save($contents)
+	public function save($contents): void
 	{
 		// write it to the memcached server
 		if (static::$memcached->set(static::$config['identifier'].'_'.$this->identifier, $contents, 0) === false)

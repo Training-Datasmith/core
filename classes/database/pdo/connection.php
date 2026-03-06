@@ -27,10 +27,9 @@ class Database_PDO_Connection extends \Database_Connection
 	protected $_identifier = '';
 
 	/**
-	 * @param string $name
-	 * @param array  $config
-	 */
-	protected function __construct($name, array $config)
+     * @param string $name
+     */
+    protected function __construct($name, array $config)
 	{
 		// example of constructing a custom schema driver
 		# $this->_schema = new \Database_<drivername>_Schema($name, $this);
@@ -39,12 +38,12 @@ class Database_PDO_Connection extends \Database_Connection
 		parent::__construct($name, $config);
 
 		// add default attributes and config values for those missing
-		$this->_config = \Arr::merge(array(
-			'attrs'        => array(
+		$this->_config = \Arr::merge([
+			'attrs'        => [
 				\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-			),
+			],
 			'cached'       => false,
-		), $this->_config);
+		], $this->_config);
 
 		// convert generic config values to specific attributes
 		if ( ! empty($this->_config['connection']['persistent']))
@@ -59,7 +58,7 @@ class Database_PDO_Connection extends \Database_Connection
 	 *
 	 * @throws \Database_Exception
 	 */
-	public function connect()
+	public function connect(): void
 	{
 		if ($this->_connection)
 		{
@@ -120,7 +119,7 @@ class Database_PDO_Connection extends \Database_Connection
 	 *
 	 * @param string $charset
 	 */
-	public function set_charset($charset)
+	public function set_charset($charset): void
 	{
 		// Make sure the database is connected
 		$this->_connection or $this->connect();
@@ -165,7 +164,7 @@ class Database_PDO_Connection extends \Database_Connection
 			$paths = \Config::get('profiling_paths');
 
 			// Storage for the trace information
-			$stacktrace = array();
+			$stacktrace = [];
 
 			// Get the execution trace of this query
 			$include = false;
@@ -175,9 +174,9 @@ class Database_PDO_Connection extends \Database_Connection
 				if ($index > 0 and empty($page['file']) === false)
 				{
 					// Checks to see what paths you want backtrace
-					foreach($paths as $index => $path)
+					foreach($paths as $path)
 					{
-						if (strpos($page['file'], $path) !== false)
+						if (str_contains($page['file'], $path))
 						{
 							$include = true;
 							break;
@@ -187,7 +186,7 @@ class Database_PDO_Connection extends \Database_Connection
 					// Only log if no paths we defined, or we have a path match
 					if ($include or empty($paths))
 					{
-						$stacktrace[] = array('file' => \Fuel::clean_path($page['file']), 'line' => $page['line']);
+						$stacktrace[] = ['file' => \Fuel::clean_path($page['file']), 'line' => $page['line']];
 					}
 				}
 			}
@@ -212,7 +211,7 @@ class Database_PDO_Connection extends \Database_Connection
 				if ($attempts > 0)
 				{
 					// try reconnecting if it was a MySQL disconnected error
-					if (strpos($e->getMessage(), '2006 MySQL') !== false)
+					if (str_contains($e->getMessage(), '2006 MySQL'))
 					{
 						$this->disconnect();
 						$this->connect();
@@ -281,34 +280,28 @@ class Database_PDO_Connection extends \Database_Connection
 
 		// Set the last query
 		$this->last_query = $sql;
-
-		if ($type === \DB::SELECT)
-		{
-			// if no custom caching is given, use the global setting
-			if ($caching)
+        if ($type === \DB::SELECT) {
+            // if no custom caching is given, use the global setting
+            if ($caching)
 			{
 				// Return an iterator of results
 				return new \Database_PDO_Cached($result, $sql, $as_object);
 			}
-			else
-			{
-				// Return an iterator of results
-				return new \Database_PDO_Result($result, $sql, $as_object);
-			}
-		}
-		elseif ($type === \DB::INSERT)
-		{
-			// Return a list of insert id and rows created
-			return array(
+            // Return an iterator of results
+            return new \Database_PDO_Result($result, $sql, $as_object);
+        }
+        if ($type === \DB::INSERT) {
+            // Return a list of insert id and rows created
+            return [
 				$this->_connection->lastInsertId(),
 				$result->rowCount(),
-			);
-		}
-		elseif ($type === \DB::UPDATE or $type === \DB::DELETE)
-		{
-			// Return the number of rows affected
-			return $result->errorCode() === '00000' ? $result->rowCount() : -1;
-		}
+			];
+        }
+
+		if ($type === \DB::UPDATE or $type === \DB::DELETE) {
+            // Return the number of rows affected
+            return $result->errorCode() === '00000' ? $result->rowCount() : -1;
+        }
 
 		return $result->errorCode() === '00000' ? true : false;
 	}
@@ -322,7 +315,7 @@ class Database_PDO_Connection extends \Database_Connection
 	 */
 	public function list_tables($like = null)
 	{
-		throw new \FuelException('Database method '.__METHOD__.' is not supported by '.__CLASS__);
+		throw new \FuelException('Database method '.__METHOD__.' is not supported by '.self::class);
 	}
 
 	/**
@@ -340,15 +333,15 @@ class Database_PDO_Connection extends \Database_Connection
 		$q->execute();
 		$result  = $q->fetchAll();
 		$count   = 0;
-		$columns = array();
+		$columns = [];
 		! is_null($like) and $like = str_replace('%', '.*', $like);
 		foreach ($result as $row)
 		{
-			if ( ! is_null($like) and ! preg_match('#'.$like.'#', $row['Field']))
+			if ( ! is_null($like) and ! preg_match('#'.$like.'#', (string) $row['Field']))
 			{
 				continue;
 			}
-			list($type, $length) = $this->_parse_type($row['Type']);
+			[$type, $length] = $this->_parse_type($row['Type']);
 
 			$column = $this->datatype($type);
 
@@ -362,7 +355,7 @@ class Database_PDO_Connection extends \Database_Connection
 				case 'float':
 					if (isset($length))
 					{
-						list($column['numeric_precision'], $column['numeric_scale']) = explode(',', $length);
+						[$column['numeric_precision'], $column['numeric_scale']] = explode(',', $length);
 					}
 					break;
 				case 'int':
@@ -387,23 +380,23 @@ class Database_PDO_Connection extends \Database_Connection
 						case 'tinytext':
 						case 'mediumtext':
 						case 'longtext':
-							$column['collation_name'] = isset($row['Collation']) ? $row['Collation'] : null;
+							$column['collation_name'] = $row['Collation'] ?? null;
 							break;
 
 						case 'enum':
 						case 'set':
-							$column['collation_name'] = isset($row['Collation']) ? $row['Collation'] : null;
-							$column['options']        = explode('\',\'', substr($length, 1, - 1));
+							$column['collation_name'] = $row['Collation'] ?? null;
+							$column['options']        = explode('\',\'', substr((string) $length, 1, - 1));
 							break;
 					}
 					break;
 			}
 
 			// MySQL attributes
-			$column['comment']    = isset($row['Comment']) ? $row['Comment'] : null;
+			$column['comment']    = $row['Comment'] ?? null;
 			$column['extra']      = $row['Extra'];
 			$column['key']        = $row['Key'];
-			$column['privileges'] = isset($row['Privileges']) ? $row['Privileges'] : null;
+			$column['privileges'] = $row['Privileges'] ?? null;
 
 			$columns[$row['Field']] = $column;
 		}
@@ -420,7 +413,7 @@ class Database_PDO_Connection extends \Database_Connection
 	 */
 	public function list_indexes($table, $like = null)
 	{
-		throw new \FuelException('Database method '.__METHOD__.' is not supported by '.__CLASS__);
+		throw new \FuelException('Database method '.__METHOD__.' is not supported by '.self::class);
 	}
 
 	/**
@@ -450,7 +443,7 @@ class Database_PDO_Connection extends \Database_Connection
 		$datatype = parent::datatype($type);
 
 		// if not an ANSI database, assume it's string
-		return empty($datatype) ? array('type' => 'string') : $datatype;
+		return empty($datatype) ? ['type' => 'string'] : $datatype;
 	}
 
 	/**

@@ -35,7 +35,7 @@ class Lang_Php extends \Lang_File
 	/**
 	 * check the status of any opcache mechanism in use
 	 */
-	public static function _init()
+	public static function _init(): void
 	{
 		// do we have Opcache active?
 		static::$uses_opcache = (PHP_VERSION_ID >= 50500 and function_exists('opcache_invalidate'));
@@ -130,7 +130,6 @@ class Lang_Php extends \Lang_File
 <?php
 
 CONF;
-		$output .= 'return '.str_replace(array('  ', 'array (', '\''.APPPATH, '\''.DOCROOT, '\''.COREPATH, '\''.PKGPATH), array("\t", 'array(', 'APPPATH.\'', 'DOCROOT.\'', 'COREPATH.\'', 'PKGPATH.\''), var_export($contents, true)).";\n";
-		return $output;
+		return $output . ('return ' . str_replace(['  ', 'array (', '\''.APPPATH, '\''.DOCROOT, '\''.COREPATH, '\''.PKGPATH], ["\t", 'array(', 'APPPATH.\'', 'DOCROOT.\'', 'COREPATH.\'', 'PKGPATH.\''], var_export($contents, true)) . ";\n");
 	}
 }

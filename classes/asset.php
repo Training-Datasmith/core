@@ -30,44 +30,42 @@ class Asset
 	 *
 	 * @var  array
 	 */
-	protected static $_instance = null;
+	protected static $_instance;
 
 	/**
 	 * All the Asset instances
 	 *
 	 * @var  array
 	 */
-	protected static $_instances = array();
+	protected static $_instances = [];
 
 	/**
 	 * Default configuration values
 	 *
 	 * @var  array
 	 */
-	protected static $default_config = array(
-		'paths' => array('assets/'),
+	protected static $default_config = [
+		'paths' => ['assets/'],
 		'img_dir' => 'img/',
 		'js_dir' => 'js/',
 		'css_dir' => 'css/',
-		'folders' => array(
-			'css' => array(),
-			'js'  => array(),
-			'img' => array(),
-		),
+		'folders' => [
+			'css' => [],
+			'js'  => [],
+			'img' => [],
+		],
 		'url' => '/',
 		'add_mtime' => true,
 		'indent_level' => 1,
 		'indent_with' => "\t",
 		'auto_render' => true,
 		'fail_silently' => false,
-	);
+	];
 
 	/**
-	 * This is called automatically by the Autoloader.  It loads in the config
-	 *
-	 * @return  void
-	 */
-	public static function _init()
+     * This is called automatically by the Autoloader.  It loads in the config
+     */
+    public static function _init(): void
 	{
 		\Config::load('asset', true, false, true);
 	}
@@ -105,7 +103,7 @@ class Asset
 	 * @param   array  $config  default config overrides
 	 * @return  Asset_Instance
 	 */
-	public static function forge($name = 'default', array $config = array())
+	public static function forge($name = 'default', array $config = [])
 	{
 		if ($exists = static::instance($name))
 		{
@@ -124,25 +122,23 @@ class Asset
 	}
 
 	/**
-	 * Adds the given path to the front of the asset paths array.  It adds paths
-	 * in a way so that asset paths are used First in Last Out.
-	 *
-	 * @param   string $path    the path to add
-	 * @param   string $type    optional path type (js, css or img)
-	 * @return  void
-	 */
-	public static function add_path($path, $type = null)
+     * Adds the given path to the front of the asset paths array.  It adds paths
+     * in a way so that asset paths are used First in Last Out.
+     *
+     * @param   string $path    the path to add
+     * @param   string $type    optional path type (js, css or img)
+     */
+    public static function add_path($path, $type = null): void
 	{
 		static::instance()->add_path($path, $type);
 	}
 
 	/**
-	 * Removes the given path from the asset paths array
-	 *
-	 * @param   string $path the path to remove
-	 * @return  void
-	 */
-	public static function remove_path($path, $type = null)
+     * Removes the given path from the asset paths array
+     *
+     * @param   string $path the path to remove
+     */
+    public static function remove_path($path, $type = null): void
 	{
 		static::instance()->remove_path($path, $type);
 	}
@@ -174,13 +170,13 @@ class Asset
 	 * @return  mixed
 	 * @throws  \BadMethodCallException
 	 */
-	public static function __callStatic($method, $args)
+	public static function __callStatic(string $method, array $args)
 	{
 		// get the default instance
 		$instance = static::instance();
 
 		// call the reqiested method
-		return call_user_func_array(array($instance, $method), $args);
+		return call_user_func_array([$instance, $method], $args);
 	}
 
 	// --------------------------------------------------------------------
@@ -196,7 +192,7 @@ class Asset
 	 * @param	bool	$raw			whether to return the raw file or not when group is not set
 	 * @return	string
 	 */
-	public static function css($stylesheets = array(), $attr = array(), $group = NULL, $raw = false)
+	public static function css($stylesheets = [], $attr = [], $group = NULL, $raw = false)
 	{
 		return static::instance()->assettype('css', $stylesheets, $attr, $group, $raw);
 	}
@@ -214,7 +210,7 @@ class Asset
 	 * @param   bool    $raw		whether to return the raw file or not when group is not set
 	 * @return	string
 	 */
-	public static function js($scripts = array(), $attr = array(), $group = NULL, $raw = false)
+	public static function js($scripts = [], $attr = [], $group = NULL, $raw = false)
 	{
 		return static::instance()->assettype('js', $scripts, $attr, $group, $raw);
 	}
@@ -232,7 +228,7 @@ class Asset
 	 * @param	string	$group  The asset group name
 	 * @return	string
 	 */
-	public static function img($images = array(), $attr = array(), $group = NULL)
+	public static function img($images = [], $attr = [], $group = NULL)
 	{
 		return static::instance()->assettype('img', $images, $attr, $group);
 	}

@@ -14,12 +14,12 @@ namespace Fuel\Core;
 
 class Cache_Handler_Serialized implements \Cache_Handler_Driver
 {
-	public function readable($contents)
+	public function readable($contents): mixed
 	{
 		return unserialize($contents);
 	}
 
-	public function writable($contents)
+	public function writable($contents): string
 	{
 		return serialize($contents);
 	}

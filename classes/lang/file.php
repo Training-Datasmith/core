@@ -17,11 +17,7 @@ namespace Fuel\Core;
  */
 abstract class Lang_File implements Lang_Interface
 {
-	protected $file;
-
-	protected $languages = array();
-
-	protected $vars = array();
+	protected array $vars;
 
 	/**
 	 * Sets up the file to be parsed and variables
@@ -30,18 +26,14 @@ abstract class Lang_File implements Lang_Interface
 	 * @param   array   $languages  Languages to scan for the lang file
 	 * @param   array   $vars       Variables to parse in the file
 	 */
-	public function __construct($file = null, $languages = array(), $vars = array())
+	public function __construct(protected $file = null, protected $languages = [], $vars = [])
 	{
-		$this->file = $file;
-
-		$this->languages = $languages;
-
-		$this->vars = array(
+		$this->vars = [
 			'APPPATH' => APPPATH,
 			'COREPATH' => COREPATH,
 			'PKGPATH' => PKGPATH,
 			'DOCROOT' => DOCROOT,
-		) + $vars;
+		] + $vars;
 	}
 
 	/**
@@ -54,7 +46,7 @@ abstract class Lang_File implements Lang_Interface
 	{
 		$paths = $this->find_file();
 
-		$lang = array();
+		$lang = [];
 
 		foreach ($paths as $path)
 		{
@@ -99,7 +91,7 @@ abstract class Lang_File implements Lang_Interface
 	 * @param   array  $array  array to be prepped
 	 * @return  array  prepped array
 	 */
-	protected function prep_vars(&$array)
+	protected function prep_vars(array &$array)
 	{
 		static $replacements = false;
 
@@ -107,7 +99,7 @@ abstract class Lang_File implements Lang_Interface
 		{
 			foreach ($this->vars as $i => $v)
 			{
-				$replacements['#^('.preg_quote($v).'){1}(.*)?#'] = "%".$i."%$2";
+				$replacements['#^('.preg_quote((string) $v).'){1}(.*)?#'] = "%".$i."%$2";
 			}
 		}
 
@@ -132,7 +124,7 @@ abstract class Lang_File implements Lang_Interface
 	 */
 	protected function find_file()
 	{
-		$paths = array();
+		$paths = [];
 		foreach ($this->languages as $lang)
 		{
 			$paths = array_merge($paths, \Finder::search('lang'.DS.$lang, $this->file, $this->ext, true));

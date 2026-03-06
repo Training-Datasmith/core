@@ -23,12 +23,12 @@ class Database_Query_Builder_Update extends \Database_Query_Builder_Where
 	/**
 	 * @var array  $_set  update values
 	 */
-	protected $_set = array();
+	protected $_set = [];
 
 	/**
 	 * @var array  $_join  join statements
 	 */
-	protected $_join = array();
+	protected $_join = [];
 
 	/**
 	 * @var Database_Query_Builder_Join  $_last_join  last join statement
@@ -36,13 +36,11 @@ class Database_Query_Builder_Update extends \Database_Query_Builder_Where
 	protected $_last_join;
 
 	/**
-	 * Set the table for a update.
-	 *
-	 * @param  mixed  $table  table name or array($table, $alias) or object
-	 *
-	 * @return  void
-	 */
-	public function __construct($table = NULL)
+     * Set the table for a update.
+     *
+     * @param  mixed  $table  table name or array($table, $alias) or object
+     */
+    public function __construct($table = NULL)
 	{
 		if ($table)
 		{
@@ -79,7 +77,7 @@ class Database_Query_Builder_Update extends \Database_Query_Builder_Where
 	{
 		foreach ($pairs as $column => $value)
 		{
-			$this->_set[] = array($column, $value);
+			$this->_set[] = [$column, $value];
 		}
 
 		return $this;
@@ -95,7 +93,7 @@ class Database_Query_Builder_Update extends \Database_Query_Builder_Where
 	 */
 	public function value($column, $value)
 	{
-		$this->_set[] = array($column, $value);
+		$this->_set[] = [$column, $value];
 
 		return $this;
 	}
@@ -156,13 +154,13 @@ class Database_Query_Builder_Update extends \Database_Query_Builder_Where
 	public function reset()
 	{
 		$this->_table      = null;
-		$this->_join       = array();
-		$this->_set        = array();
-		$this->_where      = array();
-		$this->_order_by   = array();
+		$this->_join       = [];
+		$this->_set        = [];
+		$this->_where      = [];
+		$this->_order_by   = [];
 		$this->_limit      = null;
 		$this->_last_join  = null;
-		$this->_parameters = array();
+		$this->_parameters = [];
 
 		return $this;
 	}

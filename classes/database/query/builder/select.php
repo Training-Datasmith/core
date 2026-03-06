@@ -18,7 +18,7 @@ class Database_Query_Builder_Select extends \Database_Query_Builder_Where
 	/**
 	 * @var array  $_select  columns to select
 	 */
-	protected $_select = array();
+	protected $_select = [];
 
 	/**
 	 * @var bool  $_distinct  whether to select distinct values
@@ -28,27 +28,27 @@ class Database_Query_Builder_Select extends \Database_Query_Builder_Where
 	/**
 	 * @var array  $_from  table name
 	 */
-	protected $_from = array();
+	protected $_from = [];
 
 	/**
 	 * @var array  $_join  join objects
 	 */
-	protected $_join = array();
+	protected $_join = [];
 
 	/**
 	 * @var array  $_group_by  group by clauses
 	 */
-	protected $_group_by = array();
+	protected $_group_by = [];
 
 	/**
 	 * @var array  $_having  having clauses
 	 */
-	protected $_having = array();
+	protected $_having = [];
 
 	/**
 	 * @var integer  $_offset  offset
 	 */
-	protected $_offset = null;
+	protected $_offset;
 
 	/**
 	 * @var  Database_Query_Builder_Join  $_last_join  last join statement
@@ -262,7 +262,7 @@ class Database_Query_Builder_Select extends \Database_Query_Builder_Where
 	 */
 	public function having($column, $op = null, $value = null)
 	{
-		return call_fuel_func_array(array($this, 'and_having'), func_get_args());
+		return call_fuel_func_array($this->and_having(...), func_get_args());
 	}
 
 	/**
@@ -290,7 +290,7 @@ class Database_Query_Builder_Select extends \Database_Query_Builder_Where
 			$op = '=';
 		}
 
-		$this->_having[] = array('AND' => array($column, $op, $value));
+		$this->_having[] = ['AND' => [$column, $op, $value]];
 
 		return $this;
 	}
@@ -320,7 +320,7 @@ class Database_Query_Builder_Select extends \Database_Query_Builder_Where
 			$op = '=';
 		}
 
-		$this->_having[] = array('OR' => array($column, $op, $value));
+		$this->_having[] = ['OR' => [$column, $op, $value]];
 
 		return $this;
 	}
@@ -342,7 +342,7 @@ class Database_Query_Builder_Select extends \Database_Query_Builder_Where
 	 */
 	public function and_having_open()
 	{
-		$this->_having[] = array('AND' => '(');
+		$this->_having[] = ['AND' => '('];
 
 		return $this;
 	}
@@ -354,7 +354,7 @@ class Database_Query_Builder_Select extends \Database_Query_Builder_Where
 	 */
 	public function or_having_open()
 	{
-		$this->_having[] = array('OR' => '(');
+		$this->_having[] = ['OR' => '('];
 
 		return $this;
 	}
@@ -376,7 +376,7 @@ class Database_Query_Builder_Select extends \Database_Query_Builder_Where
 	 */
 	public function and_having_close()
 	{
-		$this->_having[] = array('AND' => ')');
+		$this->_having[] = ['AND' => ')'];
 
 		return $this;
 	}
@@ -388,7 +388,7 @@ class Database_Query_Builder_Select extends \Database_Query_Builder_Where
 	 */
 	public function or_having_close()
 	{
-		$this->_having[] = array('OR' => ')');
+		$this->_having[] = ['OR' => ')'];
 
 		return $this;
 	}
@@ -423,10 +423,10 @@ class Database_Query_Builder_Select extends \Database_Query_Builder_Where
 		}
 
 		// Callback to quote identifiers
-		$quote_ident = array($db, 'quote_identifier');
+		$quote_ident = [$db, 'quote_identifier'];
 
 		// Callback to quote tables
-		$quote_table = array($db, 'quote_table');
+		$quote_table = [$db, 'quote_table'];
 
 		// Start a selection query
 		$query = 'SELECT ';
@@ -505,18 +505,18 @@ class Database_Query_Builder_Select extends \Database_Query_Builder_Where
 	 */
 	public function reset()
 	{
-		$this->_select   = array();
-		$this->_from     = array();
-		$this->_join     = array();
-		$this->_where    = array();
-		$this->_group_by = array();
-		$this->_having   = array();
-		$this->_order_by = array();
+		$this->_select   = [];
+		$this->_from     = [];
+		$this->_join     = [];
+		$this->_where    = [];
+		$this->_group_by = [];
+		$this->_having   = [];
+		$this->_order_by = [];
 		$this->_distinct = false;
 		$this->_limit     = null;
 		$this->_offset    = null;
 		$this->_last_join = null;
-		$this->_parameters = array();
+		$this->_parameters = [];
 
 		return $this;
 	}

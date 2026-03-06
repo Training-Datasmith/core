@@ -97,10 +97,10 @@ class Database_Query_Builder_Delete extends \Database_Query_Builder_Where
 	{
 		$this->_table = NULL;
 
-		$this->_where    = array();
-		$this->_order_by = array();
+		$this->_where    = [];
+		$this->_order_by = [];
 
-		$this->_parameters = array();
+		$this->_parameters = [];
 
 		$this->_limit = NULL;
 

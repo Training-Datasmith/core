@@ -25,7 +25,7 @@ namespace Fuel\Core;
  * @package     Fuel
  * @subpackage  Core
  */
-class Request
+class Request implements \Stringable
 {
 	/**
 	 * Holds the main request instance
@@ -57,8 +57,8 @@ class Request
 	 */
 	public static function forge($uri = null, $options = true, $method = null)
 	{
-		is_bool($options) and $options = array('route' => $options);
-		is_string($options) and $options = array('driver' => $options);
+		is_bool($options) and $options = ['route' => $options];
+		is_string($options) and $options = ['driver' => $options];
 
 		if ( ! empty($options['driver']))
 		{
@@ -66,7 +66,7 @@ class Request
 			return $class::forge($uri, $options, $method);
 		}
 
-		$request = new static($uri, isset($options['route']) ? $options['route'] : true, $method);
+		$request = new static($uri, $options['route'] ?? true, $method);
 		if (static::$active)
 		{
 			$request->parent = static::$active;
@@ -115,34 +115,30 @@ class Request
 	}
 
 	/**
-	 * Returns the current request is an HMVC request
-	 *
-	 * Usage:
-	 *
-	 *     if (Request::is_hmvc())
-	 *     {
-	 *         // Do something special...
-	 *         return;
-	 *     }
-	 *
-	 * @return  bool
-	 */
-	public static function is_hmvc()
+     * Returns the current request is an HMVC request
+     *
+     * Usage:
+     *
+     *     if (Request::is_hmvc())
+     *     {
+     *         // Do something special...
+     *         return;
+     *     }
+     */
+    public static function is_hmvc(): bool
 	{
 		return ((\Fuel::$is_cli and static::main()) or static::active() !== static::main());
 	}
 
 	/**
-	 * Reset's the active request with the previous one.  This is needed after
-	 * the active request is finished.
-	 *
-	 * Usage:
-	 *
-	 *    Request::reset_request();
-	 *
-	 * @return  void
-	 */
-	public static function reset_request($full = false)
+     * Reset's the active request with the previous one.  This is needed after
+     * the active request is finished.
+     *
+     * Usage:
+     *
+     *    Request::reset_request();
+     */
+    public static function reset_request($full = false): void
 	{
 		// Let's make the previous Request active since we are done executing this one.
 		static::$active and static::$active = static::$active->parent();
@@ -158,33 +154,26 @@ class Request
 	 *
 	 * @var  Response
 	 */
-	public $response = null;
-
-	/**
-	 * The Request's URI object.
-	 *
-	 * @var  Uri
-	 */
-	public $uri = null;
+	public $response;
 
 	/**
 	 * The request's route object
 	 *
 	 * @var  Route
 	 */
-	public $route = null;
+	public $route;
 
 	/**
 	 * The Request's INPUT object.
 	 *
 	 * @var  Input_Instance
 	 */
-	protected $input = null;
+	protected $input;
 
 	/**
 	 * @var  string  $method  request method
 	 */
-	protected $method = null;
+	protected $method;
 
 	/**
 	 * The current module
@@ -219,14 +208,14 @@ class Request
 	 *
 	 * @var  array
 	 */
-	public $method_params = array();
+	public $method_params = [];
 
 	/**
 	 * The request's named params
 	 *
 	 * @var  array
 	 */
-	public $named_params = array();
+	public $named_params = [];
 
 	/**
 	 * Controller instance once instantiated
@@ -240,21 +229,21 @@ class Request
 	 *
 	 * @var  array
 	 */
-	public $paths = array();
+	public $paths = [];
 
 	/**
 	 * Request that created this one
 	 *
 	 * @var  Request
 	 */
-	protected $parent = null;
+	protected $parent;
 
 	/**
 	 * Requests created by this request
 	 *
 	 * @var  array
 	 */
-	protected $children = array();
+	protected $children = [];
 
 	/**
 	 * Creates the new Request object by getting a new URI object, then parsing
@@ -269,11 +258,11 @@ class Request
 	 * @param   string  $method  request method
 	 * @throws  \FuelException
 	 */
-	public function __construct($uri, $route = true, $method = null)
+	public function __construct(/**
+     * The Request's URI object.
+     */
+    public $uri, $route = true, $method = null)
 	{
-		// store the raw request uri so input can access it
-		$this->uri = $uri;
-
 		// forge a new input instance for this request
 		$this->input = \Input::forge($this, static::$active ? static::$active->input() : null);
 
@@ -310,22 +299,22 @@ class Request
 				// load and add the module routes
 				$module_routes = \Fuel::load($module_path);
 
-				$reserve_routes = array(
+				$reserve_routes = [
 					'_root_' => $module,
 					'_403_'  => '_403_',
 					'_404_'  => '_404_',
 					'_500_'  => '_500_',
 					$module  => $module,
-				);
+				];
 
-				$prepped_routes = array();
+				$prepped_routes = [];
 				foreach($module_routes as $name => $_route)
 				{
 					if (isset($reserve_routes[$name]))
 					{
 						$name = $reserve_routes[$name];
 					}
-					elseif (strpos($name, $module.'/') !== 0)
+					elseif (!str_starts_with($name, $module.'/'))
 					{
 						$name = $module.'/'.$name;
 					}
@@ -375,7 +364,7 @@ class Request
 	 * @throws  \FuelException
 	 * @throws  \HttpNotFoundException
 	 */
-	public function execute($method_params = null)
+	public function execute($method_params = null): static
 	{
 		// fire any request started events
 		\Event::instance()->has_events('request_started') and \Event::instance()->trigger('request_started', '', 'none');
@@ -403,7 +392,7 @@ class Request
 		{
 			if ($this->route->callable !== null)
 			{
-				$response = call_fuel_func_array($this->route->callable, array($this));
+				$response = call_fuel_func_array($this->route->callable, [$this]);
 
 				if ( ! $response instanceof Response)
 				{
@@ -446,7 +435,7 @@ class Request
 				if ($class->hasMethod('router'))
 				{
 					$method = 'router';
-					$this->method_params = array($this->action, $this->method_params);
+					$this->method_params = [$this->action, $this->method_params];
 				}
 
 				if ( ! $class->hasMethod($method))
@@ -513,7 +502,7 @@ class Request
 		}
 		else
 		{
-			throw new \FuelException(get_class($this->controller_instance).'::'.$method.'() or the controller after() method must return a Response object.');
+			throw new \FuelException($this->controller_instance::class.'::'.$method.'() or the controller after() method must return a Response object.');
 		}
 
 		// fire any request finished events
@@ -535,7 +524,7 @@ class Request
 	 * @param   string  $method  request method
 	 * @return  object  current instance
 	 */
-	public function set_method($method)
+	public function set_method($method): static
 	{
 		$this->method = strtoupper($method);
 		return $this;
@@ -590,11 +579,11 @@ class Request
 	 *
 	 * @return  Input
 	 */
-	public function set_get($var, $value)
+	public function set_get($var, $value): static
 	{
 		if ( ! is_array($var))
 		{
-			$var = array($var => $value);
+			$var = [$var => $value];
 		}
 
 		$this->input->_set('get', $var);
@@ -607,11 +596,11 @@ class Request
 	 *
 	 * @return  Input
 	 */
-	public function set_post($var, $value)
+	public function set_post($var, $value): static
 	{
 		if ( ! is_array($var))
 		{
-			$var = array($var => $value);
+			$var = [$var => $value];
 		}
 
 		$this->input->_set('post', $var);
@@ -624,11 +613,11 @@ class Request
 	 *
 	 * @return  Input
 	 */
-	public function set_json($var, $value)
+	public function set_json($var, $value): static
 	{
 		if ( ! is_array($var))
 		{
-			$var = array($var => $value);
+			$var = [$var => $value];
 		}
 
 		$this->input->_set('json', $var);
@@ -641,11 +630,11 @@ class Request
 	 *
 	 * @return  Input
 	 */
-	public function set_put($var, $value)
+	public function set_put($var, $value): static
 	{
 		if ( ! is_array($var))
 		{
-			$var = array($var => $value);
+			$var = [$var => $value];
 		}
 
 		$this->input->_set('put', $var);
@@ -658,11 +647,11 @@ class Request
 	 *
 	 * @return  Input
 	 */
-	public function set_patch($var, $value)
+	public function set_patch($var, $value): static
 	{
 		if ( ! is_array($var))
 		{
-			$var = array($var => $value);
+			$var = [$var => $value];
 		}
 
 		$this->input->_set('patch', $var);
@@ -675,11 +664,11 @@ class Request
 	 *
 	 * @return  Input
 	 */
-	public function set_delete($var, $value)
+	public function set_delete($var, $value): static
 	{
 		if ( ! is_array($var))
 		{
-			$var = array($var => $value);
+			$var = [$var => $value];
 		}
 
 		$this->input->_set('delete', $var);
@@ -698,13 +687,12 @@ class Request
 	}
 
 	/**
-	 * Add to paths which are used by Finder::search()
-	 *
-	 * @param   string  the new path
-	 * @param   bool    whether to add to the front or the back of the array
-	 * @return  void
-	 */
-	public function add_path($path, $prefix = false)
+     * Add to paths which are used by Finder::search()
+     *
+     * @param   string  the new path
+     * @param   bool    whether to add to the front or the back of the array
+     */
+    public function add_path($path, $prefix = false): void
 	{
 		if ($prefix)
 		{
@@ -765,7 +753,7 @@ class Request
 	 *
 	 * @return  string  the response
 	 */
-	public function __toString()
+	public function __toString(): string
 	{
 		return (string) $this->response;
 	}

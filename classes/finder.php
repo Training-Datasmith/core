@@ -24,9 +24,9 @@ class Finder
 	/**
 	 * @var  Finder  $instance  Singleton master instance
 	 */
-	protected static $instance = null;
+	protected static $instance;
 
-	public static function _init()
+	public static function _init(): void
 	{
 		\Config::load('file', true);
 
@@ -60,19 +60,18 @@ class Finder
 	{
 		if ( ! static::$instance)
 		{
-			static::$instance = static::forge(array(APPPATH, COREPATH));
+			static::$instance = static::forge([APPPATH, COREPATH]);
 		}
 
 		return static::$instance;
 	}
 
 	/**
-	 * Forges new Finders.
-	 *
-	 * @param   array  $paths  The paths to initialize with
-	 * @return  Finder
-	 */
-	public static function forge($paths = array())
+     * Forges new Finders.
+     *
+     * @param   array  $paths  The paths to initialize with
+     */
+    public static function forge($paths = []): static
 	{
 		return new static($paths);
 	}
@@ -80,27 +79,27 @@ class Finder
 	/**
 	 * @var  array  $paths  Holds all of the search paths
 	 */
-	protected $paths = array();
+	protected $paths = [];
 
 	/**
 	 * @var  array  $flash_paths  Search paths that only last for one lookup
 	 */
-	protected $flash_paths = array();
+	protected $flash_paths = [];
 
 	/**
 	 * @var  int  $cache_lifetime the amount of time to cache in seconds
 	 */
-	protected $cache_lifetime = null;
+	protected $cache_lifetime;
 
 	/**
 	 * @var  string  $cache_dir path to the cache file location
 	 */
-	protected $cache_dir = null;
+	protected $cache_dir;
 
 	/**
 	 * @var  array  $cached_paths  Cached lookup paths
 	 */
-	protected $cached_paths = array();
+	protected $cached_paths = [];
 
 	/**
 	 * @var  bool  $cache_valid  Whether the path cache is valid or not
@@ -112,7 +111,7 @@ class Finder
 	 *
 	 * @param  array  $paths  The paths to initialize with
 	 */
-	public function __construct($paths = array())
+	public function __construct($paths = [])
 	{
 		$this->add_path($paths);
 	}
@@ -130,11 +129,11 @@ class Finder
 	 * @return  $this
 	 * @throws  \OutOfBoundsException
 	 */
-	public function add_path($paths, $pos = null)
+	public function add_path($paths, $pos = null): static
 	{
 		if ( ! is_array($paths))
 		{
-			$paths = array($paths);
+			$paths = [$paths];
 		}
 
 		foreach ($paths as $path)
@@ -166,7 +165,7 @@ class Finder
 	 * @param   string  $path  Path to remove
 	 * @return  $this
 	 */
-	public function remove_path($path)
+	public function remove_path($path): static
 	{
 		foreach ($this->paths as $i => $p)
 		{
@@ -186,11 +185,11 @@ class Finder
 	 * @param   array  $paths  The paths to add
 	 * @return  $this
 	 */
-	public function flash($paths)
+	public function flash($paths): static
 	{
 		if ( ! is_array($paths))
 		{
-			$paths = array($paths);
+			$paths = [$paths];
 		}
 
 		foreach ($paths as $path)
@@ -206,9 +205,9 @@ class Finder
 	 *
 	 * @return  $this
 	 */
-	public function clear_flash()
+	public function clear_flash(): static
 	{
-		$this->flash_paths = array();
+		$this->flash_paths = [];
 
 		return $this;
 	}
@@ -218,31 +217,29 @@ class Finder
 	 *
 	 * @return  array  Search paths
 	 */
-	public function paths()
+	public function paths(): array
 	{
 		return array_merge($this->flash_paths, $this->paths);
 	}
 
 	/**
-	 * Prepares a path for usage.  It ensures that the path has a trailing
-	 * Directory Separator.
-	 *
-	 * @param   string  $path  The path to prepare
-	 * @return  string
-	 */
-	public function prep_path($path)
+     * Prepares a path for usage.  It ensures that the path has a trailing
+     * Directory Separator.
+     *
+     * @param   string  $path  The path to prepare
+     */
+    public function prep_path($path): string
 	{
-		$path = str_replace(array('/', '\\'), DS, $path);
+		$path = str_replace(['/', '\\'], DS, $path);
 		return rtrim($path, DS).DS;
 	}
 
 	/**
-	 * Prepares an array of paths.
-	 *
-	 * @param   array  $paths  The paths to prepare
-	 * @return  array
-	 */
-	public function prep_paths(array $paths)
+     * Prepares an array of paths.
+     *
+     * @param   array  $paths  The paths to prepare
+     */
+    public function prep_paths(array $paths): array
 	{
 		foreach ($paths as &$path)
 		{
@@ -260,7 +257,7 @@ class Finder
 	 * @param   string  $filter     The file filter
 	 * @return  array   the array of files
 	 */
-	public function list_files($directory = null, $filter = '*.php')
+	public function list_files($directory = null, string $filter = '*.php'): array
 	{
 		$paths = $this->paths;
 
@@ -274,7 +271,7 @@ class Finder
 		$paths = array_merge($this->flash_paths, $paths);
 		$this->clear_flash();
 
-		$found = array();
+		$found = [];
 		foreach ($paths as $path)
 		{
 			foreach(new \GlobIterator(rtrim($path.$directory, DS).DS.$filter) as $file)
@@ -296,9 +293,9 @@ class Finder
 	 * @param   bool    $cache     Whether to cache this path or not
 	 * @return  mixed  Path, or paths, or false
 	 */
-	public function locate($dir, $file, $ext = '.php', $multiple = false, $cache = true)
+	public function locate(string $dir, $file, string $ext = '.php', $multiple = false, $cache = true)
 	{
-		$found = $multiple ? array() : false;
+		$found = $multiple ? [] : false;
 
 		// absolute path requested?
 		if ($file[0] === '/' or substr($file, 1, 2) === ':\\')
@@ -313,7 +310,7 @@ class Finder
 				// at this point, found would be either empty array or false
 				return $found;
 			}
-			return $multiple ? array($file) : $file;
+			return $multiple ? [$file] : $file;
 		}
 
 		// determine the cache prefix
@@ -331,7 +328,7 @@ class Finder
 			$cache_id = 'S.';
 		}
 
-		$paths = array();
+		$paths = [];
 
 		// If a filename contains a :: then it is trying to be found in a namespace.
 		// This is sometimes used to load a view from a non-loaded module.
@@ -343,7 +340,7 @@ class Finder
 				$cache_id .= substr($file, 0, $pos);
 
 				// and strip the classes directory as we need the module root
-				$paths = array(substr($path, 0, -8));
+				$paths = [substr($path, 0, -8)];
 
 				// strip the namespace from the filename
 				$file = substr($file, $pos + 2);
@@ -398,12 +395,11 @@ class Finder
 	}
 
 	/**
-	 * Reads in the cached paths with the given cache id.
-	 *
-	 * @param   string  $cache_id  Cache id to read
-	 * @return  void
-	 */
-	public function read_cache($cache_id)
+     * Reads in the cached paths with the given cache id.
+     *
+     * @param   string  $cache_id  Cache id to read
+     */
+    public function read_cache($cache_id): void
 	{
 		// make sure we have all config data
 		empty($this->cache_dir) and $this->cache_dir = \Config::get('cache_dir', APPPATH.'cache/');
@@ -416,12 +412,11 @@ class Finder
 	}
 
 	/**
-	 * Writes out the cached paths if they need to be.
-	 *
-	 * @param   string  $cache_id  Cache id to read
-	 * @return  void
-	 */
-	public function write_cache($cache_id)
+     * Writes out the cached paths if they need to be.
+     *
+     * @param   string  $cache_id  Cache id to read
+     */
+    public function write_cache($cache_id): void
 	{
 		$this->cache_valid or $this->cache($cache_id, $this->cached_paths);
 	}
@@ -457,16 +452,15 @@ class Finder
 	}
 
 	/**
-	 * This method does basic filesystem caching.  It is used for things like path caching.
-	 *
-	 * This method is from KohanaPHP's Kohana class.
-	 *
-	 * @param  string  $name      the cache name
-	 * @param  array   $data      the data to cache (if non given it returns)
-	 * @param  int     $lifetime  the number of seconds for the cache too live
-	 * @return bool|null
-	 */
-	protected function cache($name, $data = null, $lifetime = null)
+     * This method does basic filesystem caching.  It is used for things like path caching.
+     *
+     * This method is from KohanaPHP's Kohana class.
+     *
+     * @param  string  $name      the cache name
+     * @param  array   $data      the data to cache (if non given it returns)
+     * @param  int     $lifetime  the number of seconds for the cache too live
+     */
+    protected function cache(string $name, $data = null, $lifetime = null): bool
 	{
 		// Cache file is a hash of the name
 		$file = $name.'.pathcache';
@@ -491,7 +485,7 @@ class Finder
 					{
 						return unserialize(file_get_contents($dir.$file));
 					}
-					catch (\Exception $e)
+					catch (\Exception)
 					{
 						// Cache exists but could not be read, ignore it
 					}
@@ -503,7 +497,7 @@ class Finder
 						// Cache has expired
 						unlink($dir.$file);
 					}
-					catch (Exception $e)
+					catch (Exception)
 					{
 						// Cache has mostly likely already been deleted,
 						// let return happen normally.
@@ -539,7 +533,7 @@ class Finder
 				catch (\PhpErrorException $e)
 				{
 					// if we get something else then a chmod error, bail out
-					if (substr($e->getMessage(), 0, 8) !== 'chmod():')
+					if (!str_starts_with($e->getMessage(), 'chmod():'))
 					{
 						throw new $e;
 					}
@@ -548,7 +542,7 @@ class Finder
 
 			return $result;
 		}
-		catch (\Exception $e)
+		catch (\Exception)
 		{
 			// Failed to write cache
 			return false;

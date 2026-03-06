@@ -32,26 +32,26 @@ class Crypt
 	 *
 	 * @var	array
 	 */
-	protected static $defaults = array();
+	protected static $defaults = [];
 
 	/**
 	 * Defined Crypto instances
 	 *
 	 * @var	array
 	 */
-	protected static $_instances = array();
+	protected static $_instances = [];
 
 	/**
 	 * initialisation and auto configuration
 	 */
-	public static function _init()
+	public static function _init(): void
 	{
 		// load the ParagonIE classes we need
 		import('paragonie.php', 'vendor');
 
 		// load the config
 		\Config::load('crypt', true);
-		static::$defaults = \Config::get('crypt', array());
+		static::$defaults = \Config::get('crypt', []);
 
 		// keep track of updates to the config
 		$update = false;
@@ -60,9 +60,9 @@ class Crypt
 		if (empty(static::$defaults['legacy']))
 		{
 			$flag = true;
-			foreach(array('crypto_key', 'crypto_iv', 'crypto_hmac') as $key)
+			foreach(['crypto_key', 'crypto_iv', 'crypto_hmac'] as $key)
 			{
-				if (empty(static::$defaults[$key]) or (strlen(static::$defaults[$key]) % 4) !== 0)
+				if (empty(static::$defaults[$key]) or (strlen((string) static::$defaults[$key]) % 4) !== 0)
 				{
 					$flag = false;
 				}
@@ -70,8 +70,8 @@ class Crypt
 			// and if we found something valid, convert it
 			if ($flag)
 			{
-				static::$defaults['legacy'] = array();
-				foreach(array('crypto_key', 'crypto_iv', 'crypto_hmac') as $key)
+				static::$defaults['legacy'] = [];
+				foreach(['crypto_key', 'crypto_iv', 'crypto_hmac'] as $key)
 				{
 					static::$defaults['legacy'][$key] = static::$defaults[$key];
 					unset(static::$defaults[$key]);
@@ -83,7 +83,7 @@ class Crypt
 		// check the sodium config
 		if (empty(static::$defaults['sodium']['cipherkey']))
 		{
-			static::$defaults['sodium'] = array('cipherkey' => sodium_bin2hex(random_bytes(SODIUM_CRYPTO_STREAM_KEYBYTES)));
+			static::$defaults['sodium'] = ['cipherkey' => sodium_bin2hex(random_bytes(SODIUM_CRYPTO_STREAM_KEYBYTES))];
 			$update = true;
 		}
 
@@ -94,12 +94,12 @@ class Crypt
 			{
 				\Config::save('crypt', static::$defaults);
 			}
-			catch (\FileAccessException $e)
+			catch (\FileAccessException)
 			{
 				// failed to write the config file, inform the user
-				echo \View::forge('errors/crypt_keys', array(
+				echo \View::forge('errors/crypt_keys', [
 					'keys' => static::$defaults,
-				));
+				]);
 				die();
 			}
 		}
@@ -114,7 +114,7 @@ class Crypt
 	 * @param	array	$config	optional runtime configuration
 	 * @return  \Crypt
 	 */
-	public static function forge($name = '__default__', array $config = array())
+	public static function forge($name = '__default__', array $config = [])
 	{
 		if ( ! array_key_exists($name, static::$_instances))
 		{
@@ -147,36 +147,32 @@ class Crypt
 	 * @param	array	$args	The arguments will passed to $method.
 	 * @return	mixed	return value of $method.
 	 */
-	public static function __callstatic($method, $args)
+	public static function __callstatic(string $method, array $args)
 	{
 		// static method calls are called on the default instance
-		return call_user_func_array(array(static::instance(), $method), $args);
+		return call_user_func_array([static::instance(), $method], $args);
 	}
 
 	// --------------------------------------------------------------------
-
-	/**
-	 * generate a URI safe base64 encoded string
-	 *
-	 * @param	string	$value
-	 * @return	string
-	 */
-	protected static function safe_b64encode($value)
+    /**
+     * generate a URI safe base64 encoded string
+     *
+     * @param	string	$value
+     */
+    protected static function safe_b64encode($value): string
 	{
 		$data = base64_encode($value);
-		$data = str_replace(array('+', '/', '='), array('-', '_', ''), $data);
-		return $data;
+		return str_replace(['+', '/', '='], ['-', '_', ''], $data);
 	}
 
 	/**
-	 * decode a URI safe base64 encoded string
-	 *
-	 * @param	string	$value
-	 * @return	string
-	 */
-	protected static function safe_b64decode($value)
+     * decode a URI safe base64 encoded string
+     *
+     * @param	string	$value
+     */
+    protected static function safe_b64decode($value): string
 	{
-		$data = str_replace(array('-', '_'), array('+', '/'), $value);
+		$data = str_replace(['-', '_'], ['+', '/'], $value);
 		$mod4 = strlen($data) % 4;
 		if ($mod4)
 		{
@@ -216,12 +212,12 @@ class Crypt
 	 * @param string $salt
 	 * @return string[]
 	 */
-	protected static function split_keys($key, $salt)
+	protected static function split_keys($key, $salt): array
 	{
-		return array(
+		return [
 			static::hkdfBlake2b($key, SODIUM_CRYPTO_SECRETBOX_KEYBYTES, 'Halite|EncryptionKey', $salt),
 			static::hkdfBlake2b($key, SODIUM_CRYPTO_AUTH_KEYBYTES, 'AuthenticationKeyFor_|Halite', $salt)
-		);
+		];
 	}
 
 	/**
@@ -233,7 +229,7 @@ class Crypt
 	 *
 	 * @return array<int, mixed>
 	 */
-	protected static function split_message($message)
+	protected static function split_message($message): array
 	{
 		// get the message length
 		$length = Binary::safeStrlen($message);
@@ -260,7 +256,7 @@ class Crypt
 		static::memzero($message);
 
 		// Now we return the pieces in a specific order:
-		return array($salt, $nonce, $encrypted, $auth);
+		return [$salt, $nonce, $encrypted, $auth];
 	}
 
 
@@ -280,7 +276,7 @@ class Crypt
 	 * @param string $salt
 	 * @return string
 	 */
-	protected static function hkdfBlake2b($ikm, $length, $info = '', $salt = '')
+	protected static function hkdfBlake2b($ikm, $length, string $info = '', $salt = '')
 	{
 		// Sanity-check the desired output length.
 		if ($length < 0 or $length > (255 * SODIUM_CRYPTO_GENERICHASH_KEYBYTES))
@@ -317,17 +313,16 @@ class Crypt
 	}
 
 	/**
-	 * Wrapper around SODIUM_CRypto_generichash()
-	 *
-	 * Expects a key (binary string).
-	 * Returns raw binary.
-	 *
-	 * @param string $input
-	 * @param string $key
-	 * @param int $length
-	 * @return string
-	 */
-	protected static function raw_keyed_hash($input, $key, $length = SODIUM_CRYPTO_GENERICHASH_BYTES)
+     * Wrapper around SODIUM_CRypto_generichash()
+     *
+     * Expects a key (binary string).
+     * Returns raw binary.
+     *
+     * @param string $input
+     * @param string $key
+     * @param int $length
+     */
+    protected static function raw_keyed_hash($input, $key, $length = SODIUM_CRYPTO_GENERICHASH_BYTES): string
 	{
 		if ($length < SODIUM_CRYPTO_GENERICHASH_BYTES_MIN)
 		{
@@ -343,13 +338,12 @@ class Crypt
 	}
 
 	/**
-	 * Calculate a MAC. This is used internally.
-	 *
-	 * @param string $message
-	 * @param string $authKey
-	 * @return string
-	 */
-	protected static function calculate_mac($message, $auth_key)
+     * Calculate a MAC. This is used internally.
+     *
+     * @param string $message
+     * @param string $authKey
+     */
+    protected static function calculate_mac($message, $auth_key): string
 	{
 		return sodium_crypto_generichash($message, $auth_key, SODIUM_CRYPTO_GENERICHASH_BYTES_MAX);
 	}
@@ -396,7 +390,7 @@ class Crypt
 		}
 		elseif (extension_loaded('libsodium') and is_callable('\\Sodium\\memzero'))
 		{
-			@call_user_func('\\Sodium\\memzero', $var);
+			@call_user_func(\Sodium\memzero(...), $var);
 		}
 	}
 
@@ -407,28 +401,24 @@ class Crypt
 	 *
 	 * @var	object
 	 */
-	protected $crypter = null;
+	protected $crypter;
 
 	/**
 	 * Hash object used to generate hashes
 	 *
 	 * @var	object
 	 */
-	protected $hasher = null;
+	protected $hasher;
 
 	/**
-	 * Crypto configuration
-	 *
-	 * @var	array
-	 */
-	protected $config = array();
+     * Crypto configuration
+     */
+    protected array $config;
 
 	/**
-	 * Class constructor
-	 *
-	 * @param	array    $config
-	 */
-	public function __construct(array $config = array())
+     * Class constructor
+     */
+    public function __construct(array $config = [])
 	{
 		$this->config = array_merge(static::$defaults, $config);
 
@@ -451,16 +441,16 @@ class Crypt
 	 * @return	mixed	return value of $method.
 	 * @throws	\ErrorException
 	 */
-	public function __call($method, $args)
+	public function __call(string $method, array $args)
 	{
 		// validate the method called
-		if ( ! in_array($method, array('encode', 'decode', 'legacy_decode')))
+		if ( ! in_array($method, ['encode', 'decode', 'legacy_decode']))
 		{
-			throw new \ErrorException('Call to undefined method '.__CLASS__.'::'.$method.'()', E_ERROR, 0, __FILE__, __LINE__);
+			throw new \ErrorException('Call to undefined method '.self::class.'::'.$method.'()', E_ERROR, 0, __FILE__, __LINE__);
 		}
 
 		// static method calls are called on the default instance
-		return call_user_func_array(array($this, $method), $args);
+		return call_user_func_array([$this, $method], $args);
 	}
 
 	/**
@@ -471,14 +461,14 @@ class Crypt
 	 * @param	void		$keylength	no longer used
 	 * @return	string	encrypted value
 	 */
-	protected function encode($value, $key = false, $keylength = false)
+	protected function encode($value, $key = false, $keylength = false): string
 	{
 		// get the binary key
 		if ( ! $key)
 		{
 			$key = static::$defaults['sodium']['cipherkey'];
 		}
-		$key = sodium_hex2bin($key);
+		$key = sodium_hex2bin((string) $key);
 
 		// Generate a nonce and a HKDF salt
 		$nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
@@ -492,7 +482,7 @@ class Crypt
 		 * This uses salted HKDF to split the keys, which is why we need the
 		 * salt in the first place.
 		 */
-		list($enc_key, $auth_key) = static::split_keys($key, $salt);
+		[$enc_key, $auth_key] = static::split_keys($key, $salt);
 
 		// Encrypt our message with the encryption key
 		$encrypted = sodium_crypto_stream_xor($value, $nonce, $enc_key);
@@ -540,13 +530,13 @@ class Crypt
 		{
 			$key = static::$defaults['sodium']['cipherkey'];
 		}
-		$key = sodium_hex2bin($key);
+		$key = sodium_hex2bin((string) $key);
 
 		// get the base64 decoded message
 		$value = Base64UrlSafe::decode($value);
 
 		// split the message into it's components
-		list ($salt, $nonce, $encrypted, $auth) = static::split_message($value);
+		[$salt, $nonce, $encrypted, $auth] = static::split_message($value);
 
 		/* Split our key into two keys: One for encryption, the other for
 		 * authentication. By using separate keys, we can reasonably dismiss
@@ -555,7 +545,7 @@ class Crypt
 		 * This uses salted HKDF to split the keys, which is why we need the
 		 * salt in the first place.
 		 */
-		list($enc_key, $auth_key) = static::split_keys($key, $salt);
+		[$enc_key, $auth_key] = static::split_keys($key, $salt);
 
 		// Check the MAC first
 		$res = static::verify_mac($auth, $salt.$nonce.$encrypted, $auth_key);
@@ -565,8 +555,7 @@ class Crypt
 		if ($res)
 		{
 			// crypto_stream_xor() can be used to encrypt and decrypt
-			/** @var string $plaintext */
-			$message = sodium_crypto_stream_xor($encrypted, $nonce, $enc_key);
+            $message = sodium_crypto_stream_xor((string) $encrypted, (string) $nonce, $enc_key);
 		}
 
 		static::memzero($encrypted);
@@ -615,19 +604,16 @@ class Crypt
 		{
 			return $this->legacy_crypter->decrypt($value);
 		}
-		else
-		{
-			return false;
-		}
+        return false;
 	}
 
-	protected function validate_hmac($value)
+	protected function validate_hmac($value): string|false
 	{
 		// strip the hmac-sha256 hash from the value
-		$hmac = substr($value, strlen($value)-43);
+		$hmac = substr((string) $value, strlen((string) $value)-43);
 
 		// and remove it from the value
-		$value = substr($value, 0, strlen($value)-43);
+		$value = substr((string) $value, 0, strlen((string) $value)-43);
 
 		// only return the value if it wasn't tampered with
 		return (static::secure_compare(static::safe_b64encode($this->legacy_hasher->hash($value)), $hmac)) ? $value : false;

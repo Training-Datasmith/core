@@ -18,17 +18,17 @@ abstract class Database_Query_Builder_Where extends \Database_Query_Builder
 	/**
 	 * @var array  $_where  where statements
 	 */
-	protected $_where = array();
+	protected $_where = [];
 
 	/**
 	 * @var array  $_order_by  order by clause
 	 */
-	protected $_order_by = array();
+	protected $_order_by = [];
 
 	/**
 	 * @var  integer  $_limit
 	 */
-	protected $_limit = null;
+	protected $_limit;
 
 	/**
 	 * Alias of and_where()
@@ -37,7 +37,7 @@ abstract class Database_Query_Builder_Where extends \Database_Query_Builder
 	 */
 	public function where()
 	{
-		return call_fuel_func_array(array($this, 'and_where'), func_get_args());
+		return call_fuel_func_array($this->and_where(...), func_get_args());
 	}
 
 	/**
@@ -80,7 +80,7 @@ abstract class Database_Query_Builder_Where extends \Database_Query_Builder
 				$value = $op;
 				$op = '=';
 			}
-			$this->_where[] = array('AND' => array($column, $op, $value));
+			$this->_where[] = ['AND' => [$column, $op, $value]];
 		}
 
 		return $this;
@@ -126,7 +126,7 @@ abstract class Database_Query_Builder_Where extends \Database_Query_Builder
 				$value = $op;
 				$op = '=';
 			}
-			$this->_where[] = array('OR' => array($column, $op, $value));
+			$this->_where[] = ['OR' => [$column, $op, $value]];
 		}
 		return $this;
 	}
@@ -148,7 +148,7 @@ abstract class Database_Query_Builder_Where extends \Database_Query_Builder
 	 */
 	public function and_where_open()
 	{
-		$this->_where[] = array('AND' => '(');
+		$this->_where[] = ['AND' => '('];
 
 		return $this;
 	}
@@ -160,7 +160,7 @@ abstract class Database_Query_Builder_Where extends \Database_Query_Builder
 	 */
 	public function or_where_open()
 	{
-		$this->_where[] = array('OR' => '(');
+		$this->_where[] = ['OR' => '('];
 
 		return $this;
 	}
@@ -182,7 +182,7 @@ abstract class Database_Query_Builder_Where extends \Database_Query_Builder
 	 */
 	public function and_where_close()
 	{
-		$this->_where[] = array('AND' => ')');
+		$this->_where[] = ['AND' => ')'];
 
 		return $this;
 	}
@@ -194,7 +194,7 @@ abstract class Database_Query_Builder_Where extends \Database_Query_Builder
 	 */
 	public function or_where_close()
 	{
-		$this->_where[] = array('OR' => ')');
+		$this->_where[] = ['OR' => ')'];
 
 		return $this;
 	}
@@ -209,7 +209,7 @@ abstract class Database_Query_Builder_Where extends \Database_Query_Builder
 	 */
 	public function order_by($column, $direction = null)
 	{
-		$this->_order_by[] = array($column, $direction);
+		$this->_order_by[] = [$column, $direction];
 
 		return $this;
 	}

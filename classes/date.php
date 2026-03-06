@@ -28,7 +28,7 @@ namespace Fuel\Core;
  * - create_time() uses strptime and has currently a very bad hack to use strtotime for windows servers
  * - Uses strftime formatting for dates www.php.net/manual/en/function.strftime.php
  */
-class Date
+class Date implements \Stringable
 {
 	/**
 	 * Time constants (and only those that are constant, thus not MONTH/YEAR)
@@ -46,9 +46,9 @@ class Date
 	/**
 	 * @var string the timezone to be used to output formatted data
 	 */
-	public static $display_timezone = null;
+	public static $display_timezone;
 
-	public static function _init()
+	public static function _init(): void
 	{
 		static::$server_gmt_offset	= \Config::get('server_gmt_offset', 0);
 
@@ -58,12 +58,12 @@ class Date
 		// It attempts conversion between glibc style formats and PHP's internal style format (no 100% match!)
 		if ( ! function_exists('strptime') && ! function_exists('Fuel\Core\strptime'))
 		{
-			function strptime($input, $format)
+			function strptime($input, $format): array|false
 			{
 				// convert the format string from glibc to date format (where possible)
 				$new_format = str_replace(
-					array('%a', '%A', '%d', '%e', '%j', '%u', '%w', '%U', '%V', '%W', '%b', '%B', '%h', '%m', '%C', '%g', '%G', '%y', '%Y', '%H', '%k', '%I', '%l', '%M', '%p', '%P', '%r', '%R', '%S', '%T', '%X', '%z', '%Z', '%c', '%D', '%F', '%s', '%x', '%n', '%t', '%%'),
-					array('D', 'l', 'd', 'j', 'N', 'z', 'w', '[^^]', 'W', '[^^]', 'M', 'F', 'M', 'm', '[^^]', 'Y', 'o', 'y', 'Y', 'H', 'G', 'h', 'g', 'i', 'A', 'a', 'H:i:s A', 'H:i', 's', 'H:i:s', '[^^]', 'O', 'T ', '[^^]', 'm/d/Y', 'Y-m-d', 'U', '[^^]', "\n", "\t", '%'),
+					['%a', '%A', '%d', '%e', '%j', '%u', '%w', '%U', '%V', '%W', '%b', '%B', '%h', '%m', '%C', '%g', '%G', '%y', '%Y', '%H', '%k', '%I', '%l', '%M', '%p', '%P', '%r', '%R', '%S', '%T', '%X', '%z', '%Z', '%c', '%D', '%F', '%s', '%x', '%n', '%t', '%%'],
+					['D', 'l', 'd', 'j', 'N', 'z', 'w', '[^^]', 'W', '[^^]', 'M', 'F', 'M', 'm', '[^^]', 'Y', 'o', 'y', 'Y', 'H', 'G', 'h', 'g', 'i', 'A', 'a', 'H:i:s A', 'H:i', 's', 'H:i:s', '[^^]', 'O', 'T ', '[^^]', 'm/d/Y', 'Y-m-d', 'U', '[^^]', "\n", "\t", '%'],
 					$format
 				);
 
@@ -73,42 +73,36 @@ class Date
 				// parse succesful?
 				if (is_array($parsed) and empty($parsed['errors']))
 				{
-					return array(
+					return [
 						'tm_year' => $parsed['year'] - 1900,
 						'tm_mon'  => $parsed['month'] - 1,
 						'tm_mday' => $parsed['day'],
 						'tm_hour' => $parsed['hour'] ?: 0,
 						'tm_min'  => $parsed['minute'] ?: 0,
 						'tm_sec'  => $parsed['second'] ?: 0,
-					);
+					];
 				}
-				else
-				{
-					$masks = array(
+                $masks = [
 						'%d' => '(?P<d>[0-9]{2})',
 						'%m' => '(?P<m>[0-9]{2})',
 						'%Y' => '(?P<Y>[0-9]{4})',
 						'%H' => '(?P<H>[0-9]{2})',
 						'%M' => '(?P<M>[0-9]{2})',
 						'%S' => '(?P<S>[0-9]{2})',
-					);
-
-					$rexep = "#" . strtr(preg_quote($format), $masks) . "#";
-
-					if ( ! preg_match($rexep, $input, $result))
+					];
+                $rexep = "#" . strtr(preg_quote((string) $format), $masks) . "#";
+                if ( ! preg_match($rexep, (string) $input, $result))
 					{
 						return false;
 					}
-
-					return array(
+                return [
 						"tm_sec"  => isset($result['S']) ? (int) $result['S'] : 0,
 						"tm_min"  => isset($result['M']) ? (int) $result['M'] : 0,
 						"tm_hour" => isset($result['H']) ? (int) $result['H'] : 0,
 						"tm_mday" => isset($result['d']) ? (int) $result['d'] : 0,
 						"tm_mon"  => isset($result['m']) ? ($result['m'] ? $result['m'] - 1 : 0) : 0,
 						"tm_year" => isset($result['Y']) ? ($result['Y'] > 1900 ? $result['Y'] - 1900 : 0) : 0,
-					);
-				}
+					];
 			}
 
 			// This really is some fugly code, but someone at PHP HQ decided strptime should
@@ -117,13 +111,12 @@ class Date
 	}
 
 	/**
-	 * Create Date object from timestamp, timezone is optional
-	 *
-	 * @param   int     $timestamp  UNIX timestamp from current server
-	 * @param   string  $timezone   valid PHP timezone from www.php.net/timezones
-	 * @return  Date
-	 */
-	public static function forge($timestamp = null, $timezone = null)
+     * Create Date object from timestamp, timezone is optional
+     *
+     * @param   int     $timestamp  UNIX timestamp from current server
+     * @param   string  $timezone   valid PHP timezone from www.php.net/timezones
+     */
+    public static function forge($timestamp = null, $timezone = null): static
 	{
 		return new static($timestamp, $timezone);
 	}
@@ -159,11 +152,11 @@ class Date
 	 * @param   string  $pattern_key  key name of pattern in config file
 	 * @return  Date
 	 */
-	public static function create_from_string($input, $pattern_key = 'local')
+	public static function create_from_string($input, string $pattern_key = 'local')
 	{
 		\Config::load('date', 'date');
 
-		$pattern = \Config::get('date.patterns.'.$pattern_key, null);
+		$pattern = \Config::get('date.patterns.'.$pattern_key);
 		empty($pattern) and $pattern = $pattern_key;
 
 		$time = strptime($input, $pattern);
@@ -195,13 +188,13 @@ class Date
 	 * @param   int|string  $interval  Length of the interval in seconds or valid strtotime time difference
 	 * @return   array      array of Date objects
 	 */
-	public static function range_to_array($start, $end, $interval = '+1 Day')
+	public static function range_to_array($start, $end, $interval = '+1 Day'): array
 	{
 		// make sure start and end are date objects
 		$start = ( ! $start instanceof Date) ? static::forge($start) : $start;
 		$end   = ( ! $end instanceof Date) ? static::forge($end) : $end;
 
-		$range = array();
+		$range = [];
 
 		// if end > start, the range is empty
 		if ($end->get_timestamp() >= $start->get_timestamp())
@@ -237,24 +230,22 @@ class Date
 	 * @param   int  $year   the year, leave empty for current
 	 * @return  int  the number of days in the month
 	 */
-	public static function days_in_month($month, $year = null)
+	public static function days_in_month($month, $year = null): int
 	{
 		$year  = ! empty($year) ? (int) $year : (int) date('Y');
 		$month = (int) $month;
+        if ($month < 1 or $month > 12) {
+            throw new \UnexpectedValueException('Invalid input for month given.');
+        }
 
-		if ($month < 1 or $month > 12)
-		{
-			throw new \UnexpectedValueException('Invalid input for month given.');
-		}
-		elseif ($month == 2)
-		{
-			if ($year % 400 == 0 or ($year % 4 == 0 and $year % 100 != 0))
+		if ($month == 2) {
+            if ($year % 400 == 0 or ($year % 4 == 0 and $year % 100 != 0))
 			{
 				return 29;
 			}
-		}
+        }
 
-		$days_in_month = array(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
+		$days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 		return $days_in_month[$month-1];
 	}
 
@@ -280,8 +271,8 @@ class Date
 		\Lang::load('date', true);
 
 		$difference = $from_timestamp - $timestamp;
-		$periods    = array('second', 'minute', 'hour', 'day', 'week', 'month', 'year', 'decade');
-		$lengths    = array(60, 60, 24, 7, 4.35, 12, 10);
+		$periods    = ['second', 'minute', 'hour', 'day', 'week', 'month', 'year', 'decade'];
+		$lengths    = [60, 60, 24, 7, 4.35, 12, 10];
 
 		for ($j = 0; isset($lengths[$j]) and $difference >= $lengths[$j] and (empty($unit) or $unit != $periods[$j]); $j++)
 		{
@@ -295,11 +286,9 @@ class Date
 			$periods[$j] = \Inflector::pluralize($periods[$j]);
 		}
 
-		$text = \Lang::get('date.text', array(
-			'time' => \Lang::get('date.'.$periods[$j], array('t' => $difference)),
-		));
-
-		return $text;
+		return \Lang::get('date.text', [
+			'time' => \Lang::get('date.'.$periods[$j], ['t' => $difference]),
+		]);
 	}
 
 	/**
@@ -328,7 +317,7 @@ class Date
 	 * @param   mixed 	$timezone     vald timezone, or if true, output the time in local time instead of system time
 	 * @return  string
 	 */
-	public function format($pattern_key = 'local', $timezone = null)
+	public function format(string $pattern_key = 'local', $timezone = null): string|false
 	{
 		\Config::load('date', 'date');
 
@@ -377,13 +366,11 @@ class Date
 	}
 
 	/**
-	 * Returns the internal timezone or the display timezone abbreviation
-	 *
-	 * @param boolean $display_timezone
-	 *
-	 * @return  string
-	 */
-	public function get_timezone_abbr($display_timezone = false)
+     * Returns the internal timezone or the display timezone abbreviation
+     *
+     * @param boolean $display_timezone
+     */
+    public function get_timezone_abbr($display_timezone = false): string
 	{
 		// determine the timezone to switch to
 		$display_timezone and $timezone = static::$display_timezone;
@@ -408,12 +395,11 @@ class Date
 	}
 
 	/**
-	 * Change the timezone
-	 *
-	 * @param   string  $timezone  timezone from www.php.net/timezones
-	 * @return  Date
-	 */
-	public function set_timezone($timezone)
+     * Change the timezone
+     *
+     * @param   string  $timezone  timezone from www.php.net/timezones
+     */
+    public function set_timezone($timezone): static
 	{
 		$this->timezone = $timezone;
 
@@ -421,11 +407,9 @@ class Date
 	}
 
 	/**
-	 * Allows you to just put the object in a string and get it inserted in the default pattern
-	 *
-	 * @return  string
-	 */
-	public function __toString()
+     * Allows you to just put the object in a string and get it inserted in the default pattern
+     */
+    public function __toString(): string
 	{
 		return $this->format();
 	}

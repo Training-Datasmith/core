@@ -14,21 +14,19 @@ namespace Fuel\Core;
 
 abstract class Image_Driver
 {
-	protected $image_fullpath  = null;
-	protected $image_directory = null;
-	protected $image_filename  = null;
-	protected $image_extension = null;
-	protected $new_extension   = null;
-	protected $config          = array();
-	protected $queued_actions  = array();
+	protected $image_fullpath;
+	protected $image_directory;
+	protected $image_filename;
+	protected $image_extension;
+	protected $new_extension;
+	protected $config          = [];
+	protected $queued_actions  = [];
 	protected $accepted_extensions;
 
 	/**
-	 * Initialize by loading config
-	 *
-	 * @return void
-	 */
-	public static function _init()
+     * Initialize by loading config
+     */
+    public static function _init(): void
 	{
 		\Config::load('image', true);
 	}
@@ -37,11 +35,11 @@ abstract class Image_Driver
 	{
 		if (is_array($config))
 		{
-			$this->config = array_merge(\Config::get('image', array()), $config);
+			$this->config = array_merge(\Config::get('image', []), $config);
 		}
 		else
 		{
-			$this->config = \Config::get('image', array());
+			$this->config = \Config::get('image', []);
 		}
 		$this->debug("Image Class was initialized using the " . $this->config['driver'] . " driver.");
 	}
@@ -95,10 +93,10 @@ abstract class Image_Driver
 				{
 					for ($x = count($vars) - 1; $x >= 0; $x--)
 					{
-						$action[$i] = preg_replace('#\$' . $x . '#', $vars[$x], $action[$i]);
+						$action[$i] = preg_replace('#\$' . $x . '#', (string) $vars[$x], (string) $action[$i]);
 					}
 				}
-				call_fuel_func_array(array($this, $func), $action);
+				call_fuel_func_array([$this, $func], $action);
 			}
 			$this->config = $old_config;
 		}
@@ -121,22 +119,22 @@ abstract class Image_Driver
 	{
 		// First check if the filename exists
 		$filename = realpath($filename);
-		$return = array(
+		$return = [
 			'filename'    => $filename,
 			'return_data' => $return_data,
-		);
+		];
 		if (is_file($filename))
 		{
 			// Check the extension
 			$ext = $this->check_extension($filename, false, $force_extension);
 			if ($ext !== false)
 			{
-				$return = array_merge($return, array(
+				$return = array_merge($return, [
 					'image_fullpath'  => $filename,
 					'image_directory' => dirname($filename),
 					'image_filename'  => basename($filename),
 					'image_extension' => $ext,
-				));
+				]);
 				if ( ! $return_data)
 				{
 					$this->image_fullpath = $filename;
@@ -198,12 +196,12 @@ abstract class Image_Driver
 		$x2 = $this->convert_number($x2, true);
 		$y2 = $this->convert_number($y2, false);
 
-		return array(
+		return [
 			'x1' => $x1,
 			'y1' => $y1,
 			'x2' => $x2,
 			'y2' => $y2,
-		);
+		];
 	}
 
 	/**
@@ -248,11 +246,11 @@ abstract class Image_Driver
 	{
 		if ($height == null or $width == null)
 		{
-			if ($height == null and substr($width, -1) == '%')
+			if ($height == null and str_ends_with($width, '%'))
 			{
 				$height = $width;
 			}
-			elseif (substr($height, -1) == '%' and $width == null)
+			elseif (str_ends_with((string) $height, '%') and $width == null)
 			{
 				$width = $height;
 			}
@@ -286,18 +284,18 @@ abstract class Image_Driver
 			// See which is the biggest ratio
 			if (function_exists('bcdiv'))
 			{
-				$width_ratio  = bcdiv($width, $sizes->width, 10);
-				$height_ratio = bcdiv($height, $sizes->height, 10);
+				$width_ratio  = bcdiv($width, (string) $sizes->width, 10);
+				$height_ratio = bcdiv($height, (string) $sizes->height, 10);
 				$compare = bccomp($width_ratio, $height_ratio, 10);
 				if ($compare > -1)
 				{
-					$height = ceil((float) bcmul($sizes->height, $height_ratio, 10));
-					$width = ceil((float) bcmul($sizes->width, $height_ratio, 10));
+					$height = ceil((float) bcmul((string) $sizes->height, $height_ratio, 10));
+					$width = ceil((float) bcmul((string) $sizes->width, $height_ratio, 10));
 				}
 				else
 				{
-					$height = ceil((float) bcmul($sizes->height, $width_ratio, 10));
-					$width = ceil((float) bcmul($sizes->width, $width_ratio, 10));
+					$height = ceil((float) bcmul((string) $sizes->height, $width_ratio, 10));
+					$width = ceil((float) bcmul((string) $sizes->width, $width_ratio, 10));
 				}
 			}
 			else
@@ -328,14 +326,14 @@ abstract class Image_Driver
 			$origheight = $height;
 		}
 
-		return array(
+		return [
 			'width'   => $width,
 			'height'  => $height,
 			'cwidth'  => $origwidth,
 			'cheight' => $origheight,
 			'x' => $x,
 			'y' => $y,
-		);
+		];
 	}
 
 	public function crop_resize($width, $height = null)
@@ -354,7 +352,7 @@ abstract class Image_Driver
 
 		if (function_exists('bcdiv'))
 		{
-			if (bccomp(bcdiv($sizes->width, $width, 10), bcdiv($sizes->height, $height, 10), 10) < 1)
+			if (bccomp(bcdiv((string) $sizes->width, $width, 10), bcdiv((string) $sizes->height, $height, 10), 10) < 1)
 			{
 				$this->_resize($width, 0, true, false);
 			}
@@ -408,9 +406,9 @@ abstract class Image_Driver
 		{
 			$degrees = 360 + $degrees;
 		}
-		return array(
+		return [
 			'degrees' => $degrees,
-		);
+		];
 	}
 
 	/**
@@ -448,7 +446,7 @@ abstract class Image_Driver
 			$sizes  = $this->sizes();
 
 			// Get the x and y  positions.
-			list($ypos, $xpos) = explode(' ', $position);
+			[$ypos, $xpos] = explode(' ', $position);
 
 			// Get the x and y padding
 			if (is_numeric($padding))
@@ -505,12 +503,12 @@ abstract class Image_Driver
 
 			$this->debug("Watermark being placed at $x,$y");
 
-			$return = array(
+			$return = [
 				'filename' => $filename,
 				'x' => $x,
 				'y' => $y,
 				'padding' => $padding,
-			);
+			];
 		}
 		return $return;
 	}
@@ -541,10 +539,10 @@ abstract class Image_Driver
 	{
 		empty($color) and $color = $this->config['bgcolor'];
 
-		return array(
+		return [
 			'size' => $size,
 			'color' => $color,
-		);
+		];
 	}
 
 	/**
@@ -569,9 +567,9 @@ abstract class Image_Driver
 	 */
 	protected function _mask($maskimage)
 	{
-		return array(
+		return [
 			'maskimage' => $maskimage,
-		);
+		];
 	}
 
 	/**
@@ -605,25 +603,25 @@ abstract class Image_Driver
 
 		if ($sides != null)
 		{
-			$sides = explode(' ', $sides);
+			$sides = explode(' ', (string) $sides);
 			foreach ($sides as $side)
 			{
 				if ($side == 'tl' or $side == 'tr' or $side == 'bl' or $side == 'br')
 				{
-					$$side = true;
+					${$side} = true;
 				}
 			}
 		}
 		$antialias == null and $antialias = 1;
 
-		return array(
+		return [
 			'radius' => $radius,
 			'tl' => $tl,
 			'tr' => $tr,
 			'bl' => $bl,
 			'br' => $br,
 			'antialias' => $antialias,
-		);
+		];
 	}
 
 	/**
@@ -656,7 +654,7 @@ abstract class Image_Driver
 			$filename = $this->image_filename;
 		}
 
-		$directory = dirname($filename);
+		$directory = dirname((string) $filename);
 		if ( ! is_dir($directory))
 		{
 			throw new \OutOfBoundsException("Could not find directory \"$directory\"");
@@ -679,9 +677,9 @@ abstract class Image_Driver
 		}
 
 		$this->debug("", "Saving image as <code>$filename</code>");
-		return array(
+		return [
 			'filename' => $filename,
-		);
+		];
 	}
 
 	/**
@@ -693,11 +691,11 @@ abstract class Image_Driver
 	 * @param   integer  $permissions  The permissions to attempt to set on the file.
 	 * @return  Image_Driver
 	 */
-	public function save_pa($append, $prepend = null, $extension = null, $permissions = null)
+	public function save_pa(string $append, $prepend = null, $extension = null, $permissions = null)
 	{
-		$filename = substr($this->image_filename, 0, -(strlen($this->image_extension) + 1));
+		$filename = substr((string) $this->image_filename, 0, -(strlen((string) $this->image_extension) + 1));
 		$fullpath = $this->image_directory.'/'.$append.$filename.$prepend.'.'.
-			($extension !== null ? $extension : $this->image_extension);
+			($extension ?? $this->image_extension);
 		$this->save($fullpath, $permissions);
 		return $this;
 	}
@@ -731,9 +729,9 @@ abstract class Image_Driver
 		}
 
 		$this->debug('', "Outputting image as $filetype");
-		return array(
+		return [
 			'filetype' => $filetype,
-		);
+		];
 	}
 
 	/**
@@ -767,7 +765,7 @@ abstract class Image_Driver
 		else
 		{
 			// Check if theres a # in front
-			if (substr($hex, 0, 1) == '#')
+			if (str_starts_with($hex, '#'))
 			{
 				$hex = substr($hex, 1);
 			}
@@ -791,12 +789,12 @@ abstract class Image_Driver
 
 		$alpha = floor($alpha / 2.55);
 
-		return array(
+		return [
 			'red' => $red,
 			'green' => $green,
 			'blue' => $blue,
 			'alpha' => $alpha,
-		);
+		];
 	}
 
 	/**
@@ -818,7 +816,7 @@ abstract class Image_Driver
 
 		foreach ($this->accepted_extensions as $ext)
 		{
-			if (strtolower(substr($filename, strlen($ext) * -1)) == strtolower($ext))
+			if (strtolower(substr($filename, strlen((string) $ext) * -1)) == strtolower((string) $ext))
 			{
 				$writevar and $this->image_extension = $ext;
 				$return = $ext;
@@ -844,19 +842,17 @@ abstract class Image_Driver
 		// conversion from string to float will return an integer.
 		// For instance: "1.2" / 10 == 0.12 but "1,2" / 10 == 0.1...
 		$input = str_replace(',', '.', $input);
-
-		$orig = $input;
 		$sizes = $this->sizes();
 		$size = $x ? $sizes->width : $sizes->height;
 		// Convert percentages to absolutes
-		if (substr($input, -1) == '%')
+		if (str_ends_with($input, '%'))
 		{
 			$input = floor((substr($input, 0, -1) / 100) * $size);
 		}
 		// Negatives are based off the bottom right
 		if ($x !== null and $input < 0)
 		{
-			$input = $size + $input;
+			return $size + $input;
 		}
 		return $input;
 	}
@@ -869,7 +865,7 @@ abstract class Image_Driver
 	protected function queue($function)
 	{
 		$func = func_get_args();
-		$tmpfunc = array();
+		$tmpfunc = [];
 		for ($i = 0; $i < count($func); $i++)
 		{
 			$tmpfunc[$i] = var_export($func[$i], true);
@@ -884,21 +880,21 @@ abstract class Image_Driver
 	 *
 	 * @param  boolean  $clear  Decides if the queue should be cleared once completed.
 	 */
-	public function run_queue($clear = null)
+	public function run_queue($clear = null): void
 	{
 		foreach ($this->queued_actions as $action)
 		{
-			$tmpfunc = array();
+			$tmpfunc = [];
 			for ($i = 0; $i < count($action); $i++)
 			{
 				$tmpfunc[$i] = var_export($action[$i], true);
 			}
 			$this->debug('', "<b>Executing <code>" . implode(", ", $tmpfunc) . "</code></b>");
-			call_user_func_array(array(&$this, '_' . $action[0]), array_slice($action, 1));
+			call_user_func_array([&$this, '_' . $action[0]], array_slice($action, 1));
 		}
 		if (($clear === null and $this->config['clear_queue']) or $clear === true)
 		{
-			$this->queued_actions = array();
+			$this->queued_actions = [];
 		}
 	}
 

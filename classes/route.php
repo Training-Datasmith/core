@@ -17,22 +17,17 @@ class Route
 	/**
 	 * @var  array  segments array
 	 */
-	public $segments = array();
+	public $segments = [];
 
 	/**
 	 * @var  array  named params array
 	 */
-	public $named_params = array();
+	public $named_params = [];
 
 	/**
 	 * @var  array  method params array
 	 */
-	public $method_params = array();
-
-	/**
-	 * @var  string  route path
-	 */
-	public $path = '';
+	public $method_params = [];
 
 	/**
 	 * @var  boolean  route case match behaviour
@@ -45,29 +40,24 @@ class Route
 	public $strip_extension = true;
 
 	/**
-	 * @var  string  route name
-	 */
-	public $name = null;
-
-	/**
 	 * @var  string  route module
 	 */
-	public $module = null;
+	public $module;
 
 	/**
 	 * @var  string  route directory
 	 */
-	public $directory = null;
+	public $directory;
 
 	/**
 	 * @var  string  controller name
 	 */
-	public $controller = null;
+	public $controller;
 
 	/**
 	 * @var  string  controller path
 	 */
-	public $controller_path = null;
+	public $controller_path;
 	/**
 	 * @var  string  default controller action
 	 */
@@ -76,26 +66,34 @@ class Route
 	/**
 	 * @var  mixed  route translation
 	 */
-	public $translation = null;
+	public $translation;
 
 	/**
 	 * @var  closure
 	 */
-	public $callable = null;
+	public $callable;
 
 	/**
 	 * @var  mixed  the compiled route regex
 	 */
-	protected $search = null;
+	protected $search;
 
-	public function __construct($path, $translation = null, $case_sensitive = null, $strip_extension = null, $name = null)
+	/**
+     * @param string $path
+     * @param string $name
+     */
+    public function __construct(/**
+     * @var  string  route path
+     */
+    public $path, $translation = null, $case_sensitive = null, $strip_extension = null, /**
+     * @var  string  route name
+     */
+    public $name = null)
 	{
-		$this->path = $path;
-		$this->translation = ($translation === null) ? $path : $translation;
-		$this->search = ($translation == stripslashes($path)) ? $path : $this->compile();
-		$this->case_sensitive = ($case_sensitive === null) ? \Config::get('routing.case_sensitive', true) : $case_sensitive;
-		$this->strip_extension = ($strip_extension === null) ? \Config::get('routing.strip_extension', true) : $strip_extension;
-		$this->name = $name;
+		$this->translation = $translation ?? $this->path;
+		$this->search = ($translation == stripslashes($this->path)) ? $this->path : $this->compile();
+		$this->case_sensitive = $case_sensitive ?? \Config::get('routing.case_sensitive', true);
+		$this->strip_extension = $strip_extension ?? \Config::get('routing.strip_extension', true);
 	}
 
 	/**
@@ -103,28 +101,28 @@ class Route
 	 *
 	 * @return  string  compiled route.
 	 */
-	protected function compile()
+	protected function compile(): ?string
 	{
 		if ($this->path === '_root_')
 		{
 			return '';
 		}
 
-		$search = str_replace(array(
+		$search = str_replace([
 			':any',
 			':everything',
 			':alnum',
 			':num',
 			':alpha',
 			':segment',
-		), array(
+		], [
 			'.+',
 			'.*',
 			'[[:alnum:]]+',
 			'[[:digit:]]+',
 			'[[:alpha:]]+',
 			'[^/]*',
-		), $this->path);
+		], $this->path);
 
 		return preg_replace('#(?<!\[\[):([a-z\_]+)(?!:\]\])#uD', '(?P<$1>.+?)', $search);
 	}
@@ -162,7 +160,7 @@ class Route
 	 * @param   array   $named_params  Named parameters
 	 * @return  object  $this
 	 */
-	public function matched($uri = '', $named_params = array())
+	public function matched($uri = '', array $named_params = []): static
 	{
 		// Clean out all the non-named stuff out of $named_params
 		foreach($named_params as $key => $val)
@@ -196,15 +194,15 @@ class Route
 
 				if ($this->case_sensitive)
 				{
-					$path = preg_replace('#^'.$this->search.'$#uD', $this->translation, $uri);
+					$path = preg_replace('#^'.$this->search.'$#uD', (string) $this->translation, $uri);
 				}
 				else
 				{
-					$path = preg_replace('#^'.$this->search.'$#uiD', $this->translation, $uri);
+					$path = preg_replace('#^'.$this->search.'$#uiD', (string) $this->translation, $uri);
 				}
 			}
 
-			$this->segments = explode('/', trim($path, '/'));
+			$this->segments = explode('/', trim((string) $path, '/'));
 		}
 
 		return $this;
@@ -233,7 +231,7 @@ class Route
 
 				$protocol = isset($r[2]) ? ($r[2] ? 'https' : 'http') : false;
 
-				if (($protocol === false or $protocol == \Input::protocol()) and $method == strtoupper($verb))
+				if (($protocol === false or $protocol == \Input::protocol()) and $method == strtoupper((string) $verb))
 				{
 					$r[1]->search = $route->search;
 					$result = $route->_parse_search($uri, $r[1], $method);
@@ -261,9 +259,6 @@ class Route
 		{
 			return $route->matched($uri, $params);
 		}
-		else
-		{
-			return false;
-		}
+        return false;
 	}
 }

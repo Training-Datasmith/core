@@ -17,52 +17,47 @@ abstract class Cache_Storage_Driver
 	/**
 	 * @var  array  defines which class properties are gettable with get_... in the __call() method
 	 */
-	protected static $_gettable = array('created', 'expiration', 'dependencies', 'identifier');
+	protected static $_gettable = ['created', 'expiration', 'dependencies', 'identifier'];
 
 	/**
 	 * @var  array  defines which class properties are settable with set_... in the __call() method
 	 */
-	protected static $_settable = array('expiration', 'dependencies', 'identifier');
+	protected static $_settable = ['expiration', 'dependencies', 'identifier'];
 
 	/**
 	 * @var  string  name of the content handler driver
 	 */
-	protected $content_handler = null;
+	protected ?object $content_handler;
 
 	/**
 	 * @var  Cache_Handler_Driver  handles and formats the cache's contents
 	 */
-	protected $handler_object = null;
-
-	/**
-	 * @var  string  the cache's name, either string or md5'd serialization of something else
-	 */
-	protected $identifier = null;
+	protected $handler_object;
 
 	/**
 	 * @var  int  timestamp of creation of the cache
 	 */
-	protected $created = null;
+	protected $created;
 
 	/**
 	 * @var  int  timestamp when this cache will expire
 	 */
-	protected $expiration = null;
+	protected $expiration;
 
 	/**
 	 * @var  array  contains identifiers of other caches this one depends on
 	 */
-	protected $dependencies = array();
+	protected $dependencies = [];
 
 	/**
 	 * @var  mixed  the contents of this
 	 */
-	protected $contents = null;
+	protected $contents;
 
 	/**
 	 * @var  string  loaded driver
 	 */
-	protected $driver = null;
+	protected $driver;
 
 	/**
 	 * Abstract method that should take care of the storage engine specific reading. Needs to set the object properties:
@@ -100,14 +95,13 @@ abstract class Cache_Storage_Driver
 	abstract public function delete_all($section);
 
 	/**
-	 * Should check all dependencies against the creation timestamp.
-	 * This is static to make it possible in the future to check dependencies from other storages then the current one,
-	 * though I don't have a clue yet how to make that possible.
-	 *
-	 * @param  array  $dependencies
-	 * @return bool   either true or false on any failure
-	 */
-	abstract public function check_dependencies(array $dependencies);
+     * Should check all dependencies against the creation timestamp.
+     * This is static to make it possible in the future to check dependencies from other storages then the current one,
+     * though I don't have a clue yet how to make that possible.
+     *
+     * @return bool   either true or false on any failure
+     */
+    abstract public function check_dependencies(array $dependencies);
 
 	/**
 	 * Default constructor, any extension should either load this first or act similar
@@ -115,13 +109,11 @@ abstract class Cache_Storage_Driver
 	 * @param  string $identifier the identifier for this cache
 	 * @param  array  $config additional config values
 	 */
-	public function __construct($identifier, $config)
+	public function __construct(protected $identifier, array $config)
 	{
-		$this->identifier = $identifier;
-
 		// fetch options from config and set them
-		$this->expiration       = array_key_exists('expiration', $config) ? $config['expiration'] : \Config::get('cache.expiration', null);
-		$this->dependencies     = array_key_exists('dependencies', $config) ? $config['dependencies'] : array();
+		$this->expiration       = array_key_exists('expiration', $config) ? $config['expiration'] : \Config::get('cache.expiration');
+		$this->dependencies     = array_key_exists('dependencies', $config) ? $config['dependencies'] : [];
 		$this->content_handler  = array_key_exists('content_handler', $config) ? new $config['content_handler']() : null;
 		$this->driver           = array_key_exists('driver', $config) ? $config['driver'] : 'file';
 	}
@@ -133,26 +125,21 @@ abstract class Cache_Storage_Driver
 	 * @param   array
 	 * @return  void|mixed
 	 */
-	public function __call($method, $args = array())
+	public function __call(string $method, array $args = [])
 	{
 		// Allow getting any properties set in static::$_gettable
-		if (substr($method, 0, 3) == 'get')
-		{
-			$name = substr($method, 4);
-			if (in_array($name, static::$_gettable))
+        if (str_starts_with($method, 'get')) {
+            $name = substr($method, 4);
+            if (in_array($name, static::$_gettable))
 			{
 				return $this->{$name};
 			}
-			else
-			{
-				throw new \BadMethodCallException('This property doesn\'t exist or can\'t be read.');
-			}
-		}
-		// Allow setting any properties set in static::$_settable
-		elseif (substr($method, 0, 3) == 'set')
-		{
-			$name = substr($method, 4);
-			if (in_array($name, static::$_settable))
+            throw new \BadMethodCallException('This property doesn\'t exist or can\'t be read.');
+        }
+        // Allow getting any properties set in static::$_gettable
+		if (str_starts_with($method, 'set')) {
+            $name = substr($method, 4);
+            if (in_array($name, static::$_settable))
 			{
 				$this->{$name} = @$args[0];
 			}
@@ -160,12 +147,9 @@ abstract class Cache_Storage_Driver
 			{
 				throw new \BadMethodCallException('This property doesn\'t exist or can\'t be set.');
 			}
-			return $this;
-		}
-		else
-		{
-			throw new \BadMethodCallException('Illegal method call: ' . $method);
-		}
+            return $this;
+        }
+        throw new \BadMethodCallException('Illegal method call: ' . $method);
 	}
 
 	/**
@@ -188,29 +172,25 @@ abstract class Cache_Storage_Driver
 		if (is_string($identifier) || is_int($identifier))
 		{
 			// cleanup to only allow alphanumeric chars, dashes, dots & underscores
-			if (preg_match('/^([a-z0-9_\.\-]*)$/iuD', $identifier) === 0)
+			if (preg_match('/^([a-z0-9_\.\-]*)$/iuD', (string) $identifier) === 0)
 			{
 				throw new \FuelException('Cache identifier can only contain alphanumeric characters, underscores, dashes & dots.');
 			}
 
 			return (string) $identifier;
 		}
-		// In case of array, bool or object return the md5 of the $identifier's serialization
-		else
-		{
-			return '_hashes.'.md5(serialize($identifier));
-		}
+        return '_hashes.'.md5(serialize($identifier));
 	}
 
 	/**
 	 * Resets all properties except for the identifier, should be run by default when a delete() is triggered
 	 */
-	public function reset()
+	public function reset(): void
 	{
 		$this->contents			= null;
 		$this->created			= null;
 		$this->expiration		= null;
-		$this->dependencies		= array();
+		$this->dependencies		= [];
 		$this->content_handler	= null;
 		$this->handler_object	= null;
 	}
@@ -223,7 +203,7 @@ abstract class Cache_Storage_Driver
 	 * @param  bool   $expiration    The time in seconds until the cache will expire, =< 0 or null means no expiration
 	 * @param  array  $dependencies  array of names on which this cache depends for
 	 */
-	final public function set($contents = null, $expiration = false, $dependencies = array())
+	final public function set($contents = null, $expiration = false, $dependencies = []): void
 	{
 		$contents = \Fuel::value($contents);
 		// save the current expiration
@@ -250,14 +230,11 @@ abstract class Cache_Storage_Driver
 		}
 
 		// Convert dependency identifiers to string when set
-		$this->dependencies = ( ! is_array($this->dependencies)) ? array($this->dependencies) : $this->dependencies;
-		if ( ! empty( $this->dependencies ) )
-		{
-			foreach($this->dependencies as $key => $id)
+		$this->dependencies = ( ! is_array($this->dependencies)) ? [$this->dependencies] : $this->dependencies;
+		foreach($this->dependencies as $key => $id)
 			{
-				$this->dependencies[$key] = $this->stringify_identifier($id);
+				$this->dependencies[$key] = static::stringify_identifier($id);
 			}
-		}
 
 		// Turn everything over to the storage specific method
 		$this->_set();
@@ -310,13 +287,13 @@ abstract class Cache_Storage_Driver
 	 * @param   array        $dependencies Contains the identifiers of caches this one will depend on
 	 * @return  mixed
 	 */
-	final public function call($callback, $args = array(), $expiration = null, $dependencies = array())
+	final public function call($callback, $args = [], $expiration = null, $dependencies = [])
 	{
 		try
 		{
 			$this->get();
 		}
-		catch (\CacheNotFoundException $e)
+		catch (\CacheNotFoundException)
 		{
 			// Create the contents
 			$contents = call_fuel_func_array($callback, $args);
@@ -391,7 +368,7 @@ abstract class Cache_Storage_Driver
 			}
 			else
 			{
-				$type = is_object($this->contents) ? get_class($this->contents) : gettype($this->contents);
+				$type = get_debug_type($this->contents);
 				$this->content_handler = \Config::get('cache.'.$type.'_handler', 'serialized');
 			}
 		}

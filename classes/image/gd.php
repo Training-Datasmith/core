@@ -14,8 +14,8 @@ namespace Fuel\Core;
 
 class Image_Gd extends \Image_Driver
 {
-	protected $image_data = null;
-	protected $accepted_extensions = array('png', 'gif', 'jpg', 'jpeg');
+	protected $image_data;
+	protected $accepted_extensions = ['png', 'gif', 'jpg', 'jpeg'];
 	protected $gdresizefunc = "imagecopyresampled";
 
 	public function load($filename, $return_data = false, $force_extension = false)
@@ -84,29 +84,25 @@ class Image_Gd extends \Image_Driver
 	{
 		extract(parent::_rotate($degrees));
 		$degrees = 360 - $degrees;
-		$bgcolor = $this->config['bgcolor'] !== null ? $this->config['bgcolor'] : '#000';
+		$bgcolor = $this->config['bgcolor'] ?? '#000';
 		$color = $this->create_color($this->image_data, $bgcolor, 100);
-		$this->image_data = imagerotate($this->image_data, $degrees, $color, false);
+		$this->image_data = imagerotate($this->image_data, $degrees, $color);
 	}
 
-	protected function _watermark($filename, $position, $padding = array(5,5))
+	protected function _watermark($filename, $position, $padding = [5,5])
 	{
 		$values = parent::_watermark($filename, $position, $padding);
 		if ($values == false)
 		{
 			throw new \InvalidArgumentException("Watermark image not found or invalid filetype.");
 		}
-		else
-		{
-			extract($values);
-			$wsizes = $this->sizes($filename);
-			$sizes = $this->sizes();
-
-			// Load the watermark preserving transparency
-			$watermark = $this->load($filename, true);
-
-			// Below is to prevent glitch in GD with negative  $x coords
-			if ($x < 0 || $y < 0)
+        extract($values);
+        $wsizes = $this->sizes($filename);
+        $this->sizes();
+        // Load the watermark preserving transparency
+        $watermark = $this->load($filename, true);
+        // Below is to prevent glitch in GD with negative  $x coords
+        if ($x < 0 || $y < 0)
 			{
 				$this->debug("Modifying watermark to remove negative coords.");
 				// Generate a new width and height for the watermark.
@@ -128,17 +124,15 @@ class Image_Gd extends \Image_Driver
 				$x = $x < 0 ? 0 : $x;
 				$y = $y < 0 ? 0 : $y;
 			}
-
-			// Used as a workaround for lack of alpha support in imagecopymerge.
-			$this->debug("Coords for watermark are $x , $y");
-			$this->image_merge($this->image_data, $watermark, $x, $y, $this->config['watermark_alpha']);
-		}
+        // Used as a workaround for lack of alpha support in imagecopymerge.
+        $this->debug("Coords for watermark are $x , $y");
+        $this->image_merge($this->image_data, $watermark, $x, $y, $this->config['watermark_alpha']);
 	}
 
 	protected function _flip($mode)
 	{
 		$sizes	= (array) $this->sizes();
-		$source = array_merge($sizes, array('x' => 0, 'y' => 0));
+		$source = array_merge($sizes, ['x' => 0, 'y' => 0]);
 
 		switch ($mode)
 		{
@@ -231,12 +225,12 @@ class Image_Gd extends \Image_Driver
 
 				if ($maskalpha == 0)
 				{
-					$ourcolor = array(
+					$ourcolor = [
 						'red' => 0,
 						'green' => 0,
 						'blue' => 0,
 						'alpha' => 0,
-					);
+					];
 				}
 				else
 				{
@@ -274,7 +268,7 @@ class Image_Gd extends \Image_Driver
 		$sizes = $this->sizes();
 
 		// Create the 256 color palette
-		$bwpalette = array();
+		$bwpalette = [];
 		for ($i = 0; $i < 256; $i++)
 		{
 			$bwpalette[$i] = imagecolorallocate($this->image_data, $i, $i, $i);
@@ -288,12 +282,13 @@ class Image_Gd extends \Image_Driver
 				$red   = ($color >> 16) & 0xFF;
 				$green = ($color >> 8) & 0xFF;
 				$blue  = $color & 0xFF;
-
-				// If its black or white, theres no use in setting the pixel
-				if (($red == 0 && $green == 0 && $blue == 0) || ($red == 255 && $green == 255 && $blue == 255))
-				{
-					continue;
-				}
+                // If its black or white, theres no use in setting the pixel
+                if ($red == 0 && $green == 0 && $blue == 0) {
+                    continue;
+                }
+                if ($red == 255 && $green == 255 && $blue == 255) {
+                    continue;
+                }
 
 				// Now set the color
 				$shade = (($red*0.299)+($green*0.587)+($blue*0.114));
@@ -321,9 +316,9 @@ class Image_Gd extends \Image_Driver
 		}
 		else
 		{
-			list($width, $height) = getimagesize($filename);
+			[$width, $height] = getimagesize($filename);
 		}
-		return (object) array('width' => $width, 'height' => $height);
+		return (object) ['width' => $width, 'height' => $height];
 	}
 
 	public function save($filename = null, $permissions = null)
@@ -333,7 +328,7 @@ class Image_Gd extends \Image_Driver
 		$this->run_queue();
 		$this->add_background();
 
-		$vars = array(&$this->image_data, $filename);
+		$vars = [&$this->image_data, $filename];
 		$filetype = $this->image_extension;
 		if ($filetype == 'jpg' || $filetype == 'jpeg')
 		{
@@ -363,7 +358,7 @@ class Image_Gd extends \Image_Driver
 		$this->run_queue();
 		$this->add_background();
 
-		$vars = array($this->image_data, null);
+		$vars = [$this->image_data, null];
 		if ($filetype == 'jpg' || $filetype == 'jpeg')
 		{
 			$vars[] = $this->config['quality'];

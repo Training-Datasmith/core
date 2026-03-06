@@ -25,68 +25,63 @@ namespace Fuel\Core;
 class Input_Instance
 {
 	/**
-	 * @var  $request  Active instance of Request
-	 */
-	protected $request = null;
-
-	/**
 	 * @var  $detected_uri  The URI that was detected automatically
 	 */
-	protected $detected_uri = null;
+	protected $detected_uri;
 
 	/**
 	 * @var  $detected_ext  The URI extension that was detected automatically
 	 */
-	protected $detected_ext = null;
+	protected $detected_ext;
 
 	/**
 	 * @var  string  $raw  raw PHP input
 	 */
-	protected $raw_input = null;
+	protected string|false $raw_input;
 
 	/**
 	 * @var  array  $get  All GET input
 	 */
-	protected $input_get = array();
+	protected $input_get = [];
 
 	/**
 	 * @var  array  $post  All POST input
 	 */
-	protected $input_post = array();
+	protected $input_post = [];
 
 	/**
 	 * @var  array  $put  All PUT input
 	 */
-	protected $input_put = array();
+	protected $input_put = [];
 
 	/**
 	 * @var  array  $post  All DELETE input
 	 */
-	protected $input_delete = array();
+	protected $input_delete = [];
 
 	/**
 	 * @var  array  $input  All PATCH input
 	 */
-	protected $input_patch = array();
+	protected $input_patch = [];
 
 	/**
 	 * @var  $json  parsed request body as json
 	 */
-	protected $input_json = array();
+	protected $input_json = [];
 
 	/**
 	 * @var  $xml  parsed request body as xml
 	 */
-	protected $input_xml = array();
+	protected $input_xml = [];
 
 	/**
 	 *
 	 */
-	public function __construct(Request $new = null, Input_Instance $input = null)
+	public function __construct(/**
+     * @var  $request  Active instance of Request
+     */
+    protected ?\Fuel\Core\Request $request = null, Input_Instance $input = null)
 	{
-		// store the associated request
-		$this->request = $new;
-
 		// get php raw input
 		$this->raw_input = file_get_contents('php://input');
 
@@ -149,7 +144,7 @@ class Input_Instance
 
 			if ( ! empty($_SERVER['REQUEST_URI']))
 			{
-				$uri = strpos($_SERVER['SCRIPT_NAME'], $_SERVER['REQUEST_URI']) !== 0 ? $_SERVER['REQUEST_URI'] : '';
+				$uri = !str_starts_with((string) $_SERVER['SCRIPT_NAME'], (string) $_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
 			}
 		}
 
@@ -160,7 +155,7 @@ class Input_Instance
 			{
 				$this->detected_uri = $uri;
 			}
-			elseif ($uri = \Cli::option(1) and strpos($uri, '/') === 0)
+			elseif (($uri = \Cli::option(1)) and str_starts_with($uri, '/'))
 			{
 				$this->detected_uri = $uri;
 			}
@@ -178,38 +173,38 @@ class Input_Instance
 
 		// Remove the base URL from the URI
 		$base_url = parse_url(\Config::get('base_url'), PHP_URL_PATH);
-		if ($uri !== '' and $base_url !== '' and strncmp($uri, $base_url, strlen($base_url)) === 0)
+		if ($uri !== '' and $base_url !== '' and str_starts_with((string) $uri, $base_url))
 		{
-			$uri = substr($uri, strlen($base_url) - 1);
+			$uri = substr((string) $uri, strlen($base_url) - 1);
 		}
 
 		// If we are using an index file (not mod_rewrite) then remove it
 		$index_file = \Config::get('index_file');
-		if ($index_file and strncmp($uri, $index_file, strlen($index_file)) === 0)
+		if ($index_file and str_starts_with((string) $uri, $index_file))
 		{
-			$uri = substr($uri, strlen($index_file));
+			$uri = substr((string) $uri, strlen($index_file));
 		}
 
 		// When index.php? is used and the config is set wrong, lets just
 		// be nice and help them out.
-		if ($index_file and strncmp($uri, '?/', 2) === 0)
+		if ($index_file and str_starts_with((string) $uri, '?/'))
 		{
-			$uri = substr($uri, 1);
+			$uri = substr((string) $uri, 1);
 		}
 
 		// in case of incorrect rewrites, we may need to cleanup and
 		// recreate the QUERY_STRING and $_GET
-		if (strpos($uri, '?') !== false)
+		if (str_contains((string) $uri, '?'))
 		{
 			// log this issue
 			\Log::write(\Fuel::L_DEBUG, 'Your rewrite rules are incorrect, change "index.php?/$1 [QSA,L]" to "index.php/$1 [L]"!');
 
 			// reset $_GET
-			$_GET = array();
+			$_GET = [];
 
 			// lets split the URI up in case it contains a ?.  This would
 			// indicate the server requires 'index.php?'
-			preg_match('#(.*?)\?(.*)#i', $uri, $matches);
+			preg_match('#(.*?)\?(.*)#i', (string) $uri, $matches);
 
 			// If there are matches then lets set everything correctly
 			if ( ! empty($matches))
@@ -229,10 +224,10 @@ class Input_Instance
 		}
 
 		// Deal with any trailing dots
-		$uri = rtrim($uri, '.');
+		$uri = rtrim((string) $uri, '.');
 
 		// Do we have a URI and does it not end on a slash?
-		if ($uri and substr($uri, -1) !== '/')
+		if ($uri and !str_ends_with($uri, '/'))
 		{
 			// Strip the defined url suffix from the uri if needed
 			$ext = strrchr($uri, '.');
@@ -242,7 +237,7 @@ class Input_Instance
 			if ( ! empty($ext))
 			{
 				// if it has a slash in it, it's a URI segment with a dot in it
-				if (strpos($ext, '/') === false)
+				if (!str_contains($ext, '/'))
 				{
 					$this->detected_ext = ltrim($ext, '.');
 
@@ -332,11 +327,9 @@ class Input_Instance
 	}
 
 	/**
-	 * Returns all of the GET, POST, PUT, PATCH or DELETE array's
-	 *
-	 * @return  array
-	 */
-	public function all()
+     * Returns all of the GET, POST, PUT, PATCH or DELETE array's
+     */
+    public function all(): array
 	{
 		return array_merge($this->input_get, $this->input_post, $this->input_put, $this->input_patch, $this->input_delete);
 	}
@@ -414,14 +407,12 @@ class Input_Instance
 	}
 
 	/**
-	 * Set additional input variables
-	 *
-	 * @param  string  $method  name of the HTTP method to set variables for, in lowercase
-	 * @param  array   $input   assoc array of input fieldnames and values
-	 *
-	 * @return  void
-	 */
-	public function _set($method, array $input)
+     * Set additional input variables
+     *
+     * @param  string  $method  name of the HTTP method to set variables for, in lowercase
+     * @param  array   $input   assoc array of input fieldnames and values
+     */
+    public function _set($method, array $input): void
 	{
 		// make sure the method is lowercase
 		$method = strtolower(trim($method));
@@ -500,14 +491,14 @@ class Input_Instance
 			array_pop($blocks);
 
 			// loop data blocks
-			$php_input = array();
-			foreach ($blocks as $id => $block)
+			$php_input = [];
+			foreach ($blocks as $block)
 			{
 				// skip empty blocks
 				if ( ! empty($block))
 				{
 					// parse uploaded files
-					if (strpos($block, 'application/octet-stream') !== FALSE)
+					if (str_contains($block, 'application/octet-stream'))
 					{
 						// match "name", then everything after "stream" (optional) except for prepending newlines
 						preg_match("/name=\"([^\"]*)\".*stream[\n|\r]+([^\n\r].*)?$/s", $block, $matches);
@@ -520,7 +511,7 @@ class Input_Instance
 					}
 
 					// store the result, if any
-					$php_input[$matches[1]] = isset($matches[2]) ? $matches[2] : '';
+					$php_input[$matches[1]] = $matches[2] ?? '';
 				}
 			}
 		}

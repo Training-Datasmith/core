@@ -30,11 +30,9 @@ class Database_PDO_Result extends \Database_Result
 	}
 
 	/**
-	 * Result destruction cleans up all open result sets.
-	 *
-	 * @return  void
-	 */
-	public function __destruct()
+     * Result destruction cleans up all open result sets.
+     */
+    public function __destruct()
 	{
 		// Cached results do not use driver resources
 	}

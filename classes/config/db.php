@@ -17,11 +17,9 @@ namespace Fuel\Core;
  */
 class Config_Db implements Config_Interface
 {
-	protected $identifier;
-
 	protected $ext = '.db';
 
-	protected $vars = array();
+	protected array $vars;
 
 	protected $database;
 
@@ -33,18 +31,16 @@ class Config_Db implements Config_Interface
 	 * @param   string  $identifier  Config identifier name
 	 * @param   array   $vars  Variables to parse in the data retrieved
 	 */
-	public function __construct($identifier = null, $vars = array())
+	public function __construct(protected $identifier = null, $vars = [])
 	{
-		$this->identifier = $identifier;
-
-		$this->vars = array(
+		$this->vars = [
 			'APPPATH' => APPPATH,
 			'COREPATH' => COREPATH,
 			'PKGPATH' => PKGPATH,
 			'DOCROOT' => DOCROOT,
-		) + $vars;
+		] + $vars;
 
-		$this->database = \Config::get('config.database', null);
+		$this->database = \Config::get('config.database');
 		$this->table = \Config::get('config.table_name', 'config');
 	}
 
@@ -58,7 +54,7 @@ class Config_Db implements Config_Interface
 	 */
 	public function load($overwrite = false, $cache = true)
 	{
-		$config = array();
+		$config = [];
 
 		// try to retrieve the config from the database
 		try
@@ -117,7 +113,7 @@ class Config_Db implements Config_Interface
 	 * @param   array  $array  array to be prepped
 	 * @return  array  prepped array
 	 */
-	protected function prep_vars(&$array)
+	protected function prep_vars(array &$array)
 	{
 		static $replacements = false;
 
@@ -125,7 +121,7 @@ class Config_Db implements Config_Interface
 		{
 			foreach ($this->vars as $i => $v)
 			{
-				$replacements['#^('.preg_quote($v).'){1}(.*)?#'] = "%".$i."%$2";
+				$replacements['#^('.preg_quote((string) $v).'){1}(.*)?#'] = "%".$i."%$2";
 			}
 		}
 
@@ -148,19 +144,19 @@ class Config_Db implements Config_Interface
 	 * @param   $contents  $contents    config array to save
 	 * @return  bool       DB result
 	 */
-	public function save($contents)
+	public function save($contents): bool
 	{
 		// prep the contents
 		$this->prep_vars($contents);
 		$contents = serialize($contents);
 
 		// update the config in the database
-		$result = \DB::update($this->table)->set(array('config' => $contents, 'hash' => uniqid()))->where('identifier', '=', $this->identifier)->execute($this->database);
+		$result = \DB::update($this->table)->set(['config' => $contents, 'hash' => uniqid()])->where('identifier', '=', $this->identifier)->execute($this->database);
 
 		// if there wasn't an update, do an insert
 		if ($result === 0)
 		{
-			list($notused, $result) = \DB::insert($this->table)->set(array('identifier' => $this->identifier, 'config' => $contents, 'hash' => uniqid()))->execute($this->database);
+			[$notused, $result] = \DB::insert($this->table)->set(['identifier' => $this->identifier, 'config' => $contents, 'hash' => uniqid()])->execute($this->database);
 		}
 
 		return $result === 1;

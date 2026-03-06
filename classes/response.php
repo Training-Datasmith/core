@@ -12,7 +12,7 @@
 
 namespace Fuel\Core;
 
-class Response
+class Response implements \Stringable
 {
 	/**
 	 * @var  array  An array of status codes and messages
@@ -20,7 +20,7 @@ class Response
 	 * See http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
 	 * for the complete and approved list, and links to the RFC's that define them
 	 */
-	public static $statuses = array(
+	public static $statuses = [
 		100 => 'Continue',
 		101 => 'Switching Protocols',
 		102 => 'Processing',
@@ -80,18 +80,16 @@ class Response
 		509 => 'Bandwidth Limit Exceeded',
 		510 => 'Not Extended',
 		511 => 'Network Authentication Required',
-	);
+	];
 
 	/**
-	 * Creates an instance of the Response class
-	 *
-	 * @param   string  $body    The response body
-	 * @param   int     $status  The HTTP response status for this response
-	 * @param   array   $headers Array of HTTP headers for this response
-	 *
-	 * @return  Response
-	 */
-	public static function forge($body = null, $status = 200, array $headers = array())
+     * Creates an instance of the Response class
+     *
+     * @param   string  $body    The response body
+     * @param   int     $status  The HTTP response status for this response
+     * @param   array   $headers Array of HTTP headers for this response
+     */
+    public static function forge($body = null, $status = 200, array $headers = []): static
 	{
 		$response = new static($body, $status, $headers);
 
@@ -102,32 +100,30 @@ class Response
 	}
 
 	/**
-	 * Redirects to another uri/url.  Sets the redirect header,
-	 * sends the headers and exits.  Can redirect via a Location header
-	 * or using a refresh header.
-	 *
-	 * The refresh header works better on certain servers like IIS.
-	 *
-	 * @param   string  $url     The url
-	 * @param   string  $method  The redirect method
-	 * @param   int     $code    The redirect status code
-	 *
-	 * @return  void
-	 */
-	public static function redirect($url = '', $method = 'location', $code = 302)
+     * Redirects to another uri/url.  Sets the redirect header,
+     * sends the headers and exits.  Can redirect via a Location header
+     * or using a refresh header.
+     *
+     * The refresh header works better on certain servers like IIS.
+     *
+     * @param   string  $url     The url
+     * @param   string  $method  The redirect method
+     * @param   int     $code    The redirect status code
+     */
+    public static function redirect($url = '', $method = 'location', $code = 302): void
 	{
 		$response = new static;
 
 		$response->set_status($code);
 
-		if (strpos($url, '://') === false)
+		if (!str_contains($url, '://'))
 		{
 			$url = $url !== '' ? \Uri::create($url) : \Uri::base();
 		}
 
 		if (\Config::get('response.redirect_with_wildcards', true))
 		{
-			strpos($url, '*') !== false and $url = \Uri::segment_replace($url);
+			str_contains($url, '*') and $url = \Uri::segment_replace($url);
 		}
 
 		if ($method == 'location')
@@ -148,26 +144,25 @@ class Response
 	}
 
 	/**
-	 * Redirects back to the previous page, if that page is within the current
-	 * application. If not, it will redirect to the given url, and if none is
-	 * given, back to the application root. If the current page is the application
-	 * root, an exception is thrown
-	 *
-	 * @param   string  $url     The url
-	 * @param   string  $method  The redirect method
-	 * @param   int     $code    The redirect status code
-	 *
-	 * @return  void
-	 *
-	 * @throws  \RuntimeException  If it would redirect back to itself
-	 */
-	public static function redirect_back($url = '', $method = 'location', $code = 302)
+     * Redirects back to the previous page, if that page is within the current
+     * application. If not, it will redirect to the given url, and if none is
+     * given, back to the application root. If the current page is the application
+     * root, an exception is thrown
+     *
+     * @param   string  $url     The url
+     * @param   string  $method  The redirect method
+     * @param   int     $code    The redirect status code
+     *
+     *
+     * @throws  \RuntimeException  If it would redirect back to itself
+     */
+    public static function redirect_back($url = '', $method = 'location', $code = 302): void
 	{
 		// do we have a referrer?
 		if ($referrer = \Input::referrer())
 		{
 			// is it within our website? And not equal to the current url?
-			if (strpos($referrer, \Uri::base()) === 0 and $referrer != \Uri::current())
+			if (str_starts_with($referrer, \Uri::base()) and $referrer != \Uri::current())
 			{
 				// redirect back to where we came from
 				static::redirect($referrer, $method, $code);
@@ -185,60 +180,43 @@ class Response
 	}
 
 	/**
-	 * @var  int  The HTTP status code
-	 */
-	public $status = 200;
-
-	/**
 	 * @var  array  An array of HTTP headers
 	 */
-	public $headers = array();
+	public $headers = [];
 
 	/**
-	 * @var  string  The content of the response
-	 */
-	public $body = null;
-
-	/**
-	 * Sets up the response with a body and a status code.
-	 *
-	 * @param  string  $body     The response body
-	 * @param  int     $status   The response status
-	 * @param  array   $headers
-	 */
-	public function __construct($body = null, $status = 200, array $headers = array())
+     * Sets up the response with a body and a status code.
+     *
+     * @param  string  $body     The response body
+     * @param  int     $status   The response status
+     */
+    public function __construct(public $body = null, public $status = 200, array $headers = [])
 	{
 		foreach ($headers as $k => $v)
 		{
 			$this->set_header($k, $v);
 		}
-		$this->body = $body;
-		$this->status = $status;
 	}
 
 	/**
-	 * Sets the response status code
-	 *
-	 * @param   int  $status  The status code
-	 *
-	 * @return  Response
-	 */
-	public function set_status($status = 200)
+     * Sets the response status code
+     *
+     * @param   int  $status  The status code
+     */
+    public function set_status($status = 200): static
 	{
 		$this->status = $status;
 		return $this;
 	}
 
 	/**
-	 * Adds a header to the queue
-	 *
-	 * @param   string       $name     The header name
-	 * @param   string       $value    The header value
-	 * @param   string|bool  $replace  Whether to replace existing value for the header, will never overwrite/be overwritten when false
-	 *
-	 * @return  Response
-	 */
-	public function set_header($name, $value, $replace = true)
+     * Adds a header to the queue
+     *
+     * @param   string       $name     The header name
+     * @param   string       $value    The header value
+     * @param   string|bool  $replace  Whether to replace existing value for the header, will never overwrite/be overwritten when false
+     */
+    public function set_header($name, $value, $replace = true): static
 	{
 		if ($replace)
 		{
@@ -246,21 +224,19 @@ class Response
 		}
 		else
 		{
-			$this->headers[] = array($name, $value);
+			$this->headers[] = [$name, $value];
 		}
 
 		return $this;
 	}
 
 	/**
-	 * Adds multiple headers to the queue
-	 *
-	 * @param   array        $headers  Assoc array with header name / value combinations
-	 * @param   string|bool  $replace  Whether to replace existing value for the header, will never overwrite/be overwritten when false
-	 *
-	 * @return  Response
-	 */
-	public function set_headers($headers, $replace = true)
+     * Adds multiple headers to the queue
+     *
+     * @param   array        $headers  Assoc array with header name / value combinations
+     * @param   string|bool  $replace  Whether to replace existing value for the header, will never overwrite/be overwritten when false
+     */
+    public function set_headers($headers, $replace = true): static
 	{
 		foreach ($headers as $key => $value)
 		{
@@ -282,12 +258,9 @@ class Response
 	{
 		if (func_num_args())
 		{
-			return isset($this->headers[$name]) ? $this->headers[$name] : null;
+			return $this->headers[$name] ?? null;
 		}
-		else
-		{
-			return $this->headers;
-		}
+        return $this->headers;
 	}
 
 	/**
@@ -309,12 +282,10 @@ class Response
 	}
 
 	/**
-	 * Sends the headers if they haven't already been sent.  Returns whether
-	 * they were sent or not.
-	 *
-	 * @return  bool
-	 */
-	public function send_headers()
+     * Sends the headers if they haven't already been sent.  Returns whether
+     * they were sent or not.
+     */
+    public function send_headers(): bool
 	{
 		if ( ! headers_sent())
 		{
@@ -325,7 +296,7 @@ class Response
 			}
 			else
 			{
-				$protocol = \Input::server('SERVER_PROTOCOL') ? \Input::server('SERVER_PROTOCOL') : 'HTTP/1.1';
+				$protocol = \Input::server('SERVER_PROTOCOL') ?: 'HTTP/1.1';
 				header($protocol.' '.$this->status.' '.static::$statuses[$this->status]);
 			}
 
@@ -350,14 +321,12 @@ class Response
 	}
 
 	/**
-	 * Sends the response to the output buffer.  Optionally will send the
-	 * headers.
-	 *
-	 * @param   bool  $send_headers  Whether or not to send the defined HTTP headers
-	 *
-	 * @return  void
-	 */
-	public function send($send_headers = false)
+     * Sends the response to the output buffer.  Optionally will send the
+     * headers.
+     *
+     * @param   bool  $send_headers  Whether or not to send the defined HTTP headers
+     */
+    public function send($send_headers = false): void
 	{
 		$body = $this->__toString();
 
@@ -373,11 +342,9 @@ class Response
 	}
 
 	/**
-	 * Returns the body as a string.
-	 *
-	 * @return  string
-	 */
-	public function __toString()
+     * Returns the body as a string.
+     */
+    public function __toString(): string
 	{
 		return (string) $this->body;
 	}

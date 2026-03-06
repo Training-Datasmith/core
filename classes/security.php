@@ -47,7 +47,7 @@ class Security
 	 * @throws SecurityException it the CSRF token validation failed
 	 * @throws FuelException if no security output filter is defined
 	 */
-	public static function _init()
+	public static function _init(): void
 	{
 		static::$csrf_token_key = \Config::get('security.csrf_token_key', 'fuel_csrf_token');
 		static::$csrf_old_token = \Input::cookie(static::$csrf_token_key, false);
@@ -55,30 +55,27 @@ class Security
 		// if csrf automatic checking is enabled, and it fails validation, bail out!
 		if (\Config::get('security.csrf_autoload', false))
 		{
-			$check_token_methods = \Config::get('security.csrf_autoload_methods', array('post', 'put', 'delete'));
+			$check_token_methods = \Config::get('security.csrf_autoload_methods', ['post', 'put', 'delete']);
 			if (in_array(strtolower(\Input::method()), $check_token_methods) and ! static::check_token())
 			{
 				if (\Config::get('security.csrf_bad_request_on_fail', false))
 				{
 					throw new \HttpBadRequestException('CSRF validation failed, Possible hacking attempt detected!');
 				}
-				else
-				{
-					throw new \SecurityException('CSRF validation failed, Possible hacking attempt detected!');
-				}
+                throw new \SecurityException('CSRF validation failed, Possible hacking attempt detected!');
 			}
 		}
 
 		// throw an exception if the output filter setting is missing from the app config
-		if (\Config::get('security.output_filter', null) === null)
+		if (\Config::get('security.output_filter') === null)
 		{
 			throw new \FuelException('There is no security.output_filter defined in your application config file');
 		}
 
 		// deal with duplicate filters, no need to slow the framework down
-		foreach (array('output_filter', 'uri_filter', 'input_filter') as $setting)
+		foreach (['output_filter', 'uri_filter', 'input_filter'] as $setting)
 		{
-			$config = \Config::get('security.'.$setting, array());
+			$config = \Config::get('security.'.$setting, []);
 			is_array($config) and \Config::set('security.'.$setting, \Arr::unique($config));
 		}
 	}
@@ -92,10 +89,10 @@ class Security
 	 */
 	public static function clean_uri($uri, $strict = false)
 	{
-		$filters = \Config::get('security.uri_filter', array());
-		$filters = is_array($filters) ? $filters : array($filters);
+		$filters = \Config::get('security.uri_filter', []);
+		$filters = is_array($filters) ? $filters : [$filters];
 
-		$strict and $uri = str_replace(array('//', '../'), '/', $uri);
+		$strict and $uri = str_replace(['//', '../'], '/', $uri);
 
 		return static::clean($uri, $filters);
 	}
@@ -103,7 +100,7 @@ class Security
 	/**
 	 * Cleans the global $_GET, $_POST and $_COOKIE arrays
 	 */
-	public static function clean_input()
+	public static function clean_input(): void
 	{
 		$_GET		= static::clean($_GET);
 		$_POST		= static::clean($_POST);
@@ -139,8 +136,8 @@ class Security
 		// deal with all other variable types
 		else
 		{
-			is_null($filters) and $filters = \Config::get($type, array());
-			$filters = is_array($filters) ? $filters : array($filters);
+			is_null($filters) and $filters = \Config::get($type, []);
+			$filters = is_array($filters) ? $filters : [$filters];
 
 			foreach ($filters as $filter)
 			{
@@ -159,7 +156,7 @@ class Security
 				// assume it's a regex of characters to filter
 				else
 				{
-					$var = preg_replace('#['.$filter.']#ui', '', $var);
+					$var = preg_replace('#['.$filter.']#ui', '', (string) $var);
 				}
 			}
 		}
@@ -167,7 +164,7 @@ class Security
 		return $var;
 	}
 
-	public static function xss_clean($value, array $options = array(), $spec = '')
+	public static function xss_clean($value, array $options = [], $spec = '')
 	{
 		if ( ! is_array($value))
 		{
@@ -176,7 +173,7 @@ class Security
 				import('htmlawed/htmlawed', 'vendor');
 			}
 
-			return htmLawed($value, array_merge(array('safe' => 1, 'balanced' => 0), $options), $spec);
+			return htmLawed($value, array_merge(['safe' => 1, 'balanced' => 0], $options), $spec);
 		}
 
 		foreach ($value as $k => $v)
@@ -206,7 +203,7 @@ class Security
 
 	public static function htmlentities($value, $flags = null, $encoding = null, $double_encode = null)
 	{
-		static $already_cleaned = array();
+		static $already_cleaned = [];
 
 		is_null($flags) and $flags = \Config::get('security.htmlentities_flags', ENT_QUOTES);
 		is_null($encoding) and $encoding = \Fuel::$encoding;
@@ -238,7 +235,7 @@ class Security
 				$value[$k] = static::htmlentities($v, $flags, $encoding, $double_encode);
 			}
 		}
-		elseif ($value instanceof \Iterator or get_class($value) == 'stdClass')
+		elseif ($value instanceof \Iterator or $value::class == 'stdClass')
 		{
 			// Add to $already_cleaned variable
 			$already_cleaned[] = $value;
@@ -251,7 +248,7 @@ class Security
 		elseif (is_object($value))
 		{
 			// Check if the object is whitelisted and return when that's the case
-			foreach (\Config::get('security.whitelisted_classes', array()) as $class)
+			foreach (\Config::get('security.whitelisted_classes', []) as $class)
 			{
 				if (is_a($value, $class))
 				{
@@ -265,7 +262,7 @@ class Security
 			// Throw exception when it wasn't whitelisted and can't be converted to String
 			if ( ! method_exists($value, '__toString'))
 			{
-				throw new \RuntimeException('Object class "'.get_class($value).'" could not be converted to string or '.
+				throw new \RuntimeException('Object class "'.$value::class.'" could not be converted to string or '.
 					'sanitized as ArrayAccess. Whitelist it in security.whitelisted_classes in app/config/config.php '.
 					'to allow it to be passed unchecked.');
 			}
@@ -277,12 +274,11 @@ class Security
 	}
 
 	/**
-	 * Check CSRF Token
-	 *
-	 * @param   string  $value  CSRF token to be checked, checks post when empty
-	 * @return  bool
-	 */
-	public static function check_token($value = null)
+     * Check CSRF Token
+     *
+     * @param   string  $value  CSRF token to be checked, checks post when empty
+     */
+    public static function check_token($value = null): bool
 	{
 		$value = $value ?: \Input::param(static::$csrf_token_key, \Input::json(static::$csrf_token_key, 'fail'));
 
@@ -313,11 +309,9 @@ class Security
 	}
 
 	/**
-	 * Generate new token. Based on an example from OWASP
-	 *
-	 * @return string
-	 */
-	public static function generate_token()
+     * Generate new token. Based on an example from OWASP
+     */
+    public static function generate_token(): string
 	{
 		// generate a random token base
 		if (function_exists('random_bytes'))
@@ -336,7 +330,7 @@ class Security
 		// return the hashed token
 		if (function_exists('hash_algos'))
 		{
-			foreach (array('sha512', 'sha384', 'sha256', 'sha224', 'sha1', 'md5') as $hash)
+			foreach (['sha512', 'sha384', 'sha256', 'sha224', 'sha1', 'md5'] as $hash)
 			{
 				if (in_array($hash, hash_algos()))
 				{
@@ -354,7 +348,7 @@ class Security
 	 *
 	 * @param   $rotate   bool   if true, generate a new token, even if the current token is still valid
 	 */
-	public static function set_token($rotate = true)
+	public static function set_token($rotate = true): void
 	{
 		// re-use old token when found (= not expired) and expiration is used (otherwise always reset)
 		if ($rotate === false and static::$csrf_old_token !== false)
@@ -372,14 +366,12 @@ class Security
 	}
 
 	/**
-	 * JS fetch token
-	 *
-	 * Produces JavaScript fuel_csrf_token() function that will return the current
-	 * CSRF token when called. Use to fill right field on form submit for AJAX operations.
-	 *
-	 * @return string
-	 */
-	public static function js_fetch_token()
+     * JS fetch token
+     *
+     * Produces JavaScript fuel_csrf_token() function that will return the current
+     * CSRF token when called. Use to fill right field on form submit for AJAX operations.
+     */
+    public static function js_fetch_token(): string
 	{
 		$output  = '<script type="text/javascript">
 	function fuel_csrf_token()
@@ -401,20 +393,17 @@ class Security
 		}
 		return "";
 	}'.PHP_EOL;
-		$output .= '</script>'.PHP_EOL;
 
-		return $output;
+		return $output . ('</script>' . PHP_EOL);
 	}
 
 	/**
-	 * JS set token
-	 *
-	 * Produces JavaScript fuel_set_csrf_token() function that will update the current
-	 * CSRF token in the form when called, based on the value of the csrf cookie
-	 *
-	 * @return string
-	 */
-	public static function js_set_token()
+     * JS set token
+     *
+     * Produces JavaScript fuel_set_csrf_token() function that will update the current
+     * CSRF token in the form when called, based on the value of the csrf cookie
+     */
+    public static function js_set_token(): string
 	{
 		$output  = '<script type="text/javascript">
 	function fuel_set_csrf_token(form)
@@ -446,8 +435,7 @@ class Security
 			}
 		}
 	}'.PHP_EOL;
-		$output .= '</script>'.PHP_EOL;
 
-		return $output;
+		return $output . ('</script>' . PHP_EOL);
 	}
 }

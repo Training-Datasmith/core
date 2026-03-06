@@ -19,12 +19,12 @@ class Session_Memcached extends \Session_Driver
 	/**
 	 * array of driver config defaults
 	 */
-	protected static $_defaults = array(
+	protected static $_defaults = [
 		'cookie_name' => 'fuelmid',				// name of the session cookie for memcached based sessions
-		'servers'     => array(					// array of servers and portnumbers that run the memcached service
-			array('host' => '127.0.0.1', 'port' => 11211, 'weight' => 100),
-		),
-	);
+		'servers'     => [					// array of servers and portnumbers that run the memcached service
+			['host' => '127.0.0.1', 'port' => 11211, 'weight' => 100],
+		],
+	];
 
 	/*
 	 * @var	storage for the memcached object
@@ -33,7 +33,7 @@ class Session_Memcached extends \Session_Driver
 
 	// --------------------------------------------------------------------
 
-	public function __construct($config = array())
+	public function __construct($config = [])
 	{
 		parent::__construct($config);
 
@@ -147,11 +147,8 @@ class Session_Memcached extends \Session_Driver
 					// cookie present, but session record missing. force creation of a new session
 					return $this->read(true);
 				}
-				else
-				{
-					// unpack the payload
-					$payload = $this->_unserialize($payload);
-				}
+                // unpack the payload
+                $payload = $this->_unserialize($payload);
 			}
 
 			if ( ! isset($payload[0]) or ! is_array($payload[0]))
@@ -210,7 +207,7 @@ class Session_Memcached extends \Session_Driver
 			$this->keys['updated'] = $this->time->get_timestamp();
 
 			// session payload
-			$payload = $this->_serialize(array($this->keys, $this->data, $this->flash));
+			$payload = $this->_serialize([$this->keys, $this->data, $this->flash]);
 
 			// create the session file
 			$this->_write_memcached($this->keys['session_id'], $payload);
@@ -219,11 +216,11 @@ class Session_Memcached extends \Session_Driver
 			if ( isset($this->keys['previous_id']) and $this->keys['previous_id'] != $this->keys['session_id'])
 			{
 				// point the old session file to the new one, we don't want to lose the session
-				$payload = $this->_serialize(array('rotated_session_id' => $this->keys['session_id']));
+				$payload = $this->_serialize(['rotated_session_id' => $this->keys['session_id']]);
 				$this->_write_memcached($this->keys['previous_id'], $payload);
 			}
 
-			$this->_set_cookie(array($this->keys['session_id']));
+			$this->_set_cookie([$this->keys['session_id']]);
 		}
 
 		return $this;
@@ -272,7 +269,7 @@ class Session_Memcached extends \Session_Driver
 	 */
 	public function _validate_config($config)
 	{
-		$validated = array();
+		$validated = [];
 
 		foreach ($config as $name => $item)
 		{
@@ -293,7 +290,7 @@ class Session_Memcached extends \Session_Driver
 							// do we have a servers config
 							if ( empty($value) or ! is_array($value))
 							{
-								$value = array('default' => array('host' => '127.0.0.1', 'port' => '11211'));
+								$value = ['default' => ['host' => '127.0.0.1', 'port' => '11211']];
 							}
 
 							// validate the servers

@@ -43,11 +43,9 @@ class Num
 	protected static $config;
 
 	/**
-	 * Class initialization callback
-	 *
-	 * @return   void
-	 */
-	public static function _init()
+     * Class initialization callback
+     */
+    public static function _init(): void
 	{
 		\Lang::load('byte_units', true);
 
@@ -99,33 +97,32 @@ class Num
 		$unit = \Arr::get($matches, 2, 'B');
 
 		// Convert the size into bytes
-		$bytes = $size * pow(2, static::$byte_units[$unit]);
+		$bytes = $size * 2 ** static::$byte_units[$unit];
 
 		return $bytes;
 	}
 
 	/**
-	 * Converts a number of bytes to a human readable number by taking the
-	 * number of that unit that the bytes will go into it. Supports TB value.
-	 *
-	 * Note: Integers in PHP are limited to 32 bits, unless they are on 64 bit
-	 * architectures, then they have 64 bit size. If you need to place the
-	 * larger size then what the PHP integer type will hold, then use a string.
-	 * It will be converted to a double, which should always have 64 bit length.
-	 *
-	 * @param   integer
-	 * @param   integer
-	 * @return  boolean|string
-	 */
-	public static function format_bytes($bytes = 0, $decimals = 0)
+     * Converts a number of bytes to a human readable number by taking the
+     * number of that unit that the bytes will go into it. Supports TB value.
+     *
+     * Note: Integers in PHP are limited to 32 bits, unless they are on 64 bit
+     * architectures, then they have 64 bit size. If you need to place the
+     * larger size then what the PHP integer type will hold, then use a string.
+     * It will be converted to a double, which should always have 64 bit length.
+     *
+     * @param   integer
+     * @param   integer
+     */
+    public static function format_bytes($bytes = 0, $decimals = 0): string|false
 	{
-		$quant = array(
+		$quant = [
 			'TB' => 1099511627776,  // pow( 1024, 4)
 			'GB' => 1073741824,     // pow( 1024, 3)
 			'MB' => 1048576,        // pow( 1024, 2)
 			'KB' => 1024,           // pow( 1024, 1)
 			'B ' => 1,              // pow( 1024, 0)
-		);
+		];
 
 		foreach ($quant as $unit => $mag )
 		{
@@ -154,18 +151,15 @@ class Num
 	 */
 	public static function quantity($num, $decimals = 0)
 	{
-		if ($num >= 1000 && $num < 1000000)
-		{
-			return sprintf('%01.'.$decimals.'f', (sprintf('%01.0f', $num) / 1000)).'K';
-		}
-		elseif ($num >= 1000000 && $num < 1000000000)
-		{
-			return sprintf('%01.'.$decimals.'f', (sprintf('%01.0f', $num) / 1000000)).'M';
-		}
-		elseif ($num >= 1000000000)
-		{
-			return sprintf('%01.'.$decimals.'f', (sprintf('%01.0f', $num) / 1000000000)).'B';
-		}
+		if ($num >= 1000 && $num < 1000000) {
+            return sprintf('%01.'.$decimals.'f', (sprintf('%01.0f', $num) / 1000)).'K';
+        }
+        if ($num >= 1000000 && $num < 1000000000) {
+            return sprintf('%01.'.$decimals.'f', (sprintf('%01.0f', $num) / 1000000)).'M';
+        }
+        if ($num >= 1000000000) {
+            return sprintf('%01.'.$decimals.'f', (sprintf('%01.0f', $num) / 1000000000)).'B';
+        }
 
 		return $num;
 	}
@@ -196,16 +190,16 @@ class Num
 		$fpos = 0;
 		$spos = 0;
 
-		while ((strlen($format) - 1) >= $fpos)
+		while ((strlen((string) $format) - 1) >= $fpos)
 		{
-			if (ctype_alnum(substr($format, $fpos, 1)))
+			if (ctype_alnum(substr((string) $format, $fpos, 1)))
 			{
-				$result .= substr($string, $spos, 1);
+				$result .= substr((string) $string, $spos, 1);
 				$spos++;
 			}
 			else
 			{
-				$result .= substr($format, $fpos, 1);
+				$result .= substr((string) $format, $fpos, 1);
 			}
 
 			$fpos++;
@@ -243,18 +237,18 @@ class Num
 		$fpos = 0;
 		$spos = 0;
 
-		while ((strlen($format) - 1) >= $fpos)
+		while ((strlen((string) $format) - 1) >= $fpos)
 		{
-			if (ctype_alnum(substr($format, $fpos, 1)))
+			if (ctype_alnum(substr((string) $format, $fpos, 1)))
 			{
-				$result .= substr($string, $spos, 1);
+				$result .= substr((string) $string, $spos, 1);
 				$spos++;
 			}
 			else
 			{
-				$result .= substr($format, $fpos, 1);
+				$result .= substr((string) $format, $fpos, 1);
 
-				if (strpos($ignore, substr($format, $fpos, 1)) === false)
+				if (!str_contains((string) $ignore, substr((string) $format, $fpos, 1)))
 				{
 					++$spos;
 				}
@@ -299,9 +293,9 @@ class Num
 	{
 		$formats = static::$config['formatting']['smart_phone'];
 
-		if(is_array($formats) and isset($formats[strlen($string)]))
+		if(is_array($formats) and isset($formats[strlen((string) $string)]))
 		{
-			return static::format($string, $formats[strlen($string)]);
+			return static::format($string, $formats[strlen((string) $string)]);
 		}
 
 		return $string;
