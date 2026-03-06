@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -14,13 +16,13 @@ namespace Fuel\Core;
 
 class Cache_Handler_String implements \Cache_Handler_Driver
 {
-	public function readable($contents): string
-	{
-		return (string) $contents;
-	}
+    public function readable($contents): string
+    {
+        return (string) $contents;
+    }
 
-	public function writable($contents): string
-	{
-		return (string) $contents;
-	}
+    public function writable($contents): string
+    {
+        return (string) $contents;
+    }
 }

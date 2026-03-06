@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -22,66 +24,64 @@ namespace Fuel\Core;
  */
 abstract class Event
 {
-	/**
-	 * @var  array  $instances  Event_Instance container
-	 */
-	protected static $instances = [];
+    /**
+     * @var  array  $instances  Event_Instance container
+     */
+    protected static $instances = [];
 
-	/**
-	 * Event instance forge.
-	 *
-	 * @param   array   $events  events array
-	 * @return  object  new Event_Instance instance
-	 */
-	public static function forge(array $events = [])
-	{
-		return new \Event_Instance($events);
-	}
+    /**
+     * Event instance forge.
+     *
+     * @param   array   $events  events array
+     * @return  object  new Event_Instance instance
+     */
+    public static function forge(array $events = [])
+    {
+        return new \Event_Instance($events);
+    }
 
-	/**
-	 * Multiton Event instance.
-	 *
-	 * @param   string  $name    instance name
-	 * @param   array   $events  events array
-	 * @return  object  Event_Instance object
-	 */
-	public static function instance(string $name = 'fuelphp', array $events = [])
-	{
-		if ( ! array_key_exists($name, static::$instances))
-		{
-			$events = array_merge(\Config::get('event.'.$name, []), $events);
-			$instance = static::forge($events);
-			static::$instances[$name] = &$instance;
-		}
+    /**
+     * Multiton Event instance.
+     *
+     * @param   string  $name    instance name
+     * @param   array   $events  events array
+     * @return  object  Event_Instance object
+     */
+    public static function instance(string $name = 'fuelphp', array $events = [])
+    {
+        if (! array_key_exists($name, static::$instances)) {
+            $events = array_merge(\Config::get('event.'.$name, []), $events);
+            $instance = static::forge($events);
+            static::$instances[$name] = &$instance;
+        }
 
-		return static::$instances[$name];
-	}
+        return static::$instances[$name];
+    }
 
-	/**
-	 * Static call forwarder
-	 *
-	 * @param   string  $func  method name
-	 * @param   array   $args  passed arguments
-	 * @return  mixed
-	 * @throws  \BadMethodCallException
-	 */
-	public static function __callStatic(string $func, array $args)
-	{
-		$instance = static::instance();
+    /**
+     * Static call forwarder
+     *
+     * @param   string  $func  method name
+     * @param   array   $args  passed arguments
+     * @return  mixed
+     * @throws  \BadMethodCallException
+     */
+    public static function __callStatic(string $func, array $args)
+    {
+        $instance = static::instance();
 
-		if (method_exists($instance, $func))
-		{
-			return call_fuel_func_array([$instance, $func], $args);
-		}
+        if (method_exists($instance, $func)) {
+            return call_fuel_func_array([$instance, $func], $args);
+        }
 
-		throw new \BadMethodCallException('Call to undefined method: '.static::class.'::'.$func);
-	}
+        throw new \BadMethodCallException('Call to undefined method: '.static::class.'::'.$func);
+    }
 
-	/**
-	 * Load events config
-	 */
-	public static function _init(): void
-	{
-		\Config::load('event', true);
-	}
+    /**
+     * Load events config
+     */
+    public static function _init(): void
+    {
+        \Config::load('event', true);
+    }
 }

@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -22,118 +24,110 @@ namespace Fuel\Core;
  */
 class Uri implements \Stringable
 {
-	/**
-	 * Returns the desired segment, or $default if it does not exist.
-	 *
-	 * @param   int     $segment  The segment number (1-based index)
-	 * @param   mixed   $default  Default value to return
-	 * @return  string
-	 */
-	public static function segment($segment, $default = null)
-	{
-		if ($request = \Request::active())
-		{
-			return $request->uri->get_segment($segment, $default);
-		}
+    /**
+     * Returns the desired segment, or $default if it does not exist.
+     *
+     * @param   int     $segment  The segment number (1-based index)
+     * @param   mixed   $default  Default value to return
+     * @return  string
+     */
+    public static function segment($segment, $default = null)
+    {
+        if ($request = \Request::active()) {
+            return $request->uri->get_segment($segment, $default);
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	/**
-	 * Returns all segments in an array
-	 *
-	 * @return  array
-	 */
-	public static function segments()
-	{
-		if ($request = \Request::active())
-		{
-			return $request->uri->get_segments();
-		}
+    /**
+     * Returns all segments in an array
+     *
+     * @return  array
+     */
+    public static function segments()
+    {
+        if ($request = \Request::active()) {
+            return $request->uri->get_segments();
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	/**
+    /**
      * Replace all * wildcards in a URI by the current segment in that location
      *
      * @param  string  $url     The url containing the wildcards
      * @param  bool    $secure  To force a particular HTTP scheme
      */
     public static function segment_replace(string $url, $secure = null): string
-	{
-		// get the path from the url
-		$parts = parse_url($url);
+    {
+        // get the path from the url
+        $parts = parse_url($url);
 
-		// explode it in it's segments
-		$segments = explode('/', trim($parts['path'], '/'));
+        // explode it in it's segments
+        $segments = explode('/', trim($parts['path'], '/'));
 
-		// fetch any segments needed
-		$wildcards = 0;
-		foreach ($segments as $index => &$segment)
-		{
-			if (str_contains($segment, '*'))
-			{
-				$wildcards++;
-				if (($new = static::segment($index+1)) === null)
-				{
-					throw new \OutofBoundsException('Segment replace on "'.$url.'" failed. No segment exists for wildcard '.$wildcards.'.');
-				}
-				$segment = str_replace('*', $new, $segment);
-			}
-		}
+        // fetch any segments needed
+        $wildcards = 0;
+        foreach ($segments as $index => &$segment) {
+            if (str_contains($segment, '*')) {
+                $wildcards++;
+                if (($new = static::segment($index + 1)) === null) {
+                    throw new \OutofBoundsException('Segment replace on "'.$url.'" failed. No segment exists for wildcard '.$wildcards.'.');
+                }
+                $segment = str_replace('*', $new, $segment);
+            }
+        }
 
-		// re-assemble the path
-		$parts['path'] = '/'.implode('/', $segments);
+        // re-assemble the path
+        $parts['path'] = '/'.implode('/', $segments);
 
-		// do we need to force a scheme?
-		if (is_bool($secure))
-		{
-			$parts['scheme'] = $secure ? 'https' : 'http';
-		}
+        // do we need to force a scheme?
+        if (is_bool($secure)) {
+            $parts['scheme'] = $secure ? 'https' : 'http';
+        }
 
-		// and rebuild the url with the new path
-		if (empty($parts['host']))
-		{
-			// if a relative url was given, fake a host so we can remove it after building
-			return substr(http_build_url('http://__removethis__/', $parts), 22);
-		}
+        // and rebuild the url with the new path
+        if (empty($parts['host'])) {
+            // if a relative url was given, fake a host so we can remove it after building
+            return substr(http_build_url('http://__removethis__/', $parts), 22);
+        }
 
-		// return the newly constructed url
-		return http_build_url('', $parts);
-	}
+        // return the newly constructed url
+        return http_build_url('', $parts);
+    }
 
-	/**
-	 * Converts the current URI segments to an associative array.  If
-	 * the URI has an odd number of segments, an empty value will be added.
-	 *
-	 * @param   int    $start  segment number to start from. default value is the first segment
-	 * @return  array  the assoc array
-	 */
-	public static function to_assoc($start = 1)
-	{
-		$segments = array_slice(static::segments(), ($start - 1));
-		count($segments) % 2 and $segments[] = null;
+    /**
+     * Converts the current URI segments to an associative array.  If
+     * the URI has an odd number of segments, an empty value will be added.
+     *
+     * @param   int    $start  segment number to start from. default value is the first segment
+     * @return  array  the assoc array
+     */
+    public static function to_assoc($start = 1)
+    {
+        $segments = array_slice(static::segments(), ($start - 1));
+        count($segments) % 2 and $segments[] = null;
 
-		return \Arr::to_assoc($segments);
-	}
+        return \Arr::to_assoc($segments);
+    }
 
-	/**
-	 * Returns the full uri as a string
-	 *
-	 * @return  string
-	 */
-	public static function string()
-	{
-		if ($request = \Request::active())
-		{
-			return $request->uri->get();
-		}
+    /**
+     * Returns the full uri as a string
+     *
+     * @return  string
+     */
+    public static function string()
+    {
+        if ($request = \Request::active()) {
+            return $request->uri->get();
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	/**
+    /**
      * Creates a url with the given uri, including the base url
      *
      * @param   string  $uri            The uri to create the URL for
@@ -142,97 +136,87 @@ class Uri implements \Stringable
      * @param   bool    $secure         If false, force http. If true, force https
      */
     public static function create($uri = null, $variables = [], $get_variables = [], $secure = null): string
-	{
-		$url = '';
-		is_null($uri) and $uri = static::string();
+    {
+        $url = '';
+        is_null($uri) and $uri = static::string();
 
-		// If the given uri is not a full URL
-		if( ! preg_match("#^(http|https|ftp)://#i", (string) $uri))
-		{
-			$url .= \Config::get('base_url');
+        // If the given uri is not a full URL
+        if (! preg_match('#^(http|https|ftp)://#i', (string) $uri)) {
+            $url .= \Config::get('base_url');
 
-			if ($index_file = \Config::get('index_file'))
-			{
-				$url .= $index_file.'/';
-			}
-		}
-		$url .= ltrim((string) $uri, '/');
+            if ($index_file = \Config::get('index_file')) {
+                $url .= $index_file.'/';
+            }
+        }
+        $url .= ltrim((string) $uri, '/');
 
-		// stick a url suffix onto it if defined and needed
-		if ($url_suffix = \Config::get('url_suffix', false) and !str_ends_with($url, '/'))
-		{
-			$current_suffix = strrchr($url, '.');
-			if ( ! $current_suffix or str_contains($current_suffix, '/'))
-			{
-				$url .= $url_suffix;
-			}
-		}
+        // stick a url suffix onto it if defined and needed
+        if ($url_suffix = \Config::get('url_suffix', false) and !str_ends_with($url, '/')) {
+            $current_suffix = strrchr($url, '.');
+            if (! $current_suffix or str_contains($current_suffix, '/')) {
+                $url .= $url_suffix;
+            }
+        }
 
-		if ( ! empty($get_variables))
-		{
-			$char = !str_contains($url, '?') ? '?' : '&';
-			if (is_string($get_variables))
-			{
-				$url .= $char.str_replace('%3A', ':', $get_variables);
-			}
-			else
-			{
-				$url .= $char.str_replace('%3A', ':', http_build_query($get_variables));
-			}
-		}
+        if (! empty($get_variables)) {
+            $char = !str_contains($url, '?') ? '?' : '&';
+            if (is_string($get_variables)) {
+                $url .= $char.str_replace('%3A', ':', $get_variables);
+            } else {
+                $url .= $char.str_replace('%3A', ':', http_build_query($get_variables));
+            }
+        }
 
-		array_walk(
-			$variables,
-			function ($val, string $key) use (&$url): void
-			{
-				$url = str_replace(':'.$key, $val, $url);
-			}
-		);
+        array_walk(
+            $variables,
+            function ($val, string $key) use (&$url): void {
+                $url = str_replace(':'.$key, $val, $url);
+            }
+        );
 
-		is_bool($secure) and $url = http_build_url($url, ['scheme' => $secure ? 'https' : 'http']);
+        is_bool($secure) and $url = http_build_url($url, ['scheme' => $secure ? 'https' : 'http']);
 
-		return $url;
-	}
+        return $url;
+    }
 
-	/**
-	 * Gets the main request's URI
-	 *
-	 * @return  string
-	 */
-	public static function main()
-	{
-		return static::create(\Request::main()->uri->get());
-	}
+    /**
+     * Gets the main request's URI
+     *
+     * @return  string
+     */
+    public static function main()
+    {
+        return static::create(\Request::main()->uri->get());
+    }
 
-	/**
-	 * Gets the current URL, including the BASE_URL
-	 *
-	 * @return  string
-	 */
-	public static function current()
-	{
-		return static::create();
-	}
+    /**
+     * Gets the current URL, including the BASE_URL
+     *
+     * @return  string
+     */
+    public static function current()
+    {
+        return static::create();
+    }
 
-	/**
-	 * Gets the base URL, including the index_file if wanted.
-	 *
-	 * @param   bool    $include_index  Whether to include index.php in the URL
-	 * @return  string
-	 */
-	public static function base($include_index = true)
-	{
-		$url = \Config::get('base_url');
+    /**
+     * Gets the base URL, including the index_file if wanted.
+     *
+     * @param   bool    $include_index  Whether to include index.php in the URL
+     * @return  string
+     */
+    public static function base($include_index = true)
+    {
+        $url = \Config::get('base_url');
 
-		if ($include_index and \Config::get('index_file'))
-		{
-			$url .= \Config::get('index_file').'/';
-		}
+        if ($include_index and \Config::get('index_file')) {
+            $url .= \Config::get('index_file').'/';
+        }
 
-		return $url;
-	}
+        return $url;
+    }
 
-	/**
+    /**
      * Builds a query string by merging all array and string values passed. If
      * a string is passed, it will be assumed to be a switch, and converted
      * to "string=1".
@@ -241,138 +225,130 @@ class Uri implements \Stringable
      * @param array|string ...
      */
     public static function build_query_string(): string
-	{
-		$params = [];
+    {
+        $params = [];
 
-		foreach (func_get_args() as $arg)
-		{
-			$arg = is_array($arg) ? $arg : [$arg => '1'];
+        foreach (func_get_args() as $arg) {
+            $arg = is_array($arg) ? $arg : [$arg => '1'];
 
-			$params = array_merge($params, $arg);
-		}
+            $params = array_merge($params, $arg);
+        }
 
-		return http_build_query($params);
-	}
+        return http_build_query($params);
+    }
 
-	/**
-	 * Updates the query string of the current or passed URL with the data passed
-	 *
-	 * @param  array|string  $vars    Assoc array of GET variables, or a get variable name
-	 * @param  string|mixed  $uri     Optional URI to use if $vars is an array, otherwise the get variable name
-	 * @param  bool          $secure  If false, force http. If true, force https
-	 *
-	 * @return string
-	 */
-	public static function update_query_string($vars = [], $uri = null, $secure = null)
-	{
-		// unify the input data
-		if ( ! is_array($vars))
-		{
-			$vars = [$vars => $uri];
-			$uri = null;
-		}
+    /**
+     * Updates the query string of the current or passed URL with the data passed
+     *
+     * @param  array|string  $vars    Assoc array of GET variables, or a get variable name
+     * @param  string|mixed  $uri     Optional URI to use if $vars is an array, otherwise the get variable name
+     * @param  bool          $secure  If false, force http. If true, force https
+     *
+     * @return string
+     */
+    public static function update_query_string($vars = [], $uri = null, $secure = null)
+    {
+        // unify the input data
+        if (! is_array($vars)) {
+            $vars = [$vars => $uri];
+            $uri = null;
+        }
 
-		// if we have a custom URI, use that
-		if ($uri === null)
-		{
-			// use the current URI if not is passed
-			$uri = static::current();
+        // if we have a custom URI, use that
+        if ($uri === null) {
+            // use the current URI if not is passed
+            $uri = static::current();
 
-			// merge them with the existing query string data
-			$vars = array_merge(\Input::get(), $vars);
-		}
+            // merge them with the existing query string data
+            $vars = array_merge(\Input::get(), $vars);
+        }
 
-		// return the updated uri
-		return static::create($uri, [], $vars, $secure);
-	}
+        // return the updated uri
+        return static::create($uri, [], $vars, $secure);
+    }
 
-	/**
-	 * @var  string  The URI string
-	 */
-	protected string $uri;
+    /**
+     * @var  string  The URI string
+     */
+    protected string $uri;
 
-	/**
-	 * @var  array  The URI segments
-	 */
-	protected array $segments;
+    /**
+     * @var  array  The URI segments
+     */
+    protected array $segments;
 
-	/**
-	 * Construct takes a URI or detects it if none is given and generates
-	 * the segments.
-	 *
-	 * @param   string  $uri  The URI
-	 */
-	public function __construct($uri = null)
-	{
-		if (\Fuel::$profiling)
-		{
-			\Profiler::mark(__METHOD__.' Start');
-		}
+    /**
+     * Construct takes a URI or detects it if none is given and generates
+     * the segments.
+     *
+     * @param   string  $uri  The URI
+     */
+    public function __construct($uri = null)
+    {
+        if (\Fuel::$profiling) {
+            \Profiler::mark(__METHOD__.' Start');
+        }
 
-		// if the route is a closure, an object will be passed here
-		is_object($uri) and $uri = null;
+        // if the route is a closure, an object will be passed here
+        is_object($uri) and $uri = null;
 
-		// if no uri is passed, get it from input
-		is_null($uri) and $uri = \Input::uri();
+        // if no uri is passed, get it from input
+        is_null($uri) and $uri = \Input::uri();
 
-		// store the uri
-		$this->uri = trim((string) $uri, '/');
+        // store the uri
+        $this->uri = trim((string) $uri, '/');
 
-		// determine the uri segment list
-		if (empty($uri))
-		{
-			$this->segments = [];
-		}
-		else
-		{
-			$this->segments = explode('/', $this->uri);
-		}
+        // determine the uri segment list
+        if (empty($uri)) {
+            $this->segments = [];
+        } else {
+            $this->segments = explode('/', $this->uri);
+        }
 
-		if (\Fuel::$profiling)
-		{
-			\Profiler::mark(__METHOD__.' End');
-		}
-	}
+        if (\Fuel::$profiling) {
+            \Profiler::mark(__METHOD__.' End');
+        }
+    }
 
-	/**
-	 * Returns the full URI string
-	 *
-	 * @return  string  The URI string
-	 */
-	public function get()
-	{
-		return $this->uri;
-	}
+    /**
+     * Returns the full URI string
+     *
+     * @return  string  The URI string
+     */
+    public function get()
+    {
+        return $this->uri;
+    }
 
-	/**
-	 * Returns all of the URI segments
-	 *
-	 * @return  array  The URI segments
-	 */
-	public function get_segments()
-	{
-		return $this->segments;
-	}
+    /**
+     * Returns all of the URI segments
+     *
+     * @return  array  The URI segments
+     */
+    public function get_segments()
+    {
+        return $this->segments;
+    }
 
-	/**
-	 * Get the specified URI segment, return default if it doesn't exist.
-	 *
-	 * Segment index is 1 based, not 0 based
-	 *
-	 * @param   string  $segment  The 1-based segment index
-	 * @param   mixed   $default  The default value
-	 * @return  mixed
-	 */
-	public function get_segment($segment, $default = null)
-	{
-		return $this->segments[$segment - 1] ?? \Fuel::value($default);
-	}
+    /**
+     * Get the specified URI segment, return default if it doesn't exist.
+     *
+     * Segment index is 1 based, not 0 based
+     *
+     * @param   string  $segment  The 1-based segment index
+     * @param   mixed   $default  The default value
+     * @return  mixed
+     */
+    public function get_segment($segment, $default = null)
+    {
+        return $this->segments[$segment - 1] ?? \Fuel::value($default);
+    }
 
-	/**
+    /**
      * Returns the URI string
      */
     public function __toString(): string
-	{
-		return $this->get();
-	}
+    {
+        return $this->get();
+    }
 }

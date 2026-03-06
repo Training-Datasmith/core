@@ -47,11 +47,11 @@
 		<h2>Backtrace</h2>
 		<ol>
 		<?php
-			$id = 0;
-			foreach($backtrace as $trace):
-				$id++;
-				$debug_lines = \Debug::file_lines($trace['file'], $trace['line']);
-		?>
+            $id = 0;
+		foreach ($backtrace as $trace):
+		    $id++;
+		    $debug_lines = \Debug::file_lines($trace['file'], $trace['line']);
+		    ?>
 			<li>
 				<a href="#" onclick="javascript:fuel_toggle('backtrace_<?php echo $id; ?>');return false;"><?php echo \Fuel::clean_path($trace['file']).' @ line '.$trace['line']; ?></a>
 				<div id="backtrace_<?php echo $id; ?>" class="backtrace_block">
@@ -63,11 +63,11 @@
 		<?php endforeach; ?>
 		</ol>
 
-<?php if ( ! empty($soap)): ?>
+<?php if (! empty($soap)): ?>
 		<h2>SOAP Response</h2>
 		<p class="nextintro">Faultcode: <?php echo $soap['faultcode']; ?> [ <?php echo $soap['errortype']; ?> ]:<br />Faultstring: <?php echo e($soap['faultstring']); ?></p>
 		<ol>
-		<?php foreach($soap['backtrace'] as $trace): ?>
+		<?php foreach ($soap['backtrace'] as $trace): ?>
 			<li>
 				<?php echo e(str_replace(' ', '&nbsp;', $trace)); ?>
 			</li>
@@ -79,12 +79,12 @@
 		<h2>Prior Non-Fatal Errors</h2>
 		<ol>
 		<?php
-		$id = 0;
-		foreach($non_fatal as $err):
-			$id++;
-			extract($err);
-			$debug_lines = \Debug::file_lines($orig_filepath, $error_line);
-		?>
+		    $id = 0;
+    foreach ($non_fatal as $err):
+        $id++;
+        extract($err);
+        $debug_lines = \Debug::file_lines($orig_filepath, $error_line);
+        ?>
 			<li>
 				<a href="#" onclick="javascript:fuel_toggle('non_fatal_<?php echo $id; ?>');return false;"><?php echo $severity; ?>: <?php echo e($message); ?> in <?php echo $filepath; ?> @ line <?php echo $error_line; ?></a>
 				<div id="non_fatal_<?php echo $id; ?>" class="backtrace_block">
@@ -97,7 +97,7 @@
 		</ol>
 <?php endif; ?>
 
-<?php if ( ! empty($contents)): ?>
+<?php if (! empty($contents)): ?>
 	<h2>Prior Contents (<a href="#" onclick="javascript:fuel_toggle('prior_contents');return false;">show</a>)</h2>
 	<?php if (\Config::get('errors.render_prior', false) == true): ?>
 		<div id="prior_contents" class="fuel_debug_source" style="display: none;"><?php echo $contents ?></div>

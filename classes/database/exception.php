@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -15,32 +17,32 @@ namespace Fuel\Core;
 
 class Database_Exception extends \FuelException
 {
-	/**
+    /**
      * Overload the constructor to allow an additional error code to be passed
      * @param mixed $code
      * @param mixed $dbcode
      */
-    public function __construct ($message, /**
+    public function __construct($message, /**
      * @var mixed  The exception code
      *
      * Redefine the exception code property, as PDO uses alphanumeric codes
      */
-    protected $code = 0, $previous = null, /**
+        protected $code = 0, $previous = null, /**
      * @var mixed  The original databaase error code
      *
      * We also store the original error code of the underlying driver
      */
-    protected $dbcode = 0)
-	{
-		// call the parent without a code, the interface is defined as numeric
-		parent::__construct($message, 0, $previous);
-	}
+        protected $dbcode = 0)
+    {
+        // call the parent without a code, the interface is defined as numeric
+        parent::__construct($message, 0, $previous);
+    }
 
-	/**
-	 * Return the original database error code if given
-	 */
-	final public function getDbCode()
-	{
-		return $this->dbcode;
-	}
+    /**
+     * Return the original database error code if given
+     */
+    final public function getDbCode()
+    {
+        return $this->dbcode;
+    }
 }

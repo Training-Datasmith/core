@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -19,31 +21,31 @@
  * This will allow you to upgrade fuel without losing your custom config.
  */
 
-return array(
-	'csv' => array(
-		'import' => array(
-			'delimiter' => ',',
-			'enclosure' => '"',
-			'newline'   => "\n",
-			'escape'    => '\\',
-		),
-		'export' => array(
-			'delimiter' => ',',
-			'enclosure' => '"',
-			'newline'   => "\n",
-			'escape'    => '\\',
-		),
-		'regex_newline'   => "\n",
-		'enclose_numbers' => true,
-	),
-	'xml' => array(
-		'basenode' => 'xml',
-		'use_cdata' => false,
-		'bool_representation' => null,
-	),
-	'json' => array(
-		'encode' => array(
-			'options' => JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP,
-		),
-	),
-);
+return [
+    'csv' => [
+        'import' => [
+            'delimiter' => ',',
+            'enclosure' => '"',
+            'newline'   => "\n",
+            'escape'    => '\\',
+        ],
+        'export' => [
+            'delimiter' => ',',
+            'enclosure' => '"',
+            'newline'   => "\n",
+            'escape'    => '\\',
+        ],
+        'regex_newline'   => "\n",
+        'enclose_numbers' => true,
+    ],
+    'xml' => [
+        'basenode' => 'xml',
+        'use_cdata' => false,
+        'bool_representation' => null,
+    ],
+    'json' => [
+        'encode' => [
+            'options' => JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP,
+        ],
+    ],
+];

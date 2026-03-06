@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -14,32 +16,32 @@ namespace Fuel\Core;
 
 class HttpBadRequestException extends HttpException
 {
-	public function response()
-	{
-		return new \Response(\View::forge('400'), 400);
-	}
+    public function response()
+    {
+        return new \Response(\View::forge('400'), 400);
+    }
 }
 
 class HttpNoAccessException extends HttpException
 {
-	public function response()
-	{
-		return new \Response(\View::forge('403'), 403);
-	}
+    public function response()
+    {
+        return new \Response(\View::forge('403'), 403);
+    }
 }
 
 class HttpNotFoundException extends HttpException
 {
-	public function response()
-	{
-		return new \Response(\View::forge('404'), 404);
-	}
+    public function response()
+    {
+        return new \Response(\View::forge('404'), 404);
+    }
 }
 
 class HttpServerErrorException extends HttpException
 {
-	public function response()
-	{
-		return new \Response(\View::forge('500'), 500);
-	}
+    public function response()
+    {
+        return new \Response(\View::forge('500'), 500);
+    }
 }

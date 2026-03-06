@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -18,7 +20,7 @@ namespace Fuel\Core;
  */
 abstract class TestCase extends \PHPUnit_Framework_TestCase
 {
-	// backward compatibility with PHPUnit < v6
+    // backward compatibility with PHPUnit < v6
     public function expectException($exception): void
     {
         self::setExpectedException($exception);

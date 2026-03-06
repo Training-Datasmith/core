@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -16,163 +18,142 @@ namespace Fuel\Core;
 
 class Session_Cookie extends \Session_Driver
 {
-	/**
-	 * array of driver config defaults
-	 */
-	protected static $_defaults = [
-		'cookie_name'  => 'fuelcid',
-	];
+    /**
+     * array of driver config defaults
+     */
+    protected static $_defaults = [
+        'cookie_name'  => 'fuelcid',
+    ];
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
 
-	public function __construct($config = [])
-	{
-		parent::__construct($config);
+    public function __construct($config = [])
+    {
+        parent::__construct($config);
 
-		// merge the driver config with the global config
-		$this->config = array_merge($config, (isset($config['cookie']) and is_array($config['cookie'])) ? $config['cookie'] : static::$_defaults);
+        // merge the driver config with the global config
+        $this->config = array_merge($config, (isset($config['cookie']) and is_array($config['cookie'])) ? $config['cookie'] : static::$_defaults);
 
-		$this->config = $this->_validate_config($this->config);
-	}
+        $this->config = $this->_validate_config($this->config);
+    }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
 
-	/**
-	 * create a new session
-	 *
-	 * @return	\Session_Cookie
-	 */
-	protected function create()
-	{
-		// create the session
-		parent::create();
+    /**
+     * create a new session
+     *
+     * @return	\Session_Cookie
+     */
+    protected function create()
+    {
+        // create the session
+        parent::create();
 
-		// no need for a previous id here
-		unset($this->keys['previous_id']);
+        // no need for a previous id here
+        unset($this->keys['previous_id']);
 
-		return $this;
-	}
+        return $this;
+    }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
 
-	/**
-	 * read the session
-	 *
-	 * @param	boolean, set to true if we want to force a new session to be created
-	 * @return	\Session_Driver
-	 */
-	protected function read($force = false)
-	{
-		// get the session cookie
-		$payload = $this->_get_cookie();
+    /**
+     * read the session
+     *
+     * @param	boolean, set to true if we want to force a new session to be created
+     * @return	\Session_Driver
+     */
+    protected function read($force = false)
+    {
+        // get the session cookie
+        $payload = $this->_get_cookie();
 
-		// validate it
-		if ($force)
-		{
-			// a forced session reset
-		}
-		elseif ($payload === false)
-		{
-			// no cookie found
-		}
-		elseif ( ! isset($payload[0]) or ! is_array($payload[0]))
-		{
-			logger('DEBUG', 'Error: not a valid cookie payload!');
-		}
-		elseif ($payload[0]['updated'] + $this->config['expiration_time'] <= $this->time->get_timestamp())
-		{
-			logger('DEBUG', 'Error: session id has expired!');
-		}
-		elseif ($this->config['match_ip'] and $payload[0]['ip_hash'] !== md5(\Input::ip().\Input::real_ip()))
-		{
-			logger('DEBUG', 'Error: IP address in the session doesn\'t match this requests source IP!');
-		}
-		elseif ($this->config['match_ua'] and $payload[0]['user_agent'] !== \Input::user_agent())
-		{
-			logger('DEBUG', 'Error: User agent in the session doesn\'t match the browsers user agent string!');
-		}
-		else
-		{
-			// session is valid, retrieve the payload
-			if (isset($payload[0]) and is_array($payload[0]))
-			{
-				$this->keys  = $payload[0];
-			}
-			if (isset($payload[1]) and is_array($payload[1]))
-			{
-				$this->data  = $payload[1];
-			}
-			if (isset($payload[2]) and is_array($payload[2]))
-			{
-				$this->flash = $payload[2];
-			}
-		}
+        // validate it
+        if ($force) {
+            // a forced session reset
+        } elseif ($payload === false) {
+            // no cookie found
+        } elseif (! isset($payload[0]) or ! is_array($payload[0])) {
+            logger('DEBUG', 'Error: not a valid cookie payload!');
+        } elseif ($payload[0]['updated'] + $this->config['expiration_time'] <= $this->time->get_timestamp()) {
+            logger('DEBUG', 'Error: session id has expired!');
+        } elseif ($this->config['match_ip'] and $payload[0]['ip_hash'] !== md5(\Input::ip().\Input::real_ip())) {
+            logger('DEBUG', 'Error: IP address in the session doesn\'t match this requests source IP!');
+        } elseif ($this->config['match_ua'] and $payload[0]['user_agent'] !== \Input::user_agent()) {
+            logger('DEBUG', 'Error: User agent in the session doesn\'t match the browsers user agent string!');
+        } else {
+            // session is valid, retrieve the payload
+            if (isset($payload[0]) and is_array($payload[0])) {
+                $this->keys  = $payload[0];
+            }
+            if (isset($payload[1]) and is_array($payload[1])) {
+                $this->data  = $payload[1];
+            }
+            if (isset($payload[2]) and is_array($payload[2])) {
+                $this->flash = $payload[2];
+            }
+        }
 
-		return $this;
-	}
+        return $this;
+    }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
 
-	/**
-	 * write the current session
-	 *
-	 * @return	\Session_Cookie
-	 */
-	protected function write()
-	{
-		// do we have something to write?
-		if ( ! empty($this->keys) or ! empty($this->data) or ! empty($this->flash))
-		{
-			// rotate the session id if needed
-			$this->rotate(false);
+    /**
+     * write the current session
+     *
+     * @return	\Session_Cookie
+     */
+    protected function write()
+    {
+        // do we have something to write?
+        if (! empty($this->keys) or ! empty($this->data) or ! empty($this->flash)) {
+            // rotate the session id if needed
+            $this->rotate(false);
 
-			// record the last update time of the session
-			$this->keys['updated'] = $this->time->get_timestamp();
+            // record the last update time of the session
+            $this->keys['updated'] = $this->time->get_timestamp();
 
-			// then update the cookie
-			$this->_set_cookie([$this->keys, $this->data, $this->flash]);
-		}
+            // then update the cookie
+            $this->_set_cookie([$this->keys, $this->data, $this->flash]);
+        }
 
-		return $this;
-	}
+        return $this;
+    }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
 
-	/**
-	 * validate a driver config value
-	 *
-	 * @param	array	array with configuration values
-	 * @return	array	validated and consolidated config
-	 */
-	public function _validate_config($config)
-	{
-		$validated = [];
+    /**
+     * validate a driver config value
+     *
+     * @param	array	array with configuration values
+     * @return	array	validated and consolidated config
+     */
+    public function _validate_config($config)
+    {
+        $validated = [];
 
-		foreach ($config as $name => $item)
-		{
-			// filter out any driver config
-			if (!is_array($item))
-			{
-				switch ($name)
-				{
-					case 'cookie_name':
-						if ( empty($item) or ! is_string($item))
-						{
-							$item = 'fuelcid';
-						}
-					break;
+        foreach ($config as $name => $item) {
+            // filter out any driver config
+            if (!is_array($item)) {
+                switch ($name) {
+                    case 'cookie_name':
+                        if (empty($item) or ! is_string($item)) {
+                            $item = 'fuelcid';
+                        }
+                        break;
 
-					default:
-						// no config item for this driver
-					break;
-				}
+                    default:
+                        // no config item for this driver
+                        break;
+                }
 
-				// global config, was validated in the driver
-				$validated[$name] = $item;
-			}
-		}
+                // global config, was validated in the driver
+                $validated[$name] = $item;
+            }
+        }
 
-		// validate all global settings as well
-		return parent::_validate_config($validated);
-	}
+        // validate all global settings as well
+        return parent::_validate_config($validated);
+    }
 }

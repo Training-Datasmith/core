@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -20,53 +22,53 @@ namespace Fuel\Core;
  */
 class Test_Lang extends TestCase
 {
-	/**
-	 * Test for Lang::get()
-	 *
-	 * @test
-	 */
-	public function test_line()
-	{
-		Lang::load('test');
-		$output = Lang::get('hello', array('name' => 'Bob'));
-		$expected = 'Hello there Bob!';
-		$this->assertEquals($expected, $output);
-	}
+    /**
+     * Test for Lang::get()
+     *
+     * @test
+     */
+    public function test_line()
+    {
+        Lang::load('test');
+        $output = Lang::get('hello', ['name' => 'Bob']);
+        $expected = 'Hello there Bob!';
+        $this->assertEquals($expected, $output);
+    }
 
-	/**
-	 * Test for Lang::get()
-	 *
-	 * @test
-	 */
-	public function test_line_invalid()
-	{
-		Lang::load('test');
-		$output = Lang::get('non_existant_hello', array('name' => 'Bob'));
-		$expected = false;
-		$this->assertEquals($expected, $output);
-	}
+    /**
+     * Test for Lang::get()
+     *
+     * @test
+     */
+    public function test_line_invalid()
+    {
+        Lang::load('test');
+        $output = Lang::get('non_existant_hello', ['name' => 'Bob']);
+        $expected = false;
+        $this->assertEquals($expected, $output);
+    }
 
-	/**
-	 * Test for Lang::set()
-	 *
-	 * @test
-	 */
-	public function test_set_return_true()
-	{
-		$output = Lang::set('testing_set_valid', 'Ahoy :name!');
-		$this->assertNull($output);
-	}
+    /**
+     * Test for Lang::set()
+     *
+     * @test
+     */
+    public function test_set_return_true()
+    {
+        $output = Lang::set('testing_set_valid', 'Ahoy :name!');
+        $this->assertNull($output);
+    }
 
-	/**
-	 * Test for Lang::set()
-	 *
-	 * @test
-	 */
-	public function test_set()
-	{
-		Lang::set('testing_set_valid', 'Ahoy :name!');
-		$output = Lang::get('testing_set_valid', array('name' => 'Bob'));
-		$expected = 'Ahoy Bob!';
-		$this->assertEquals($expected, $output);
-	}
+    /**
+     * Test for Lang::set()
+     *
+     * @test
+     */
+    public function test_set()
+    {
+        Lang::set('testing_set_valid', 'Ahoy :name!');
+        $output = Lang::get('testing_set_valid', ['name' => 'Bob']);
+        $expected = 'Ahoy Bob!';
+        $this->assertEquals($expected, $output);
+    }
 }

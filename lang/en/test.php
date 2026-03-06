@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -10,6 +12,6 @@
  * @link       https://fuelphp.com
  */
 
-return array(
-	'hello' => 'Hello there :name!',
-);
+return [
+    'hello' => 'Hello there :name!',
+];

@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -14,26 +16,24 @@ namespace Fuel\Core;
 
 class Cache_Handler_Json implements \Cache_Handler_Driver
 {
-	public function readable($contents): mixed
-	{
-		$array = false;
-		if (str_starts_with($contents, 'a'))
-		{
-			$contents = substr($contents, 1);
-			$array = true;
-		}
+    public function readable($contents): mixed
+    {
+        $array = false;
+        if (str_starts_with($contents, 'a')) {
+            $contents = substr($contents, 1);
+            $array = true;
+        }
 
-		return json_decode($contents, $array);
-	}
+        return json_decode($contents, $array);
+    }
 
-	public function writable($contents): string
-	{
-		$array = '';
-		if (is_array($contents))
-		{
-			$array = 'a';
-		}
+    public function writable($contents): string
+    {
+        $array = '';
+        if (is_array($contents)) {
+            $array = 'a';
+        }
 
-		return $array.json_encode($contents);
-	}
+        return $array.json_encode($contents);
+    }
 }

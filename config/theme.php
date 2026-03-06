@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -22,123 +24,123 @@
  *
  */
 
-return array(
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Active Theme
-	 * -------------------------------------------------------------------------
-	 *
-	 *  The active theme to use.
-	 *
-	 *  This can also be set in code using:
-	 *
-	 *      Theme::active('foo');
-	 *
-	 */
+return [
+    /**
+     * -------------------------------------------------------------------------
+     *  Active Theme
+     * -------------------------------------------------------------------------
+     *
+     *  The active theme to use.
+     *
+     *  This can also be set in code using:
+     *
+     *      Theme::active('foo');
+     *
+     */
 
-	'active' => 'default',
+    'active' => 'default',
 
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Compatibility
-	 * -------------------------------------------------------------------------
-	 *
-	 *  The fallback theme to use.
-	 *
-	 *  If a view is not found in the active theme, this theme is used
-	 *  as a fallback.
-	 *
-	 *  This can also be set in code using:
-	 *
-	 *      Theme::fallback('foo');
-	 *
-	 */
+    /**
+     * -------------------------------------------------------------------------
+     *  Compatibility
+     * -------------------------------------------------------------------------
+     *
+     *  The fallback theme to use.
+     *
+     *  If a view is not found in the active theme, this theme is used
+     *  as a fallback.
+     *
+     *  This can also be set in code using:
+     *
+     *      Theme::fallback('foo');
+     *
+     */
 
-	'fallback' => 'default',
+    'fallback' => 'default',
 
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Paths
-	 * -------------------------------------------------------------------------
-	 *
-	 *  The theme search paths.
-	 *
-	 *  They are searched in the order given. You can add paths on the fly via:
-	 *
-	 *      Theme::add_path($path)
-	 *
-	 *      or
-	 *
-	 *      Theme::add_paths(array($path1, $path2));
-	 *
-	 */
+    /**
+     * -------------------------------------------------------------------------
+     *  Paths
+     * -------------------------------------------------------------------------
+     *
+     *  The theme search paths.
+     *
+     *  They are searched in the order given. You can add paths on the fly via:
+     *
+     *      Theme::add_path($path)
+     *
+     *      or
+     *
+     *      Theme::add_paths(array($path1, $path2));
+     *
+     */
 
-	'paths' => array(
-		APPPATH.'themes',
-	),
+    'paths' => [
+        APPPATH.'themes',
+    ],
 
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Assets
-	 * -------------------------------------------------------------------------
-	 *
-	 *  The folder inside the theme to be used to store assets.
-	 *
-	 *  This is relative to the theme's path.
-	 *
-	 */
+    /**
+     * -------------------------------------------------------------------------
+     *  Assets
+     * -------------------------------------------------------------------------
+     *
+     *  The folder inside the theme to be used to store assets.
+     *
+     *  This is relative to the theme's path.
+     *
+     */
 
-	'assets_folder' => 'assets',
+    'assets_folder' => 'assets',
 
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Extensions
-	 * -------------------------------------------------------------------------
-	 *
-	 *  The extension for theme view files.
-	 *
-	 */
+    /**
+     * -------------------------------------------------------------------------
+     *  Extensions
+     * -------------------------------------------------------------------------
+     *
+     *  The extension for theme view files.
+     *
+     */
 
-	'view_ext' => '.html',
+    'view_ext' => '.html',
 
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Theme Info - Documentation
-	 * -------------------------------------------------------------------------
-	 *
-	 *  Whether to require a theme info file.
-	 *
-	 */
+    /**
+     * -------------------------------------------------------------------------
+     *  Theme Info - Documentation
+     * -------------------------------------------------------------------------
+     *
+     *  Whether to require a theme info file.
+     *
+     */
 
-	'require_info_file' => false,
+    'require_info_file' => false,
 
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Theme Info - File name
-	 * -------------------------------------------------------------------------
-	 *
-	 *  The theme info file name.
-	 *
-	 */
+    /**
+     * -------------------------------------------------------------------------
+     *  Theme Info - File name
+     * -------------------------------------------------------------------------
+     *
+     *  The theme info file name.
+     *
+     */
 
-	'info_file_name' => 'themeinfo.php',
+    'info_file_name' => 'themeinfo.php',
 
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Modules
-	 * -------------------------------------------------------------------------
-	 *
-	 *  Auto prefixing for modules.
-	 *
-	 *  If true, the view to be loaded will be prefixed by the name of the
-	 *  current module (if any).
-	 *
-	 *  If a string, it will be prefixed too, allowing you to store all modules
-	 *  in a subfolder.
-	 *
-	 *  If false, module prefixing is not used.
-	 *
-	 */
+    /**
+     * -------------------------------------------------------------------------
+     *  Modules
+     * -------------------------------------------------------------------------
+     *
+     *  Auto prefixing for modules.
+     *
+     *  If true, the view to be loaded will be prefixed by the name of the
+     *  current module (if any).
+     *
+     *  If a string, it will be prefixed too, allowing you to store all modules
+     *  in a subfolder.
+     *
+     *  If false, module prefixing is not used.
+     *
+     */
 
-	'use_modules' => false,
-);
+    'use_modules' => false,
+];

@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -15,240 +17,233 @@ namespace Fuel\Core;
 
 class Database_Query_Builder_Update extends \Database_Query_Builder_Where
 {
-	/**
-	 * @var string  $_table  table name
-	 */
-	protected $_table;
+    /**
+     * @var string  $_table  table name
+     */
+    protected $_table;
 
-	/**
-	 * @var array  $_set  update values
-	 */
-	protected $_set = [];
+    /**
+     * @var array  $_set  update values
+     */
+    protected $_set = [];
 
-	/**
-	 * @var array  $_join  join statements
-	 */
-	protected $_join = [];
+    /**
+     * @var array  $_join  join statements
+     */
+    protected $_join = [];
 
-	/**
-	 * @var Database_Query_Builder_Join  $_last_join  last join statement
-	 */
-	protected $_last_join;
+    /**
+     * @var Database_Query_Builder_Join  $_last_join  last join statement
+     */
+    protected $_last_join;
 
-	/**
+    /**
      * Set the table for a update.
      *
      * @param  mixed  $table  table name or array($table, $alias) or object
      */
-    public function __construct($table = NULL)
-	{
-		if ($table)
-		{
-			// Set the initial table name
-			$this->_table = $table;
-		}
+    public function __construct($table = null)
+    {
+        if ($table) {
+            // Set the initial table name
+            $this->_table = $table;
+        }
 
-		// Start the query with no SQL
-		parent::__construct('', \DB::UPDATE);
-	}
+        // Start the query with no SQL
+        parent::__construct('', \DB::UPDATE);
+    }
 
-	/**
-	 * Sets the table to update.
-	 *
-	 * @param  mixed  $table  table name or array($table, $alias)
-	 *
-	 * @return  $this
-	 */
-	public function table($table)
-	{
-		$this->_table = $table;
+    /**
+     * Sets the table to update.
+     *
+     * @param  mixed  $table  table name or array($table, $alias)
+     *
+     * @return  $this
+     */
+    public function table($table)
+    {
+        $this->_table = $table;
 
-		return $this;
-	}
+        return $this;
+    }
 
-	/**
-	 * Set the values to update with an associative array.
-	 *
-	 * @param  array  $pairs   associative (column => value) list
-	 *
-	 * @return  $this
-	 */
-	public function set(array $pairs)
-	{
-		foreach ($pairs as $column => $value)
-		{
-			$this->_set[] = [$column, $value];
-		}
+    /**
+     * Set the values to update with an associative array.
+     *
+     * @param  array  $pairs   associative (column => value) list
+     *
+     * @return  $this
+     */
+    public function set(array $pairs)
+    {
+        foreach ($pairs as $column => $value) {
+            $this->_set[] = [$column, $value];
+        }
 
-		return $this;
-	}
+        return $this;
+    }
 
-	/**
-	 * Set the value of a single column.
-	 *
-	 * @param   mixed  $column  table name or array($table, $alias) or object
-	 * @param   mixed  $value   column value
-	 *
-	 * @return  $this
-	 */
-	public function value($column, $value)
-	{
-		$this->_set[] = [$column, $value];
+    /**
+     * Set the value of a single column.
+     *
+     * @param   mixed  $column  table name or array($table, $alias) or object
+     * @param   mixed  $value   column value
+     *
+     * @return  $this
+     */
+    public function value($column, $value)
+    {
+        $this->_set[] = [$column, $value];
 
-		return $this;
-	}
+        return $this;
+    }
 
-	/**
-	 * Compile the SQL query and return it.
-	 *
-	 * @param   mixed  $db  Database instance or instance name
-	 *
-	 * @return  string
-	 */
-	public function compile($db = null)
-	{
-		if ( ! $db instanceof \Database_Connection)
-		{
-			// Get the database instance
-			$db = \Database_Connection::instance($db);
-		}
+    /**
+     * Compile the SQL query and return it.
+     *
+     * @param   mixed  $db  Database instance or instance name
+     *
+     * @return  string
+     */
+    public function compile($db = null)
+    {
+        if (! $db instanceof \Database_Connection) {
+            // Get the database instance
+            $db = \Database_Connection::instance($db);
+        }
 
-		// Start an update query
-		$query = 'UPDATE '.$db->quote_table($this->_table);
+        // Start an update query
+        $query = 'UPDATE '.$db->quote_table($this->_table);
 
-		if ( ! empty($this->_join))
-		{
-			// Add tables to join
-			$query .= ' '.$this->_compile_join($db, $this->_join);
-		}
+        if (! empty($this->_join)) {
+            // Add tables to join
+            $query .= ' '.$this->_compile_join($db, $this->_join);
+        }
 
-		// Add the columns to update
-		$query .= ' SET '.$this->_compile_set($db, $this->_set);
+        // Add the columns to update
+        $query .= ' SET '.$this->_compile_set($db, $this->_set);
 
-		if ( ! empty($this->_where))
-		{
-			// Add selection conditions
-			$query .= ' WHERE '.$this->_compile_conditions($db, $this->_where);
-		}
+        if (! empty($this->_where)) {
+            // Add selection conditions
+            $query .= ' WHERE '.$this->_compile_conditions($db, $this->_where);
+        }
 
-		if ( ! empty($this->_order_by))
-		{
-			// Add sorting
-			$query .= ' '.$this->_compile_order_by($db, $this->_order_by);
-		}
+        if (! empty($this->_order_by)) {
+            // Add sorting
+            $query .= ' '.$this->_compile_order_by($db, $this->_order_by);
+        }
 
-		if ($this->_limit !== null)
-		{
-			// Add limiting
-			$query .= ' LIMIT '.$this->_limit;
-		}
+        if ($this->_limit !== null) {
+            // Add limiting
+            $query .= ' LIMIT '.$this->_limit;
+        }
 
-		return $query;
-	}
+        return $query;
+    }
 
-	/**
-	 * Reset the query parameters
-	 *
-	 * @return $this
-	 */
-	public function reset()
-	{
-		$this->_table      = null;
-		$this->_join       = [];
-		$this->_set        = [];
-		$this->_where      = [];
-		$this->_order_by   = [];
-		$this->_limit      = null;
-		$this->_last_join  = null;
-		$this->_parameters = [];
+    /**
+     * Reset the query parameters
+     *
+     * @return $this
+     */
+    public function reset()
+    {
+        $this->_table      = null;
+        $this->_join       = [];
+        $this->_set        = [];
+        $this->_where      = [];
+        $this->_order_by   = [];
+        $this->_limit      = null;
+        $this->_last_join  = null;
+        $this->_parameters = [];
 
-		return $this;
-	}
+        return $this;
+    }
 
-	/**
-	 * Adds addition tables to "JOIN ...".
-	 *
-	 * @param   mixed   $table  column name or array($column, $alias) or object
-	 * @param   string  $type   join type (LEFT, RIGHT, INNER, etc)
-	 *
-	 * @return  $this
-	 */
-	public function join($table, $type = null)
-	{
-		$this->_join[] = $this->_last_join = new \Database_Query_Builder_Join($table, $type);
+    /**
+     * Adds addition tables to "JOIN ...".
+     *
+     * @param   mixed   $table  column name or array($column, $alias) or object
+     * @param   string  $type   join type (LEFT, RIGHT, INNER, etc)
+     *
+     * @return  $this
+     */
+    public function join($table, $type = null)
+    {
+        $this->_join[] = $this->_last_join = new \Database_Query_Builder_Join($table, $type);
 
-		return $this;
-	}
+        return $this;
+    }
 
-	/**
-	 * Adds "ON ..." conditions for the last created JOIN statement.
-	 *
-	 * @param   mixed   $c1  column name or array($column, $alias) or object
-	 * @param   string  $op  logic operator
-	 * @param   mixed   $c2  column name or array($column, $alias) or object
-	 *
-	 * @return  $this
-	 */
-	public function on($c1, $op, $c2)
-	{
-		$this->_last_join->on($c1, $op, $c2);
+    /**
+     * Adds "ON ..." conditions for the last created JOIN statement.
+     *
+     * @param   mixed   $c1  column name or array($column, $alias) or object
+     * @param   string  $op  logic operator
+     * @param   mixed   $c2  column name or array($column, $alias) or object
+     *
+     * @return  $this
+     */
+    public function on($c1, $op, $c2)
+    {
+        $this->_last_join->on($c1, $op, $c2);
 
-		return $this;
-	}
+        return $this;
+    }
 
-	/**
-	 * Adds "AND ON ..." conditions for the last created JOIN statement.
-	 *
-	 * @param   mixed   $c1  column name or array($column, $alias) or object
-	 * @param   string  $op  logic operator
-	 * @param   mixed   $c2  column name or array($column, $alias) or object
-	 *
-	 * @return  $this
-	 */
-	public function and_on($c1, $op, $c2)
-	{
-		$this->_last_join->and_on($c1, $op, $c2);
+    /**
+     * Adds "AND ON ..." conditions for the last created JOIN statement.
+     *
+     * @param   mixed   $c1  column name or array($column, $alias) or object
+     * @param   string  $op  logic operator
+     * @param   mixed   $c2  column name or array($column, $alias) or object
+     *
+     * @return  $this
+     */
+    public function and_on($c1, $op, $c2)
+    {
+        $this->_last_join->and_on($c1, $op, $c2);
 
-		return $this;
-	}
+        return $this;
+    }
 
-	/**
-	 * Adds "OR ON ..." conditions for the last created JOIN statement.
-	 *
-	 * @param   mixed   $c1  column name or array($column, $alias) or object
-	 * @param   string  $op  logic operator
-	 * @param   mixed   $c2  column name or array($column, $alias) or object
-	 *
-	 * @return  $this
-	 */
-	public function or_on($c1, $op, $c2)
-	{
-		$this->_last_join->or_on($c1, $op, $c2);
+    /**
+     * Adds "OR ON ..." conditions for the last created JOIN statement.
+     *
+     * @param   mixed   $c1  column name or array($column, $alias) or object
+     * @param   string  $op  logic operator
+     * @param   mixed   $c2  column name or array($column, $alias) or object
+     *
+     * @return  $this
+     */
+    public function or_on($c1, $op, $c2)
+    {
+        $this->_last_join->or_on($c1, $op, $c2);
 
-		return $this;
-	}
+        return $this;
+    }
 
-	/**
-	 * Adds an opening bracket the last created JOIN statement.
-	 *
-	 * @return  $this
-	 */
-	public function on_open()
-	{
-		$this->_last_join->on_open();
+    /**
+     * Adds an opening bracket the last created JOIN statement.
+     *
+     * @return  $this
+     */
+    public function on_open()
+    {
+        $this->_last_join->on_open();
 
-		return $this;
-	}
+        return $this;
+    }
 
-	/**
-	 * Adds a closing bracket for the last created JOIN statement.
-	 *
-	 * @return  $this
-	 */
-	public function on_close()
-	{
-		$this->_last_join->on_close();
+    /**
+     * Adds a closing bracket for the last created JOIN statement.
+     *
+     * @return  $this
+     */
+    public function on_close()
+    {
+        $this->_last_join->on_close();
 
-		return $this;
-	}
+        return $this;
+    }
 }

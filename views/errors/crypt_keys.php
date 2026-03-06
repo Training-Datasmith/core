@@ -46,7 +46,7 @@
  * @link       https://fuelphp.com
  */
 
-return array (<?php if ( ! empty($keys['legacy'])):?>
+return array (<?php if (! empty($keys['legacy'])):?>
 	'legacy' => array (
 		'crypto_key' => '<?php echo empty($keys['legacy']['crypto_key']) ? '' : $keys['legacy']['crypto_key']; ?>',
 		'crypto_iv' => '<?php echo empty($keys['legacy']['crypto_iv']) ? '' : $keys['legacy']['crypto_iv']; ?>',

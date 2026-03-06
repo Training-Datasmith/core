@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -12,20 +14,21 @@
 
 namespace Fuel\Core;
 
-interface Cache_Handler_Driver {
-	/**
-	 * Should make the contents readable
-	 *
-	 * @param   mixed
-	 * @return  mixed
-	 */
-	public function readable($contents);
+interface Cache_Handler_Driver
+{
+    /**
+     * Should make the contents readable
+     *
+     * @param   mixed
+     * @return  mixed
+     */
+    public function readable($contents);
 
-	/**
-	 * Should make the contents writable
-	 *
-	 * @param   mixed
-	 * @return  mixed
-	 */
-	public function writable($contents);
+    /**
+     * Should make the contents writable
+     *
+     * @param   mixed
+     * @return  mixed
+     */
+    public function writable($contents);
 }

@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -22,19 +24,19 @@
  *
  */
 
-return array(
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Sources
-	 * -------------------------------------------------------------------------
-	 *
-	 *  The name of the main bootstrap file.
-	 *
-	 *  Set this to false or remove if you use 'mod_rewrite'.
-	 *
-	 */
+return [
+    /**
+     * -------------------------------------------------------------------------
+     *  Sources
+     * -------------------------------------------------------------------------
+     *
+     *  The name of the main bootstrap file.
+     *
+     *  Set this to false or remove if you use 'mod_rewrite'.
+     *
+     */
 
-	'sources' => array(
-		'github.com/fuel-packages',
-	),
-);
+    'sources' => [
+        'github.com/fuel-packages',
+    ],
+];

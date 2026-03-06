@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -22,29 +24,29 @@
  *
  */
 
-return array(
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Format
-	 * -------------------------------------------------------------------------
-	 *
-	 *  Defaults used for formatting options.
-	 *
-	 *  See how to use it here (https://fuelphp.com/docs/classes/num.html)
-	 *
-	 */
+return [
+    /**
+     * -------------------------------------------------------------------------
+     *  Format
+     * -------------------------------------------------------------------------
+     *
+     *  Defaults used for formatting options.
+     *
+     *  See how to use it here (https://fuelphp.com/docs/classes/num.html)
+     *
+     */
 
-	'formatting' => array(
-		'phone' => '(000) 000-0000',
+    'formatting' => [
+        'phone' => '(000) 000-0000',
 
-		'smart_phone' => array(
-			7  => '000-0000',
-			10 => '(000) 000-0000',
-			11 => '0 (000) 000-0000',
-		),
+        'smart_phone' => [
+            7  => '000-0000',
+            10 => '(000) 000-0000',
+            11 => '0 (000) 000-0000',
+        ],
 
-		'credit_card' => '**** **** **** 0000',
+        'credit_card' => '**** **** **** 0000',
 
-		'exp' => '00-00',
-	),
-);
+        'exp' => '00-00',
+    ],
+];

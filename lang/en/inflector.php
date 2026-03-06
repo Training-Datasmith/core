@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -10,9 +12,9 @@
  * @link       https://fuelphp.com
  */
 
-return array(
+return [
 
-        'uncountable_words' => array(
+        'uncountable_words' => [
                 'equipment',
                 'information',
                 'rice',
@@ -21,9 +23,9 @@ return array(
                 'series',
                 'fish',
                 'meta',
-        ),
+        ],
 
-        'singular_rules' => array(
+        'singular_rules' => [
                 '/(matr)ices$/i'         => '\1ix',
                 '/(vert|ind)ices$/i'     => '\1ex',
                 '/^(ox)en/i'             => '\1',
@@ -51,9 +53,9 @@ return array(
                 '/(c)hildren$/i'         => '\1\2hild',
                 '/(n)ews$/i'             => '\1\2ews',
                 '/([^us])s$/i'           => '\1',
-        ),
+        ],
 
-        'plural_rules' => array(
+        'plural_rules' => [
                 '/^(ox)$/i'                 => '\1\2en',     // ox
                 '/([m|l])ouse$/i'           => '\1ice',      // mouse, louse
                 '/(matr|vert|ind)ix|ex$/i'  => '\1ices',     // matrix, vertex, index
@@ -73,6 +75,6 @@ return array(
                 '/(ax|cris|test)is$/i'      => '\1es',       // axis, crisis
                 '/s$/'                      => 's',          // no change (compatibility)
                 '/$/'                       => 's',
-        ),
+        ],
 
-);
+];

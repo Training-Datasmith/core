@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -21,333 +23,324 @@ namespace Fuel\Core;
  */
 abstract class Presenter implements \Stringable
 {
-	// namespace prefix
-	protected static $ns_prefix = 'Presenter_';
+    // namespace prefix
+    protected static $ns_prefix = 'Presenter_';
 
-	/**
-	 * Factory for fetching the Presenter
-	 *
-	 * @param   string  $presenter    Presenter classname without View_ prefix or full classname
-	 * @param   string  $method       Method to execute
-	 * @param   bool    $auto_filter  Auto filter the view data
-	 * @param   string  $view         View to associate with this presenter
-	 * @return  Presenter
-	 */
-	public static function forge($presenter, $method = 'view', $auto_filter = null, $view = null)
-	{
-		// determine the presenter namespace from the current request context
-		$namespace = \Request::active() ? ucfirst(\Request::active()->module) : '';
+    /**
+     * Factory for fetching the Presenter
+     *
+     * @param   string  $presenter    Presenter classname without View_ prefix or full classname
+     * @param   string  $method       Method to execute
+     * @param   bool    $auto_filter  Auto filter the view data
+     * @param   string  $view         View to associate with this presenter
+     * @return  Presenter
+     */
+    public static function forge($presenter, $method = 'view', $auto_filter = null, $view = null)
+    {
+        // determine the presenter namespace from the current request context
+        $namespace = \Request::active() ? ucfirst(\Request::active()->module) : '';
 
-		// create the list of possible class prefixes
-		$prefixes = [static::$ns_prefix, $namespace.'\\'];
+        // create the list of possible class prefixes
+        $prefixes = [static::$ns_prefix, $namespace.'\\'];
 
-		/**
-		 * Add non prefixed classnames to the list as well, for BC reasons
-		 *
-		 * @deprecated 1.6
-		 */
-		if ( ! empty($namespace))
-		{
-			array_unshift($prefixes, $namespace.'\\'.static::$ns_prefix);
-			$prefixes[] = '';
-		}
+        /**
+         * Add non prefixed classnames to the list as well, for BC reasons
+         *
+         * @deprecated 1.6
+         */
+        if (! empty($namespace)) {
+            array_unshift($prefixes, $namespace.'\\'.static::$ns_prefix);
+            $prefixes[] = '';
+        }
 
-		// loading from a specific namespace?
-		if (str_contains($presenter, '::'))
-		{
-			$split = explode('::', $presenter, 2);
-			if (isset($split[1]))
-			{
-				array_unshift($prefixes, ucfirst($split[0]).'\\'.static::$ns_prefix);
-				$presenter = $split[1];
-			}
-		}
+        // loading from a specific namespace?
+        if (str_contains($presenter, '::')) {
+            $split = explode('::', $presenter, 2);
+            if (isset($split[1])) {
+                array_unshift($prefixes, ucfirst($split[0]).'\\'.static::$ns_prefix);
+                $presenter = $split[1];
+            }
+        }
 
-		// if no custom view is given, make it equal to the presenter name
-		is_null($view) and $view = $presenter;
+        // if no custom view is given, make it equal to the presenter name
+        is_null($view) and $view = $presenter;
 
-		// strip any extensions from the view name to determine the presenter to load
-		$presenter = \Inflector::words_to_upper(str_replace(
-			['/', DS],
-			'_',
-			!str_contains($presenter, '.') ? $presenter : substr($presenter, 0, -strlen(strrchr($presenter, '.')))
-		));
+        // strip any extensions from the view name to determine the presenter to load
+        $presenter = \Inflector::words_to_upper(str_replace(
+            ['/', DS],
+            '_',
+            !str_contains($presenter, '.') ? $presenter : substr($presenter, 0, -strlen(strrchr($presenter, '.')))
+        ));
 
-		// create the list of possible presenter classnames, start with the namespaced one
-		$classes = [];
-		foreach ($prefixes as $prefix)
-		{
-			$classes[] = $prefix.$presenter;
-		}
+        // create the list of possible presenter classnames, start with the namespaced one
+        $classes = [];
+        foreach ($prefixes as $prefix) {
+            $classes[] = $prefix.$presenter;
+        }
 
-		// check if we can find one
-		foreach ($classes as $class)
-		{
-			if (class_exists($class))
-			{
-				return new $class($method, $auto_filter, $view);
-			}
-		}
+        // check if we can find one
+        foreach ($classes as $class) {
+            if (class_exists($class)) {
+                return new $class($method, $auto_filter, $view);
+            }
+        }
 
-		throw new \OutOfBoundsException('Presenter "'.reset($classes).'" could not be found.');
-	}
+        throw new \OutOfBoundsException('Presenter "'.reset($classes).'" could not be found.');
+    }
 
-	/**
-	 * @var  string|View  view name, after instantiation a View object
-	 */
-	protected $_view;
+    /**
+     * @var  string|View  view name, after instantiation a View object
+     */
+    protected $_view;
 
-	/**
-	 * @var  Request  active request during Presenter creation for proper context
-	 */
-	protected $_active_request;
+    /**
+     * @var  Request  active request during Presenter creation for proper context
+     */
+    protected $_active_request;
 
-	/**
+    /**
      * @param string $method
      * @param bool $auto_filter
      */
     protected function __construct(/**
      * @var  string  method to execute when rendering
      */
-    protected $_method, /**
+        protected $_method, /**
      * @var  bool  whether or not to use auto filtering
      */
-    protected $_auto_filter = null, $view = null)
-	{
-		$this->_view === null and $this->_view = $view;
-		class_exists('Request', false) and $this->_active_request = \Request::active();
+        protected $_auto_filter = null,
+        $view = null
+    ) {
+        $this->_view === null and $this->_view = $view;
+        class_exists('Request', false) and $this->_active_request = \Request::active();
 
-		if (empty($this->_view))
-		{
-			// Take the class name and guess the view name
-			$class = static::class;
-			$this->_view = strtolower(str_replace('_', DS, preg_replace('#^([a-z0-9_]*\\\\)?(View_)?#i', '', $class)));
-		}
+        if (empty($this->_view)) {
+            // Take the class name and guess the view name
+            $class = static::class;
+            $this->_view = strtolower(str_replace('_', DS, preg_replace('#^([a-z0-9_]*\\\\)?(View_)?#i', '', $class)));
+        }
 
-		$this->set_view();
-	}
+        $this->set_view();
+    }
 
-	/**
-	 * Returns the View object associated with this Presenter
-	 *
-	 * @return  View
-	 */
-	public function get_view()
-	{
-		return $this->_view;
-	}
+    /**
+     * Returns the View object associated with this Presenter
+     *
+     * @return  View
+     */
+    public function get_view()
+    {
+        return $this->_view;
+    }
 
-	/**
-	 * Construct the View object
-	 */
-	public function set_view($view = null): void
-	{
-		// construct a view object if needed
-		if (is_null($view))
-		{
-			$view = $this->_view;
-			$this->_view = null;
-		}
-		if ( ! $view instanceOf View)
-		{
-			$view = \View::forge($view, $this->_view);
-		}
+    /**
+     * Construct the View object
+     */
+    public function set_view($view = null): void
+    {
+        // construct a view object if needed
+        if (is_null($view)) {
+            $view = $this->_view;
+            $this->_view = null;
+        }
+        if (! $view instanceof View) {
+            $view = \View::forge($view, $this->_view);
+        }
 
-		// store the constructed object
-		$this->_view = $view;
-	}
+        // store the constructed object
+        $this->_view = $view;
+    }
 
-	/**
-	 * Returns the active request object.
-	 *
-	 * @return  Request
-	 */
-	protected function request()
-	{
-		return $this->_active_request;
-	}
+    /**
+     * Returns the active request object.
+     *
+     * @return  Request
+     */
+    protected function request()
+    {
+        return $this->_active_request;
+    }
 
-	/**
-	 * Executed before the view method
-	 */
-	public function before() {}
+    /**
+     * Executed before the view method
+     */
+    public function before()
+    {
+    }
 
-	/**
-	 * The default view method
-	 * Should set all expected variables upon itself
-	 */
-	public function view() {}
+    /**
+     * The default view method
+     * Should set all expected variables upon itself
+     */
+    public function view()
+    {
+    }
 
-	/**
-	 * Executed after the view method
-	 */
-	public function after() {}
+    /**
+     * Executed after the view method
+     */
+    public function after()
+    {
+    }
 
-	/**
+    /**
      * Fetches an existing value from the template
      *
      * @param   mixed  $name
      */
     public function & __get(string $name): mixed
-	{
-		return $this->get($name);
-	}
+    {
+        return $this->get($name);
+    }
 
-	/**
+    /**
      * Gets a variable from the template
      *
      * @return  string
      */
     public function & get($key = null, $default = null)
-	{
-		if (is_null($default) and func_num_args() === 1)
-		{
-			return $this->_view->get($key);
-		}
-		return $this->_view->get($key, $default);
-	}
+    {
+        if (is_null($default) and func_num_args() === 1) {
+            return $this->_view->get($key);
+        }
+        return $this->_view->get($key, $default);
+    }
 
-	/**
+    /**
      * Sets and sanitizes a variable on the template
      *
      * @return  Presenter
      */
     public function __set(string $key, mixed $value)
-	{
-		return $this->set($key, $value);
-	}
+    {
+        return $this->set($key, $value);
+    }
 
-	/**
-	 * Sets a variable on the template
-	 *
-	 * @param   string     $key
-	 * @param   mixed      $value
-	 * @param   bool|null  $filter
-	 * @return  $this
-	 */
-	public function set($key, $value = null, $filter = null)
-	{
-		is_null($filter) and $filter = $this->_auto_filter;
-		$this->_view->set($key, $value, $filter);
-		return $this;
-	}
+    /**
+     * Sets a variable on the template
+     *
+     * @param   string     $key
+     * @param   mixed      $value
+     * @param   bool|null  $filter
+     * @return  $this
+     */
+    public function set($key, $value = null, $filter = null)
+    {
+        is_null($filter) and $filter = $this->_auto_filter;
+        $this->_view->set($key, $value, $filter);
+        return $this;
+    }
 
-	/**
-	 * The same as set(), except this defaults to not-encoding the variable
-	 * on output.
-	 *
-	 *     $view->set_safe('foo', 'bar');
-	 *
-	 * @param   string  $key    variable name or an array of variables
-	 * @param   mixed   $value  value
-	 * @return  $this
-	 */
-	public function set_safe($key, $value = null)
-	{
-		return $this->set($key, $value, false);
-	}
+    /**
+     * The same as set(), except this defaults to not-encoding the variable
+     * on output.
+     *
+     *     $view->set_safe('foo', 'bar');
+     *
+     * @param   string  $key    variable name or an array of variables
+     * @param   mixed   $value  value
+     * @return  $this
+     */
+    public function set_safe($key, $value = null)
+    {
+        return $this->set($key, $value, false);
+    }
 
-	/**
-	 * Magic method, determines if a variable is set.
-	 *
-	 *     isset($view->foo);
-	 *
-	 * @param   string  $key	variable name
-	 * @return  boolean
-	 */
-	public function __isset(string $key)
-	{
-		return isset($this->_view->$key);
-	}
+    /**
+     * Magic method, determines if a variable is set.
+     *
+     *     isset($view->foo);
+     *
+     * @param   string  $key	variable name
+     * @return  boolean
+     */
+    public function __isset(string $key)
+    {
+        return isset($this->_view->$key);
+    }
 
-	/**
-	 * Magic method, unsets a given variable.
-	 *
-	 *     unset($view->foo);
-	 *
-	 * @param   string  $key	variable name
-	 * @return  void
-	 */
-	public function __unset(string $key)
-	{
-		unset($this->_view->$key);
-	}
+    /**
+     * Magic method, unsets a given variable.
+     *
+     *     unset($view->foo);
+     *
+     * @param   string  $key	variable name
+     * @return  void
+     */
+    public function __unset(string $key)
+    {
+        unset($this->_view->$key);
+    }
 
-	/**
-	 * Assigns a value by reference. The benefit of binding is that values can
-	 * be altered without re-setting them. It is also possible to bind variables
-	 * before they have values. Assigned values will be available as a
-	 * variable within the view file:
-	 *
-	 *     $this->bind('ref', $bar);
-	 *
-	 * @param   string   $key     variable name
-	 * @param   mixed    $value   referenced variable
-	 * @param   bool     $filter  Whether to filter the var on output
-	 * @return  $this
-	 */
-	public function bind($key, &$value, $filter = null)
-	{
-		$this->_view->bind($key, $value, $filter);
+    /**
+     * Assigns a value by reference. The benefit of binding is that values can
+     * be altered without re-setting them. It is also possible to bind variables
+     * before they have values. Assigned values will be available as a
+     * variable within the view file:
+     *
+     *     $this->bind('ref', $bar);
+     *
+     * @param   string   $key     variable name
+     * @param   mixed    $value   referenced variable
+     * @param   bool     $filter  Whether to filter the var on output
+     * @return  $this
+     */
+    public function bind($key, &$value, $filter = null)
+    {
+        $this->_view->bind($key, $value, $filter);
 
-		return $this;
-	}
+        return $this;
+    }
 
-	/**
-	 * Change auto filter setting
-	 *
-	 * @param   null|bool  change setting (bool) or get the current setting (null)
-	 * @return  void|bool  returns current setting or nothing when it is changed
-	 */
-	public function auto_filter($setting = null)
-	{
-		if (func_num_args() == 0)
-		{
-			return $this->_view->auto_filter();
-		}
+    /**
+     * Change auto filter setting
+     *
+     * @param   null|bool  change setting (bool) or get the current setting (null)
+     * @return  void|bool  returns current setting or nothing when it is changed
+     */
+    public function auto_filter($setting = null)
+    {
+        if (func_num_args() == 0) {
+            return $this->_view->auto_filter();
+        }
 
-		return $this->_view->auto_filter($setting);
-	}
+        return $this->_view->auto_filter($setting);
+    }
 
-	/**
-	 * Add variables through method and after() and create template as a string
-	 */
-	public function render()
-	{
-		if (class_exists('Request', false))
-		{
-			$current_request = \Request::active();
-			\Request::active($this->_active_request);
-		}
+    /**
+     * Add variables through method and after() and create template as a string
+     */
+    public function render()
+    {
+        if (class_exists('Request', false)) {
+            $current_request = \Request::active();
+            \Request::active($this->_active_request);
+        }
 
-		$this->before();
-		$this->{$this->_method}();
-		$this->after();
+        $this->before();
+        $this->{$this->_method}();
+        $this->after();
 
-		$return = $this->_view->render();
+        $return = $this->_view->render();
 
-		if (class_exists('Request', false))
-		{
-			\Request::active($current_request);
-		}
+        if (class_exists('Request', false)) {
+            \Request::active($current_request);
+        }
 
-		return $return;
-	}
+        return $return;
+    }
 
-	/**
-	 * Auto-render on toString
-	 */
-	public function __toString(): string
-	{
-		try
-		{
-			return (string) $this->render();
-		}
-		catch (\Exception $e)
-		{
-			\Errorhandler::exception_handler($e);
+    /**
+     * Auto-render on toString
+     */
+    public function __toString(): string
+    {
+        try {
+            return (string) $this->render();
+        } catch (\Exception $e) {
+            \Errorhandler::exception_handler($e);
 
-			return '';
-		}
-	}
+            return '';
+        }
+    }
 }

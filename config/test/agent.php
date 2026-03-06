@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -10,16 +12,16 @@
  * @link       https://fuelphp.com
  */
 
-return array(
-    'browscap' => array(
+return [
+    'browscap' => [
         'enabled' => true,
         'url'     => '',
         'method'  => 'local',
         'file'    => __DIR__.DS.'..'.DS.'..'.DS.'tests'.DS.'agent'.DS.'browscap.ini',
-    ),
-    'cache' => array(
+    ],
+    'cache' => [
         'driver'     => '',
         'expiry'     => 1,
         'identifier' => 'fuel.agent-test',
-    ),
-);
+    ],
+];

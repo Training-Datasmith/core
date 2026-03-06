@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -17,217 +19,192 @@ namespace Fuel\Core;
  */
 abstract class Config_File implements Config_Interface
 {
-	protected array $vars;
+    protected array $vars;
 
-	/**
-	 * Sets up the file to be parsed and variables
-	 *
-	 * @param   string  $file  Config file name
-	 * @param   array   $vars  Variables to parse in the file
-	 */
-	public function __construct(protected $file = null, $vars = [])
-	{
-		$this->vars = [
-			'APPPATH' => APPPATH,
-			'COREPATH' => COREPATH,
-			'PKGPATH' => PKGPATH,
-			'DOCROOT' => DOCROOT,
-		] + $vars;
-	}
+    /**
+     * Sets up the file to be parsed and variables
+     *
+     * @param   string  $file  Config file name
+     * @param   array   $vars  Variables to parse in the file
+     */
+    public function __construct(protected $file = null, $vars = [])
+    {
+        $this->vars = [
+            'APPPATH' => APPPATH,
+            'COREPATH' => COREPATH,
+            'PKGPATH' => PKGPATH,
+            'DOCROOT' => DOCROOT,
+        ] + $vars;
+    }
 
-	/**
-	 * Loads the config file(s).
-	 *
-	 * @param   bool  $overwrite  Whether to overwrite existing values
-	 * @param   bool  $cache      Whether to cache this path or not
-	 * @return  array  the config array
-	 */
-	public function load($overwrite = false, $cache = true)
-	{
-		$paths = $this->find_file($cache);
-		$config = [];
+    /**
+     * Loads the config file(s).
+     *
+     * @param   bool  $overwrite  Whether to overwrite existing values
+     * @param   bool  $cache      Whether to cache this path or not
+     * @return  array  the config array
+     */
+    public function load($overwrite = false, $cache = true)
+    {
+        $paths = $this->find_file($cache);
+        $config = [];
 
-		foreach ($paths as $path)
-		{
-			$config = $overwrite ?
-				array_merge($config, $this->load_file($path)) :
-				\Arr::merge($config, $this->load_file($path));
-		}
+        foreach ($paths as $path) {
+            $config = $overwrite ?
+                array_merge($config, $this->load_file($path)) :
+                \Arr::merge($config, $this->load_file($path));
+        }
 
-		return $config;
-	}
+        return $config;
+    }
 
-	/**
-	 * Gets the default group name.
-	 *
-	 * @return  string
-	 */
-	public function group()
-	{
-		return $this->file;
-	}
+    /**
+     * Gets the default group name.
+     *
+     * @return  string
+     */
+    public function group()
+    {
+        return $this->file;
+    }
 
-	/**
-	 * Parses a string using all of the previously set variables.  Allows you to
-	 * use something like %APPPATH% in non-PHP files.
-	 *
-	 * @param   string  $string  String to parse
-	 * @return  string
-	 */
-	protected function parse_vars($string)
-	{
-		foreach ($this->vars as $var => $val)
-		{
-			$string = str_replace("%$var%", $val, $string);
-		}
+    /**
+     * Parses a string using all of the previously set variables.  Allows you to
+     * use something like %APPPATH% in non-PHP files.
+     *
+     * @param   string  $string  String to parse
+     * @return  string
+     */
+    protected function parse_vars($string)
+    {
+        foreach ($this->vars as $var => $val) {
+            $string = str_replace("%$var%", $val, $string);
+        }
 
-		return $string;
-	}
+        return $string;
+    }
 
-	/**
-	 * Replaces FuelPHP's path constants to their string counterparts.
-	 *
-	 * @param   array  $array  array to be prepped
-	 * @return  array  prepped array
-	 */
-	protected function prep_vars(array &$array)
-	{
-		static $replacements = false;
+    /**
+     * Replaces FuelPHP's path constants to their string counterparts.
+     *
+     * @param   array  $array  array to be prepped
+     * @return  array  prepped array
+     */
+    protected function prep_vars(array &$array)
+    {
+        static $replacements = false;
 
-		if ($replacements === false)
-		{
-			foreach ($this->vars as $i => $v)
-			{
-				$replacements['#^('.preg_quote((string) $v).'){1}(.*)?#'] = "%".$i."%$2";
-			}
-		}
+        if ($replacements === false) {
+            foreach ($this->vars as $i => $v) {
+                $replacements['#^('.preg_quote((string) $v).'){1}(.*)?#'] = '%'.$i.'%$2';
+            }
+        }
 
-		foreach ($array as $i => $value)
-		{
-			if (is_string($value))
-			{
-				$array[$i] = preg_replace(array_keys($replacements), array_values($replacements), $value);
-			}
-			elseif(is_array($value))
-			{
-				$this->prep_vars($array[$i]);
-			}
-		}
-	}
+        foreach ($array as $i => $value) {
+            if (is_string($value)) {
+                $array[$i] = preg_replace(array_keys($replacements), array_values($replacements), $value);
+            } elseif (is_array($value)) {
+                $this->prep_vars($array[$i]);
+            }
+        }
+    }
 
-	/**
-	 * Finds the given config files
-	 *
-	 * @param   bool  $cache  Whether to cache this path or not
-	 * @return  array
-	 * @throws  \ConfigException
-	 */
-	protected function find_file($cache = true)
-	{
-		if (($this->file[0] === '/' or (isset($this->file[1]) and $this->file[1] === ':')) and is_file($this->file))
-		{
-			$paths = [$this->file];
-		}
-		else
-		{
-			$paths = array_merge(
-				\Finder::search('config/'.\Fuel::$env, $this->file, $this->ext, true, $cache),
-				\Finder::search('config', $this->file, $this->ext, true, $cache)
-			);
-		}
+    /**
+     * Finds the given config files
+     *
+     * @param   bool  $cache  Whether to cache this path or not
+     * @return  array
+     * @throws  \ConfigException
+     */
+    protected function find_file($cache = true)
+    {
+        if (($this->file[0] === '/' or (isset($this->file[1]) and $this->file[1] === ':')) and is_file($this->file)) {
+            $paths = [$this->file];
+        } else {
+            $paths = array_merge(
+                \Finder::search('config/'.\Fuel::$env, $this->file, $this->ext, true, $cache),
+                \Finder::search('config', $this->file, $this->ext, true, $cache)
+            );
+        }
 
-		if (empty($paths))
-		{
-			throw new \ConfigException(sprintf('File "%s" does not exist.', $this->file));
-		}
+        if (empty($paths)) {
+            throw new \ConfigException(sprintf('File "%s" does not exist.', $this->file));
+        }
 
-		return array_reverse($paths);
-	}
+        return array_reverse($paths);
+    }
 
-	/**
-	 * Formats the output and saved it to disc.
-	 *
-	 * @param   array $contents    config array to save
-	 * @return  bool               \File::update result
-	 */
-	public function save($contents)
-	{
-		// get the formatted output
-		$output = $this->export_format($contents);
+    /**
+     * Formats the output and saved it to disc.
+     *
+     * @param   array $contents    config array to save
+     * @return  bool               \File::update result
+     */
+    public function save($contents)
+    {
+        // get the formatted output
+        $output = $this->export_format($contents);
 
-		if ( ! $output)
-		{
-			return false;
-		}
+        if (! $output) {
+            return false;
+        }
 
-		if ( ! $path = \Finder::search('config', $this->file, $this->ext))
-		{
-			if ($pos = strripos((string) $this->file, '::'))
-			{
-				// get the namespace path
-				if ($path = \Autoloader::namespace_path('\\'.ucfirst(substr((string) $this->file, 0, $pos))))
-				{
-					// strip the namespace from the filename
-					$this->file = substr((string) $this->file, $pos+2);
+        if (! $path = \Finder::search('config', $this->file, $this->ext)) {
+            if ($pos = strripos((string) $this->file, '::')) {
+                // get the namespace path
+                if ($path = \Autoloader::namespace_path('\\'.ucfirst(substr((string) $this->file, 0, $pos)))) {
+                    // strip the namespace from the filename
+                    $this->file = substr((string) $this->file, $pos + 2);
 
-					// strip the classes directory as we need the module root
-					$path = substr($path, 0, -8).'config'.DS.$this->file.$this->ext;
-				}
-				else
-				{
-					// invalid namespace requested
-					return false;
-				}
-			}
-		}
+                    // strip the classes directory as we need the module root
+                    $path = substr($path, 0, -8).'config'.DS.$this->file.$this->ext;
+                } else {
+                    // invalid namespace requested
+                    return false;
+                }
+            }
+        }
 
-		// absolute path requested?
-		if ($this->file[0] === '/' or (isset($this->file[1]) and $this->file[1] === ':'))
-		{
-			$path = $this->file;
-		}
+        // absolute path requested?
+        if ($this->file[0] === '/' or (isset($this->file[1]) and $this->file[1] === ':')) {
+            $path = $this->file;
+        }
 
-		// make sure we have a fallback
-		$path or $path = APPPATH.'config'.DS.$this->file.$this->ext;
+        // make sure we have a fallback
+        $path or $path = APPPATH.'config'.DS.$this->file.$this->ext;
 
-		$path = pathinfo($path);
-		if ( ! is_dir($path['dirname']))
-		{
-			mkdir($path['dirname'], 0777, true);
-		}
+        $path = pathinfo($path);
+        if (! is_dir($path['dirname'])) {
+            mkdir($path['dirname'], 0777, true);
+        }
 
-		$return = \File::update($path['dirname'], $path['basename'], $output);
-		if ($return)
-		{
-			try
-			{
-				\Config::load('file', true);
-				chmod($path['dirname'].DS.$path['basename'], \Config::get('file.chmod.files', 0666));
-			}
-			catch (\PhpErrorException $e)
-			{
-				// if we get something else then a chmod error, bail out
-				if (!str_starts_with($e->getMessage(), 'chmod():'))
-				{
-					throw new $e;
-				}
-			}
-		}
-		return $return;
-	}
+        $return = \File::update($path['dirname'], $path['basename'], $output);
+        if ($return) {
+            try {
+                \Config::load('file', true);
+                chmod($path['dirname'].DS.$path['basename'], \Config::get('file.chmod.files', 0666));
+            } catch (\PhpErrorException $e) {
+                // if we get something else then a chmod error, bail out
+                if (!str_starts_with($e->getMessage(), 'chmod():')) {
+                    throw new $e();
+                }
+            }
+        }
+        return $return;
+    }
 
-	/**
-	 * Must be implemented by child class. Gets called for each file to load.
-	 *
-	 * @param string  $file  the path to the file
-	 */
-	abstract protected function load_file($file);
+    /**
+     * Must be implemented by child class. Gets called for each file to load.
+     *
+     * @param string  $file  the path to the file
+     */
+    abstract protected function load_file($file);
 
-	/**
-	 * Must be implemented by child class. Gets called when saving a config file.
-	 *
-	 * @param   array   $contents  config array to save
-	 * @return  string  formatted output
-	 */
-	abstract protected function export_format($contents);
+    /**
+     * Must be implemented by child class. Gets called when saving a config file.
+     *
+     * @param   array   $contents  config array to save
+     * @return  string  formatted output
+     */
+    abstract protected function export_format($contents);
 }

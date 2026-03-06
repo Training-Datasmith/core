@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -15,7 +17,7 @@ namespace Fuel\Core;
 
 class Database_Expression implements \Stringable
 {
-	/**
+    /**
      * Sets the expression string.
      *
      *     $expression = new Database_Expression('COUNT(users.id)');
@@ -26,17 +28,17 @@ class Database_Expression implements \Stringable
     {
     }
 
-	/**
+    /**
      * Get the expression value as a string.
      *
      *     $sql = $expression->value();
      */
     public function value(): string
-	{
-		return (string) $this->_value;
-	}
+    {
+        return (string) $this->_value;
+    }
 
-	/**
+    /**
      * Return the value of the expression as a string.
      *
      *     echo $expression;
@@ -44,8 +46,8 @@ class Database_Expression implements \Stringable
      * @uses    Database_Expression::value
      */
     public function __toString(): string
-	{
-		return $this->value();
-	}
+    {
+        return $this->value();
+    }
 
 }

@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -12,9 +14,13 @@
 
 namespace Fuel\Core;
 
-class FtpConnectionException extends \FuelException {}
+class FtpConnectionException extends \FuelException
+{
+}
 
-class FtpFileAccessException extends \FuelException {}
+class FtpFileAccessException extends \FuelException
+{
+}
 
 /**
  * FTP Class
@@ -26,21 +32,21 @@ class FtpFileAccessException extends \FuelException {}
  */
 class Ftp
 {
-	/**
+    /**
      * @var true
      */
     public static $initialized = false;
 
-	protected $_hostname  = 'localhost';
-	protected $_username  = '';
-	protected $_password  = '';
-	protected int $_port;
-	protected int $_timeout;
-	protected bool $_passive;
-	protected bool $_debug;
-	protected $_conn_id   = false;
+    protected $_hostname  = 'localhost';
+    protected $_username  = '';
+    protected $_password  = '';
+    protected int $_port;
+    protected int $_timeout;
+    protected bool $_passive;
+    protected bool $_debug;
+    protected $_conn_id   = false;
 
-	/**
+    /**
      * Returns a new Ftp object. If you do not define the "file" parameter,
      *
      *     $ftp = static::forge('group');
@@ -49,132 +55,118 @@ class Ftp
      * @param   bool          $connect  Automatically connect to this server.
      */
     public static function forge($config = 'default', $connect = true): static
-	{
-		$ftp = new static($config);
+    {
+        $ftp = new static($config);
 
-		// Unless told not to, connect automatically
-		$connect === true and $ftp->connect();
+        // Unless told not to, connect automatically
+        $connect === true and $ftp->connect();
 
-		return $ftp;
-	}
+        return $ftp;
+    }
 
-	/**
-	 * Sets the initial Ftp filename and local data.
-	 *
-	 * @param   string|array  $config  The name of the config group to use, or a configuration array.
-	 */
-	public function __construct($config = 'default')
-	{
-		\Config::load('ftp', true);
+    /**
+     * Sets the initial Ftp filename and local data.
+     *
+     * @param   string|array  $config  The name of the config group to use, or a configuration array.
+     */
+    public function __construct($config = 'default')
+    {
+        \Config::load('ftp', true);
 
-		// If it is a string we're looking at a predefined config group
-		if (is_string($config))
-		{
-			$config_arr = \Config::get('ftp.'.$config);
+        // If it is a string we're looking at a predefined config group
+        if (is_string($config)) {
+            $config_arr = \Config::get('ftp.'.$config);
 
-			// Check that it exists
-			if ( ! is_array($config_arr) or $config_arr === [])
-			{
-				throw new \UnexpectedValueException('You have specified an invalid ftp connection group: '.$config);
-			}
+            // Check that it exists
+            if (! is_array($config_arr) or $config_arr === []) {
+                throw new \UnexpectedValueException('You have specified an invalid ftp connection group: '.$config);
+            }
 
-			$config = $config_arr;
-		}
+            $config = $config_arr;
+        }
 
-		// Prep the hostname
-		$this->_hostname = preg_replace('|.+?://|', '', (string) $config['hostname']);
-		$this->_username = $config['username'];
-		$this->_password = $config['password'];
-		$this->_timeout  = ! empty($config['timeout']) ? (int) $config['timeout'] : 90;
-		$this->_port     = ! empty($config['port']) ? (int) $config['port'] : 21;
-		$this->_passive  = (bool) $config['passive'];
-		$this->_ssl_mode = (bool) $config['ssl_mode'];
-		$this->_debug    = (bool) $config['debug'];
+        // Prep the hostname
+        $this->_hostname = preg_replace('|.+?://|', '', (string) $config['hostname']);
+        $this->_username = $config['username'];
+        $this->_password = $config['password'];
+        $this->_timeout  = ! empty($config['timeout']) ? (int) $config['timeout'] : 90;
+        $this->_port     = ! empty($config['port']) ? (int) $config['port'] : 21;
+        $this->_passive  = (bool) $config['passive'];
+        $this->_ssl_mode = (bool) $config['ssl_mode'];
+        $this->_debug    = (bool) $config['debug'];
 
-		static::$initialized = true;
-	}
+        static::$initialized = true;
+    }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
 
-	/**
-	 * FTP Connect
-	 *
-	 * @return	\Ftp
-	 * @throws	\FtpConnectionException
-	 */
-	public function connect(): false|self
-	{
-		if($this->_ssl_mode === true)
-		{
-			if( ! function_exists('ftp_ssl_connect'))
-			{
-				throw new \RuntimeException('ftp_ssl_connect() function is missing.');
-			}
+    /**
+     * FTP Connect
+     *
+     * @return	\Ftp
+     * @throws	\FtpConnectionException
+     */
+    public function connect(): false|self
+    {
+        if ($this->_ssl_mode === true) {
+            if (! function_exists('ftp_ssl_connect')) {
+                throw new \RuntimeException('ftp_ssl_connect() function is missing.');
+            }
 
-			$this->_conn_id = @ftp_ssl_connect($this->_hostname, $this->_port, $this->_timeout);
-		}
+            $this->_conn_id = @ftp_ssl_connect($this->_hostname, $this->_port, $this->_timeout);
+        } else {
+            $this->_conn_id = @ftp_connect($this->_hostname, $this->_port, $this->_timeout);
+        }
 
-		else
-		{
-			$this->_conn_id = @ftp_connect($this->_hostname, $this->_port, $this->_timeout);
-		}
+        if ($this->_conn_id === false) {
+            if ($this->_debug == true) {
+                throw new \FtpConnectionException('Unable to establish a connection');
+            }
+            return false;
+        }
 
-		if ($this->_conn_id === false)
-		{
-			if ($this->_debug == true)
-			{
-				throw new \FtpConnectionException('Unable to establish a connection');
-			}
-			return false;
-		}
+        if (! $this->_login()) {
+            if ($this->_debug == true) {
+                throw new \FtpConnectionException('Unable to login');
+            }
+        }
 
-		if ( ! $this->_login())
-		{
-			if ($this->_debug == true)
-			{
-				throw new \FtpConnectionException('Unable to login');
-			}
-		}
+        // Set passive mode if needed
+        if ($this->_passive == true) {
+            ftp_pasv($this->_conn_id, true);
+        }
 
-		// Set passive mode if needed
-		if ($this->_passive == true)
-		{
-			ftp_pasv($this->_conn_id, true);
-		}
+        return $this;
+    }
 
-		return $this;
-	}
+    // --------------------------------------------------------------------
 
-	// --------------------------------------------------------------------
+    /**
+     * FTP Login
+     *
+     * @return	bool
+     */
+    protected function _login()
+    {
+        return @ftp_login($this->_conn_id, $this->_username, $this->_password);
+    }
 
-	/**
-	 * FTP Login
-	 *
-	 * @return	bool
-	 */
-	protected function _login()
-	{
-		return @ftp_login($this->_conn_id, $this->_username, $this->_password);
-	}
-
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
     /**
      * Validates the connection ID
      */
     protected function _is_conn(): bool
-	{
-		if ( ! is_resource($this->_conn_id))
-		{
-			if ($this->_debug == true)
-			{
-				throw new \InvalidArgumentException('Invalid connection');
-			}
-			return false;
-		}
-		return true;
-	}
+    {
+        if (! is_resource($this->_conn_id)) {
+            if ($this->_debug == true) {
+                throw new \InvalidArgumentException('Invalid connection');
+            }
+            return false;
+        }
+        return true;
+    }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
     /**
      * Change directory
      *
@@ -188,27 +180,24 @@ class Ftp
      * @throws \FtpFileAccessException
      */
     public function change_dir($path = ''): bool
-	{
-		if ($path == '' or ! $this->_is_conn())
-		{
-			return false;
-		}
+    {
+        if ($path == '' or ! $this->_is_conn()) {
+            return false;
+        }
 
-		$result = @ftp_chdir($this->_conn_id, $path);
+        $result = @ftp_chdir($this->_conn_id, $path);
 
-		if ($result === false)
-		{
-			if ($this->_debug == true)
-			{
-				throw new \FtpFileAccessException('Unable to change the directory');
-			}
-			return false;
-		}
+        if ($result === false) {
+            if ($this->_debug == true) {
+                throw new \FtpFileAccessException('Unable to change the directory');
+            }
+            return false;
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
     /**
      * Create a directory
      *
@@ -217,33 +206,29 @@ class Ftp
      * @throws \FtpFileAccessException
      */
     public function mkdir($path, $permissions = null): bool
-	{
-		if ( ! $this->_is_conn())
-		{
-			return false;
-		}
+    {
+        if (! $this->_is_conn()) {
+            return false;
+        }
 
-		$result = ftp_mkdir($this->_conn_id, $path);
+        $result = ftp_mkdir($this->_conn_id, $path);
 
-		if ($result === false)
-		{
-			if ($this->_debug == true)
-			{
-				throw new \FtpFileAccessException('Unable to create directory');
-			}
-			return false;
-		}
+        if ($result === false) {
+            if ($this->_debug == true) {
+                throw new \FtpFileAccessException('Unable to create directory');
+            }
+            return false;
+        }
 
-		// Set file permissions if needed
-		if ($permissions !== null)
-		{
-			$this->chmod($path, (int) $permissions);
-		}
+        // Set file permissions if needed
+        if ($permissions !== null) {
+            $this->chmod($path, (int) $permissions);
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
     /**
      * Upload a file to the server
      *
@@ -254,48 +239,42 @@ class Ftp
      * @throws	\FtpFileAccessException
      */
     public function upload($local_path, $remote_path, $mode = 'auto', $permissions = null): bool
-	{
-		if ( ! $this->_is_conn())
-		{
-			return false;
-		}
+    {
+        if (! $this->_is_conn()) {
+            return false;
+        }
 
-		if ( ! is_file($local_path))
-		{
-			throw new \FtpFileAccessException('No source file');
-		}
+        if (! is_file($local_path)) {
+            throw new \FtpFileAccessException('No source file');
+        }
 
-		// Set the mode if not specified
-		if ($mode == 'auto')
-		{
-			// Get the file extension so we can set the upload type
-			$ext = pathinfo($local_path, PATHINFO_EXTENSION);
-			$mode = $this->_settype($ext);
-		}
+        // Set the mode if not specified
+        if ($mode == 'auto') {
+            // Get the file extension so we can set the upload type
+            $ext = pathinfo($local_path, PATHINFO_EXTENSION);
+            $mode = $this->_settype($ext);
+        }
 
-		$mode = ($mode == 'ascii') ? FTP_ASCII : FTP_BINARY;
+        $mode = ($mode == 'ascii') ? FTP_ASCII : FTP_BINARY;
 
-		$result = @ftp_put($this->_conn_id, $remote_path, $local_path, $mode);
+        $result = @ftp_put($this->_conn_id, $remote_path, $local_path, $mode);
 
-		if ($result === false)
-		{
-			if ($this->_debug == true)
-			{
-				throw new \FtpFileAccessException('Unable to upload');
-			}
-			return false;
-		}
+        if ($result === false) {
+            if ($this->_debug == true) {
+                throw new \FtpFileAccessException('Unable to upload');
+            }
+            return false;
+        }
 
-		// Set file permissions if needed
-		if ($permissions !== null)
-		{
-			$this->chmod($remote_path, (int) $permissions);
-		}
+        // Set file permissions if needed
+        if ($permissions !== null) {
+            $this->chmod($remote_path, (int) $permissions);
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
     /**
      * Download a file from a remote server to the local server
      *
@@ -305,37 +284,33 @@ class Ftp
      * @throws	\FtpFileAccessException
      */
     public function download($remote_path, $local_path, $mode = 'auto'): bool
-	{
-		if ( ! $this->_is_conn())
-		{
-			return false;
-		}
+    {
+        if (! $this->_is_conn()) {
+            return false;
+        }
 
-		// Set the mode if not specified
-		if ($mode == 'auto')
-		{
-			// Get the file extension so we can set the upload type
-			$ext = pathinfo($remote_path, PATHINFO_BASENAME);
-			$mode = $this->_settype($ext);
-		}
+        // Set the mode if not specified
+        if ($mode == 'auto') {
+            // Get the file extension so we can set the upload type
+            $ext = pathinfo($remote_path, PATHINFO_BASENAME);
+            $mode = $this->_settype($ext);
+        }
 
-		$mode = ($mode == 'ascii') ? FTP_ASCII : FTP_BINARY;
+        $mode = ($mode == 'ascii') ? FTP_ASCII : FTP_BINARY;
 
-		$result = @ftp_get($this->_conn_id, $local_path, $remote_path, $mode);
+        $result = @ftp_get($this->_conn_id, $local_path, $remote_path, $mode);
 
-		if ($result === false)
-		{
-			if ($this->_debug === true)
-			{
-				throw new \FtpFileAccessException('Unable to download');
-			}
-			return false;
-		}
+        if ($result === false) {
+            if ($this->_debug === true) {
+                throw new \FtpFileAccessException('Unable to download');
+            }
+            return false;
+        }
 
-		return true;
+        return true;
     }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
     /**
      * Rename (or move) a file
      *
@@ -345,71 +320,65 @@ class Ftp
      * @throws	\FtpFileAccessException
      */
     public function rename($old_file, $new_file, $move = false): bool
-	{
-		if ( ! $this->_is_conn())
-		{
-			return false;
-		}
+    {
+        if (! $this->_is_conn()) {
+            return false;
+        }
 
-		$result = @ftp_rename($this->_conn_id, $old_file, $new_file);
+        $result = @ftp_rename($this->_conn_id, $old_file, $new_file);
 
-		if ($result === false)
-		{
-			if ($this->_debug == true)
-			{
-				$msg = ($move == false) ? 'Unable to rename' : 'Unable to move';
+        if ($result === false) {
+            if ($this->_debug == true) {
+                $msg = ($move == false) ? 'Unable to rename' : 'Unable to move';
 
-				throw new \FtpFileAccessException($msg);
-			}
-			return false;
-		}
+                throw new \FtpFileAccessException($msg);
+            }
+            return false;
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
 
-	/**
-	 * Move a file
-	 *
-	 * @param	string	$old_file
-	 * @param	string	$new_file
-	 * @return	bool
-	 */
-	public function move($old_file, $new_file)
-	{
-		return $this->rename($old_file, $new_file, true);
-	}
+    /**
+     * Move a file
+     *
+     * @param	string	$old_file
+     * @param	string	$new_file
+     * @return	bool
+     */
+    public function move($old_file, $new_file)
+    {
+        return $this->rename($old_file, $new_file, true);
+    }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
     /**
      * Rename (or move) a file
      *
      * @param	string	$filepath
      * @throws	\FtpFileAccessException
      */
-    function delete_file($filepath): bool
-	{
-		if ( ! $this->_is_conn())
-		{
-			return false;
-		}
+    public function delete_file($filepath): bool
+    {
+        if (! $this->_is_conn()) {
+            return false;
+        }
 
-		$result = @ftp_delete($this->_conn_id, $filepath);
+        $result = @ftp_delete($this->_conn_id, $filepath);
 
-		if ($result === false)
-		{
-			if ($this->_debug == true)
-			{
-				throw new \FtpFileAccessException('Unable to delete');
-			}
-			return false;
-		}
+        if ($result === false) {
+            if ($this->_debug == true) {
+                throw new \FtpFileAccessException('Unable to delete');
+            }
+            return false;
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
     /**
      * Delete a folder and recursively delete everything (including sub-folders)
      * contained within it.
@@ -417,21 +386,19 @@ class Ftp
      * @param	string	$filepath
      * @throws	\FtpFileAccessException
      */
-    function delete_dir($filepath): bool
-	{
-		if ( ! $this->_is_conn())
-		{
-			return false;
-		}
+    public function delete_dir($filepath): bool
+    {
+        if (! $this->_is_conn()) {
+            return false;
+        }
 
-		// Add a trailing slash to the file path if needed
-		$filepath = preg_replace("/(.+?)\/*$/", "\\1/",  $filepath);
+        // Add a trailing slash to the file path if needed
+        $filepath = preg_replace("/(.+?)\/*$/", '\\1/', $filepath);
 
-		$list = $this->list_files($filepath);
+        $list = $this->list_files($filepath);
 
-		if ($list !== false and count($list) > 0)
-		{
-			foreach ($list as $item) {
+        if ($list !== false and count($list) > 0) {
+            foreach ($list as $item) {
                 // If we can't delete the item it's probaly a folder so
                 // we'll recursively call delete_dir()
                 if (@ftp_delete($this->_conn_id, $item)) {
@@ -443,23 +410,21 @@ class Ftp
                 }
                 $this->delete_dir($item);
             }
-		}
+        }
 
-		$result = @ftp_rmdir($this->_conn_id, $filepath);
+        $result = @ftp_rmdir($this->_conn_id, $filepath);
 
-		if ($result === false)
-		{
-			if ($this->_debug == true)
-			{
-				throw new \FtpFileAccessException('Unable to delete');
-			}
-			return false;
-		}
+        if ($result === false) {
+            if ($this->_debug == true) {
+                throw new \FtpFileAccessException('Unable to delete');
+            }
+            return false;
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
     /**
      * Set file permissions
      *
@@ -468,55 +433,49 @@ class Ftp
      * @throws	\FtpFileAccessException
      */
     public function chmod($path, $permissions): bool
-	{
-		if ( ! $this->_is_conn())
-		{
-			return false;
-		}
+    {
+        if (! $this->_is_conn()) {
+            return false;
+        }
 
-		// Permissions can only be set when running PHP 5
-		if ( ! function_exists('ftp_chmod'))
-		{
-			if ($this->_debug == true)
-			{
-				throw new \FtpFileAccessException('CHMOD function does not exist');
-			}
-			return false;
-		}
+        // Permissions can only be set when running PHP 5
+        if (! function_exists('ftp_chmod')) {
+            if ($this->_debug == true) {
+                throw new \FtpFileAccessException('CHMOD function does not exist');
+            }
+            return false;
+        }
 
-		$result = @ftp_chmod($this->_conn_id, $permissions, $path);
+        $result = @ftp_chmod($this->_conn_id, $permissions, $path);
 
-		if ($result === false)
-		{
-			if ($this->_debug == true)
-			{
-				throw new \FtpFileAccessException('Unable to CHMOD');
-			}
-			return false;
-		}
+        if ($result === false) {
+            if ($this->_debug == true) {
+                throw new \FtpFileAccessException('Unable to CHMOD');
+            }
+            return false;
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
 
-	/**
-	 * FTP List files in the specified directory
-	 *
-	 * @param	string	$path
-	 * @return	array
-	 */
-	public function list_files($path = '.'): false|array
-	{
-		if ( ! $this->_is_conn())
-		{
-			return false;
-		}
+    /**
+     * FTP List files in the specified directory
+     *
+     * @param	string	$path
+     * @return	array
+     */
+    public function list_files($path = '.'): false|array
+    {
+        if (! $this->_is_conn()) {
+            return false;
+        }
 
-		return ftp_nlist($this->_conn_id, $path);
-	}
+        return ftp_nlist($this->_conn_id, $path);
+    }
 
-	// ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
     /**
      * Read a directory and recreate it remotely
      *
@@ -528,98 +487,89 @@ class Ftp
      * @param	string	$remote_path	path to destination - include the base folder with trailing slash
      */
     public function mirror(string $local_path, string $remote_path): bool
-	{
-		if ( ! $this->_is_conn())
-		{
-			return false;
-		}
+    {
+        if (! $this->_is_conn()) {
+            return false;
+        }
 
-		// Open the local file path
-		if ($fp = @opendir($local_path))
-		{
-			// Attempt to open the remote file path.
-			if ( ! $this->change_dir($remote_path))
-			{
-				// If it doesn't exist we'll attempt to create the directory
-				if ( ! $this->mkdir($remote_path) or ! $this->change_dir($remote_path))
-				{
-					return false;
-				}
-			}
+        // Open the local file path
+        if ($fp = @opendir($local_path)) {
+            // Attempt to open the remote file path.
+            if (! $this->change_dir($remote_path)) {
+                // If it doesn't exist we'll attempt to create the directory
+                if (! $this->mkdir($remote_path) or ! $this->change_dir($remote_path)) {
+                    return false;
+                }
+            }
 
-			// Recursively read the local directory
-			while (false !== ($file = readdir($fp)))
-			{
-				if (@is_dir($local_path.$file) and !str_starts_with($file, '.'))
-				{
-					$this->mirror($local_path.$file."/", $remote_path.$file."/");
-				}
-				elseif (!str_starts_with($file, "."))
-				{
-					// Get the file extension so we can se the upload type
-					$ext = pathinfo($file, PATHINFO_EXTENSION);
-					$mode = $this->_settype($ext);
+            // Recursively read the local directory
+            while (false !== ($file = readdir($fp))) {
+                if (@is_dir($local_path.$file) and !str_starts_with($file, '.')) {
+                    $this->mirror($local_path.$file.'/', $remote_path.$file.'/');
+                } elseif (!str_starts_with($file, '.')) {
+                    // Get the file extension so we can se the upload type
+                    $ext = pathinfo($file, PATHINFO_EXTENSION);
+                    $mode = $this->_settype($ext);
 
-					$this->upload($local_path.$file, $remote_path.$file, $mode);
-				}
-			}
-			return true;
-		}
+                    $this->upload($local_path.$file, $remote_path.$file, $mode);
+                }
+            }
+            return true;
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	// --------------------------------------------------------------------
+    // --------------------------------------------------------------------
     /**
      * Set the upload type
      *
      * @param	string	$ext
      */
     protected function _settype($ext): string
-	{
-		$text_types = [
-			'txt',
-			'text',
-			'php',
-			'phps',
-			'php4',
-			'js',
-			'css',
-			'htm',
-			'html',
-			'phtml',
-			'shtml',
-			'log',
-			'xml',
-		];
+    {
+        $text_types = [
+            'txt',
+            'text',
+            'php',
+            'phps',
+            'php4',
+            'js',
+            'css',
+            'htm',
+            'html',
+            'phtml',
+            'shtml',
+            'log',
+            'xml',
+        ];
 
-		return in_array($ext, $text_types) ? 'ascii' : 'binary';
-	}
+        return in_array($ext, $text_types) ? 'ascii' : 'binary';
+    }
 
-	// ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
-	/**
-	 * Close the connection
-	 *
-	 * @return	void
-	 */
-	public function close()
-	{
-		if ( ! $this->_is_conn())
-		{
-			return false;
-		}
+    /**
+     * Close the connection
+     *
+     * @return	void
+     */
+    public function close()
+    {
+        if (! $this->_is_conn()) {
+            return false;
+        }
 
-		@ftp_close($this->_conn_id);
-	}
+        @ftp_close($this->_conn_id);
+    }
 
-	// ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
     /**
      * Close the connection when the class is unset
      */
-    public function  __destruct()
-	{
-		$this->close();
-	}
+    public function __destruct()
+    {
+        $this->close();
+    }
 
 }

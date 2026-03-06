@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -10,30 +12,30 @@
  * @link       https://fuelphp.com
  */
 
-return array(
-	'text' => ':time ago',
+return [
+    'text' => ':time ago',
 
-	'second' => ':t second',
-	'seconds' => ':t seconds',
+    'second' => ':t second',
+    'seconds' => ':t seconds',
 
-	'minute' => ':t minute',
-	'minutes' => ':t minutes',
+    'minute' => ':t minute',
+    'minutes' => ':t minutes',
 
-	'hour' => ':t hour',
-	'hours' => ':t hours',
+    'hour' => ':t hour',
+    'hours' => ':t hours',
 
-	'day' => ':t day',
-	'days' => ':t days',
+    'day' => ':t day',
+    'days' => ':t days',
 
-	'week' => ':t week',
-	'weeks' => ':t weeks',
+    'week' => ':t week',
+    'weeks' => ':t weeks',
 
-	'month' => ':t month',
-	'months' => ':t months',
+    'month' => ':t month',
+    'months' => ':t months',
 
-	'year' => ':t year',
-	'years' => ':t years',
+    'year' => ':t year',
+    'years' => ':t years',
 
-	'decade' => ':t decade',
-	'decades' => ':t decades',
-);
+    'decade' => ':t decade',
+    'decades' => ':t decades',
+];

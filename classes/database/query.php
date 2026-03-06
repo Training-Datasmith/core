@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -15,42 +17,42 @@ namespace Fuel\Core;
 
 class Database_Query implements \Stringable
 {
-	/**
-	 * @var  int  Cache lifetime
-	 */
-	protected $_lifetime;
+    /**
+     * @var  int  Cache lifetime
+     */
+    protected $_lifetime;
 
-	/**
-	 * @var  string  Cache key
-	 */
-	protected $_cache_key;
+    /**
+     * @var  string  Cache key
+     */
+    protected $_cache_key;
 
-	/**
-	 * @var  boolean  Cache all results
-	 */
-	protected $_cache_all = true;
+    /**
+     * @var  boolean  Cache all results
+     */
+    protected $_cache_all = true;
 
-	/**
-	 * @var  boolean  To allow restore of the global caching status
-	 */
-	protected $_caching;
+    /**
+     * @var  boolean  To allow restore of the global caching status
+     */
+    protected $_caching;
 
-	/**
-	 * @var  array  Quoted query parameters
-	 */
-	protected $_parameters = [];
+    /**
+     * @var  array  Quoted query parameters
+     */
+    protected $_parameters = [];
 
-	/**
-	 * @var  bool  Return results as associative arrays or objects
-	 */
-	protected $_as_object = false;
+    /**
+     * @var  bool  Return results as associative arrays or objects
+     */
+    protected $_as_object = false;
 
-	/**
-	 * @var  Database_Connection  Connection to use when compiling the SQL
-	 */
-	protected $_connection;
+    /**
+     * @var  Database_Connection  Connection to use when compiling the SQL
+     */
+    protected $_connection;
 
-	/**
+    /**
      * Creates a new SQL query of the specified type.
      *
      * @param string $_sql query string
@@ -60,259 +62,244 @@ class Database_Query implements \Stringable
     {
     }
 
-	/**
+    /**
      * Return the SQL query string.
      */
     final public function __toString(): string
-	{
-		try
-		{
-			// Return the SQL string
-			return $this->compile();
-		}
-		catch (\Exception $e)
-		{
-			return $e->getMessage();
-		}
-	}
+    {
+        try {
+            // Return the SQL string
+            return $this->compile();
+        } catch (\Exception $e) {
+            return $e->getMessage();
+        }
+    }
 
-	/**
-	 * Get the type of the query.
-	 *
-	 * @return  integer
-	 */
-	public function type()
-	{
-		return $this->_type;
-	}
+    /**
+     * Get the type of the query.
+     *
+     * @return  integer
+     */
+    public function type()
+    {
+        return $this->_type;
+    }
 
-	/**
-	 * Enables the query to be cached for a specified amount of time.
-	 *
-	 * @param   integer $lifetime  number of seconds to cache or null for default
-	 * @param   string  $cache_key name of the cache key to be used or null for default
-	 * @param   boolean $cache_all if true, cache all results, even empty ones
-	 *
-	 * @return  $this
-	 */
-	public function cached($lifetime = null, $cache_key = null, $cache_all = true): static
-	{
-		$this->_lifetime = $lifetime;
-		$this->_cache_all = (bool) $cache_all;
-		is_string($cache_key) and $this->_cache_key = $cache_key;
+    /**
+     * Enables the query to be cached for a specified amount of time.
+     *
+     * @param   integer $lifetime  number of seconds to cache or null for default
+     * @param   string  $cache_key name of the cache key to be used or null for default
+     * @param   boolean $cache_all if true, cache all results, even empty ones
+     *
+     * @return  $this
+     */
+    public function cached($lifetime = null, $cache_key = null, $cache_all = true): static
+    {
+        $this->_lifetime = $lifetime;
+        $this->_cache_all = (bool) $cache_all;
+        is_string($cache_key) and $this->_cache_key = $cache_key;
 
-		return $this;
-	}
-	/**
-	 * Per query cache controller setter/getter
-	 *
-	 * @param   bool   $bool  whether to enable it [optional]
-	 *
-	 * @return  $this
-	 */
-	public function caching($bool = null): static
-	{
-		if (is_bool($bool) or is_null($bool))
-		{
-			$this->_caching = $bool;
-		}
+        return $this;
+    }
+    /**
+     * Per query cache controller setter/getter
+     *
+     * @param   bool   $bool  whether to enable it [optional]
+     *
+     * @return  $this
+     */
+    public function caching($bool = null): static
+    {
+        if (is_bool($bool) or is_null($bool)) {
+            $this->_caching = $bool;
+        }
 
-		return $this;
-	}
+        return $this;
+    }
 
+    /**
+     * Returns results as associative arrays
+     *
+     * @return  $this
+     */
+    public function as_assoc(): static
+    {
+        $this->_as_object = false;
 
-	/**
-	 * Returns results as associative arrays
-	 *
-	 * @return  $this
-	 */
-	public function as_assoc(): static
-	{
-		$this->_as_object = false;
+        return $this;
+    }
 
-		return $this;
-	}
+    /**
+     * Returns results as objects
+     *
+     * @param   mixed $class classname or true for stdClass
+     *
+     * @return  $this
+     */
+    public function as_object($class = true): static
+    {
+        $this->_as_object = $class;
 
-	/**
-	 * Returns results as objects
-	 *
-	 * @param   mixed $class classname or true for stdClass
-	 *
-	 * @return  $this
-	 */
-	public function as_object($class = true): static
-	{
-		$this->_as_object = $class;
+        return $this;
+    }
 
-		return $this;
-	}
+    /**
+     * Set the value of a parameter in the query.
+     *
+     * @param   string $param parameter key to replace
+     * @param   mixed  $value value to use
+     *
+     * @return  $this
+     */
+    public function param($param, $value): static
+    {
+        // Add or overload a new parameter
+        $this->_parameters[$param] = $value;
 
-	/**
-	 * Set the value of a parameter in the query.
-	 *
-	 * @param   string $param parameter key to replace
-	 * @param   mixed  $value value to use
-	 *
-	 * @return  $this
-	 */
-	public function param($param, $value): static
-	{
-		// Add or overload a new parameter
-		$this->_parameters[$param] = $value;
+        return $this;
+    }
 
-		return $this;
-	}
+    /**
+     * Bind a variable to a parameter in the query.
+     *
+     * @param  string $param parameter key to replace
+     * @param  mixed  $var   variable to use
+     *
+     * @return $this
+     */
+    public function bind($param, & $var): static
+    {
+        // Bind a value to a variable
+        $this->_parameters[$param] = & $var;
 
-	/**
-	 * Bind a variable to a parameter in the query.
-	 *
-	 * @param  string $param parameter key to replace
-	 * @param  mixed  $var   variable to use
-	 *
-	 * @return $this
-	 */
-	public function bind($param, & $var): static
-	{
-		// Bind a value to a variable
-		$this->_parameters[$param] =& $var;
+        return $this;
+    }
 
-		return $this;
-	}
+    /**
+     * Add multiple parameters to the query.
+     *
+     * @param array $params list of parameters
+     *
+     * @return  $this
+     */
+    public function parameters(array $params): static
+    {
+        // Merge the new parameters in
+        $this->_parameters = $params + $this->_parameters;
 
-	/**
-	 * Add multiple parameters to the query.
-	 *
-	 * @param array $params list of parameters
-	 *
-	 * @return  $this
-	 */
-	public function parameters(array $params): static
-	{
-		// Merge the new parameters in
-		$this->_parameters = $params + $this->_parameters;
+        return $this;
+    }
 
-		return $this;
-	}
+    /**
+     * Set a DB connection to use when compiling the SQL
+     *
+     * @param  mixed  $db
+     *
+     * @return  $this
+     */
+    public function set_connection($db): static
+    {
+        if (! $db instanceof \Database_Connection) {
+            // Get the database instance
+            $db = \Database_Connection::instance($db);
+        }
+        $this->_connection = $db;
 
-	/**
-	 * Set a DB connection to use when compiling the SQL
-	 *
-	 * @param  mixed  $db
-	 *
-	 * @return  $this
-	 */
-	public function set_connection($db): static
-	{
-		if ( ! $db instanceof \Database_Connection)
-		{
-			// Get the database instance
-			$db = \Database_Connection::instance($db);
-		}
-		$this->_connection = $db;
+        return $this;
+    }
 
-		return $this;
-	}
-
-	/**
+    /**
      * Compile the SQL query and return it. Replaces any parameters with their
      * given values.
      *
      * @param   mixed $db Database instance or instance name
      */
     public function compile($db = null): string
-	{
-		if ($this->_connection !== null and $db === null)
-		{
-			$db = $this->_connection;
-		}
+    {
+        if ($this->_connection !== null and $db === null) {
+            $db = $this->_connection;
+        }
 
-		if ( ! $db instanceof \Database_Connection)
-		{
-			// Get the database instance
-			$db = $this->_connection ?: \Database_Connection::instance($db);
-		}
+        if (! $db instanceof \Database_Connection) {
+            // Get the database instance
+            $db = $this->_connection ?: \Database_Connection::instance($db);
+        }
 
-		// Import the SQL locally
-		$sql = $this->_sql;
+        // Import the SQL locally
+        $sql = $this->_sql;
 
-		if ( ! empty($this->_parameters))
-		{
-			// Quote all of the values
-			$values = array_map([$db, 'quote'], $this->_parameters);
+        if (! empty($this->_parameters)) {
+            // Quote all of the values
+            $values = array_map([$db, 'quote'], $this->_parameters);
 
-			// Replace the values in the SQL
-			$sql = \Str::tr($sql, $values);
-		}
+            // Replace the values in the SQL
+            $sql = \Str::tr($sql, $values);
+        }
 
-		return trim((string) $sql);
-	}
+        return trim((string) $sql);
+    }
 
-	/**
-	 * Execute the current query on the given database.
-	 *
-	 * @param   mixed   $db Database instance or name of instance
-	 *
-	 * @return  object   Database_Result for SELECT queries
-	 * @return  mixed    the insert id for INSERT queries
-	 * @return  integer  number of affected rows for all other queries
-	 */
-	public function execute($db = null)
-	{
-		if ($this->_connection !== null and $db === null)
-		{
-			$db = $this->_connection;
-		}
+    /**
+     * Execute the current query on the given database.
+     *
+     * @param   mixed   $db Database instance or name of instance
+     *
+     * @return  object   Database_Result for SELECT queries
+     * @return  mixed    the insert id for INSERT queries
+     * @return  integer  number of affected rows for all other queries
+     */
+    public function execute($db = null)
+    {
+        if ($this->_connection !== null and $db === null) {
+            $db = $this->_connection;
+        }
 
-		if ( ! is_object($db))
-		{
-			// Get the database instance. If this query is a instance of
-			// Database_Query_Builder_Select then use the slave connection if configured
-			$db = \Database_Connection::instance($db, null, ! $this instanceof \Database_Query_Builder_Select);
-		}
+        if (! is_object($db)) {
+            // Get the database instance. If this query is a instance of
+            // Database_Query_Builder_Select then use the slave connection if configured
+            $db = \Database_Connection::instance($db, null, ! $this instanceof \Database_Query_Builder_Select);
+        }
 
-		// Compile the SQL query
-		$sql = $this->compile($db);
+        // Compile the SQL query
+        $sql = $this->compile($db);
 
-		// make sure we have a SQL type to work with
-		if (is_null($this->_type))
-		{
-			// get the SQL statement type without having to duplicate the entire statement
-			$stmt = preg_split('/[\s]+/', ltrim(substr($sql, 0, 11), '('), 2);
-			$this->_type = match (strtoupper(reset($stmt))) {
+        // make sure we have a SQL type to work with
+        if (is_null($this->_type)) {
+            // get the SQL statement type without having to duplicate the entire statement
+            $stmt = preg_split('/[\s]+/', ltrim(substr($sql, 0, 11), '('), 2);
+            $this->_type = match (strtoupper(reset($stmt))) {
                 'DESCRIBE', 'EXECUTE', 'EXPLAIN', 'SELECT', 'SHOW' => \DB::SELECT,
                 'INSERT', 'REPLACE' => \DB::INSERT,
                 'UPDATE' => \DB::UPDATE,
                 'DELETE' => \DB::DELETE,
                 default => 0,
             };
-		}
+        }
 
-		// fetch the result caching flag
-		$caching = $this->_caching or $db->caching();
+        // fetch the result caching flag
+        $caching = $this->_caching or $db->caching();
 
-		if ($caching and ! empty($this->_lifetime) and $this->_type === \DB::SELECT)
-		{
-			$cache_key = empty($this->_cache_key) ?
-				'db.'.md5('Database_Connection::query("'.$db.'", "'.$sql.'")') : $this->_cache_key;
-			$cache = \Cache::forge($cache_key);
-			try
-			{
-				return $db->cache($cache->get(), $sql, $this->_as_object);
-			}
-			catch (\CacheNotFoundException) {}
-		}
+        if ($caching and ! empty($this->_lifetime) and $this->_type === \DB::SELECT) {
+            $cache_key = empty($this->_cache_key) ?
+                'db.'.md5('Database_Connection::query("'.$db.'", "'.$sql.'")') : $this->_cache_key;
+            $cache = \Cache::forge($cache_key);
+            try {
+                return $db->cache($cache->get(), $sql, $this->_as_object);
+            } catch (\CacheNotFoundException) {
+            }
+        }
 
-		// Execute the query
-		\DB::$query_count++;
-		$result = $db->query($this->_type, $sql, $this->_as_object, $caching);
+        // Execute the query
+        \DB::$query_count++;
+        $result = $db->query($this->_type, $sql, $this->_as_object, $caching);
 
-		// Cache the result if needed
-		if (isset($cache) and ($this->_cache_all or $result->count()))
-		{
-			$cache->set_expiration($this->_lifetime)->set_contents($result->as_array())->set();
-		}
+        // Cache the result if needed
+        if (isset($cache) and ($this->_cache_all or $result->count())) {
+            $cache->set_expiration($this->_lifetime)->set_contents($result->as_array())->set();
+        }
 
-		return $result;
-	}
+        return $result;
+    }
 
 }

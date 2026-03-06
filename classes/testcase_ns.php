@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -16,4 +18,6 @@ namespace Fuel\Core;
  * A Fuel Specific extension of the PHPUnit TestCase.  This will
  * be used for custom functionality in the future.
  */
-abstract class TestCase extends \PHPUnit\Framework\TestCase { }
+abstract class TestCase extends \PHPUnit\Framework\TestCase
+{
+}

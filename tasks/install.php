@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -25,20 +27,16 @@ namespace Fuel\Tasks;
 
 class Install
 {
-	public static function run()
-	{
-		$writable_paths = array(APPPATH.'cache', APPPATH.'logs', APPPATH.'tmp', APPPATH.'config');
+    public static function run()
+    {
+        $writable_paths = [APPPATH.'cache', APPPATH.'logs', APPPATH.'tmp', APPPATH.'config'];
 
-		foreach ($writable_paths as $path)
-		{
-			if (@chmod($path, 0777))
-			{
-				\Cli::write("\t".'Made writable: '.$path, 'green');
-			}
-			else
-			{
-				\Cli::write("\t".'Failed to make writable: '.$path, 'red');
-			}
-		}
-	}
+        foreach ($writable_paths as $path) {
+            if (@chmod($path, 0777)) {
+                \Cli::write("\t".'Made writable: '.$path, 'green');
+            } else {
+                \Cli::write("\t".'Failed to make writable: '.$path, 'red');
+            }
+        }
+    }
 }

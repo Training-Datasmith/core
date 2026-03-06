@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -26,10 +28,10 @@ $core_path    = rtrim($_SERVER['core_path'], '/').'/';
  */
 define('DOCROOT', realpath(__DIR__.DIRECTORY_SEPARATOR.$_SERVER['doc_root']).DIRECTORY_SEPARATOR);
 
-( ! is_dir($app_path) and is_dir(DOCROOT.$app_path)) and $app_path = DOCROOT.$app_path;
-( ! is_dir($core_path) and is_dir(DOCROOT.$core_path)) and $core_path = DOCROOT.$core_path;
-( ! is_dir($vendor_path) and is_dir(DOCROOT.$vendor_path)) and $vendor_path = DOCROOT.$vendor_path;
-( ! is_dir($package_path) and is_dir(DOCROOT.$package_path)) and $package_path = DOCROOT.$package_path;
+(! is_dir($app_path) and is_dir(DOCROOT.$app_path)) and $app_path = DOCROOT.$app_path;
+(! is_dir($core_path) and is_dir(DOCROOT.$core_path)) and $core_path = DOCROOT.$core_path;
+(! is_dir($vendor_path) and is_dir(DOCROOT.$vendor_path)) and $vendor_path = DOCROOT.$vendor_path;
+(! is_dir($package_path) and is_dir(DOCROOT.$package_path)) and $package_path = DOCROOT.$package_path;
 
 define('APPPATH', realpath($app_path).DIRECTORY_SEPARATOR);
 define('PKGPATH', realpath($package_path).DIRECTORY_SEPARATOR);
@@ -44,35 +46,31 @@ defined('FUEL_START_MEM') or define('FUEL_START_MEM', memory_get_usage());
 
 // Load the Composer autoloader if present
 defined('VENDORPATH') or define('VENDORPATH', realpath(COREPATH.'..'.DS.'vendor').DS);
-if ( ! is_file(VENDORPATH.'autoload.php'))
-{
-	die('Composer is not installed. Please run "php composer.phar update" in the project root to install Composer');
+if (! is_file(VENDORPATH.'autoload.php')) {
+    die('Composer is not installed. Please run "php composer.phar update" in the project root to install Composer');
 }
 require VENDORPATH.'autoload.php';
 
-if (class_exists('AspectMock\Kernel'))
-{
-	// Configure AspectMock
-	$kernel = \AspectMock\Kernel::getInstance();
-	$kernel->init(array(
-		'debug' => true,
-		'appDir' => __DIR__.'/../',
-		'includePaths' => array(
-			APPPATH, COREPATH, PKGPATH,
-		),
-		'excludePaths' => array(
-			APPPATH.'tests', COREPATH.'tests',
-		),
-		'cacheDir' => APPPATH.'tmp/AspectMock',
-	));
+if (class_exists('AspectMock\Kernel')) {
+    // Configure AspectMock
+    $kernel = \AspectMock\Kernel::getInstance();
+    $kernel->init([
+        'debug' => true,
+        'appDir' => __DIR__.'/../',
+        'includePaths' => [
+            APPPATH, COREPATH, PKGPATH,
+        ],
+        'excludePaths' => [
+            APPPATH.'tests', COREPATH.'tests',
+        ],
+        'cacheDir' => APPPATH.'tmp/AspectMock',
+    ]);
 
-	// Load in the Fuel autoloader
-	$kernel->loadFile(COREPATH.'classes'.DIRECTORY_SEPARATOR.'autoloader.php');
-}
-else
-{
-	// Load in the Fuel autoloader
-	require COREPATH.'classes'.DIRECTORY_SEPARATOR.'autoloader.php';
+    // Load in the Fuel autoloader
+    $kernel->loadFile(COREPATH.'classes'.DIRECTORY_SEPARATOR.'autoloader.php');
+} else {
+    // Load in the Fuel autoloader
+    require COREPATH.'classes'.DIRECTORY_SEPARATOR.'autoloader.php';
 }
 
 class_alias('Fuel\\Core\\Autoloader', 'Autoloader');
@@ -84,17 +82,13 @@ require_once APPPATH.'bootstrap.php';
 \Fuel::$is_test = true;
 
 // Ad hoc fix for AspectMock error
-if (class_exists('AspectMock\Kernel'))
-{
-	class_exists('Errorhandler');
+if (class_exists('AspectMock\Kernel')) {
+    class_exists('Errorhandler');
 }
 
 // Import the TestCase class
-if (class_exists('\PHPUnit\Framework\TestCase'))
-{
-	import('testcase_ns');
-}
-else
-{
-	import('testcase');
+if (class_exists('\PHPUnit\Framework\TestCase')) {
+    import('testcase_ns');
+} else {
+    import('testcase');
 }

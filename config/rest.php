@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -22,82 +24,82 @@
  *
  */
 
-return array(
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Return Format
-	 * -------------------------------------------------------------------------
-	 *
-	 *  Default format of the data to be returned.
-	 *
-	 */
+return [
+    /**
+     * -------------------------------------------------------------------------
+     *  Return Format
+     * -------------------------------------------------------------------------
+     *
+     *  Default format of the data to be returned.
+     *
+     */
 
-	'default_format' => 'xml',
+    'default_format' => 'xml',
 
-	/**
-	 * -------------------------------------------------------------------------
-	 *  XML Basenode
-	 * -------------------------------------------------------------------------
-	 *
-	 */
+    /**
+     * -------------------------------------------------------------------------
+     *  XML Basenode
+     * -------------------------------------------------------------------------
+     *
+     */
 
-	'xml_basenode' => 'xml',
+    'xml_basenode' => 'xml',
 
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Realm
-	 * -------------------------------------------------------------------------
-	 *
-	 *  Name for the password protected REST API displayed on login dialogs.
-	 *
-	 */
+    /**
+     * -------------------------------------------------------------------------
+     *  Realm
+     * -------------------------------------------------------------------------
+     *
+     *  Name for the password protected REST API displayed on login dialogs.
+     *
+     */
 
-	'realm' => 'REST API',
+    'realm' => 'REST API',
 
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Authentication
-	 * -------------------------------------------------------------------------
-	 *
-	 *  Authentication type.
-	 *
-	 *  Possible values are:
-	 *
-	 *      ''       = no login required.
-	 *      'basic'  = unsecure login.
-	 *      'digest' = more secure login.
-	 *
-	 *  Or, you can define a method name in your REST controller that handles
-	 *  authorization.
-	 *
-	 */
+    /**
+     * -------------------------------------------------------------------------
+     *  Authentication
+     * -------------------------------------------------------------------------
+     *
+     *  Authentication type.
+     *
+     *  Possible values are:
+     *
+     *      ''       = no login required.
+     *      'basic'  = unsecure login.
+     *      'digest' = more secure login.
+     *
+     *  Or, you can define a method name in your REST controller that handles
+     *  authorization.
+     *
+     */
 
-	'auth' => '',
+    'auth' => '',
 
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Credentials
-	 * -------------------------------------------------------------------------
-	 *
-	 *  Usernames and passwords for login.
-	 *
-	 *  The value is following this format:
-	 *
-	 *      array('username' => 'password')
-	 *
-	 */
+    /**
+     * -------------------------------------------------------------------------
+     *  Credentials
+     * -------------------------------------------------------------------------
+     *
+     *  Usernames and passwords for login.
+     *
+     *  The value is following this format:
+     *
+     *      array('username' => 'password')
+     *
+     */
 
-	'valid_logins' => array('admin' => '1234'),
+    'valid_logins' => ['admin' => '1234'],
 
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Performance
-	 * -------------------------------------------------------------------------
-	 *
-	 *  Disabling this setting will speed up your requests if you do not use
-	 *  a 'ACCEPT' header.
-	 *
-	 */
+    /**
+     * -------------------------------------------------------------------------
+     *  Performance
+     * -------------------------------------------------------------------------
+     *
+     *  Disabling this setting will speed up your requests if you do not use
+     *  a 'ACCEPT' header.
+     *
+     */
 
-	'ignore_http_accept' => false,
-);
+    'ignore_http_accept' => false,
+];

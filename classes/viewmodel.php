@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -21,6 +23,6 @@ namespace Fuel\Core;
  */
 abstract class Viewmodel extends \Presenter
 {
-	// namespace prefix
-	protected static $ns_prefix = 'View_';
+    // namespace prefix
+    protected static $ns_prefix = 'View_';
 }

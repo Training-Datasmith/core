@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -22,33 +24,33 @@
  *
  */
 
-return array(
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Patterns
-	 * -------------------------------------------------------------------------
-	 *
-	 *  A couple of named patterns that are often used.
-	 *
-	 */
+return [
+    /**
+     * -------------------------------------------------------------------------
+     *  Patterns
+     * -------------------------------------------------------------------------
+     *
+     *  A couple of named patterns that are often used.
+     *
+     */
 
-	'patterns' => array(
-		'local' => '%c',
+    'patterns' => [
+        'local' => '%c',
 
-		'mysql'		 => '%Y-%m-%d %H:%M:%S',
-		'mysql_date' => '%Y-%m-%d',
+        'mysql'		 => '%Y-%m-%d %H:%M:%S',
+        'mysql_date' => '%Y-%m-%d',
 
-		'us'       => '%m/%d/%Y',
-		'us_short' => '%m/%d',
-		'us_named' => '%B %d %Y',
-		'us_full'  => '%I:%M %p, %B %d %Y',
+        'us'       => '%m/%d/%Y',
+        'us_short' => '%m/%d',
+        'us_named' => '%B %d %Y',
+        'us_full'  => '%I:%M %p, %B %d %Y',
 
-		'eu'       => '%d/%m/%Y',
-		'eu_short' => '%d/%m',
-		'eu_named' => '%d %B %Y',
-		'eu_full'  => '%H:%M, %d %B %Y',
+        'eu'       => '%d/%m/%Y',
+        'eu_short' => '%d/%m',
+        'eu_named' => '%d %B %Y',
+        'eu_full'  => '%H:%M, %d %B %Y',
 
-		'24h' => '%H:%M',
-		'12h' => '%I:%M %p',
-	),
-);
+        '24h' => '%H:%M',
+        '12h' => '%I:%M %p',
+    ],
+];

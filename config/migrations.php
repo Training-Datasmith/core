@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -22,65 +24,65 @@
  *
  */
 
-return array(
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Version
-	 * -------------------------------------------------------------------------
-	 *
-	 *  Which version of the schema should be considered current.
-	 *
-	 *  Default value is 0.
-	 *
-	 */
+return [
+    /**
+     * -------------------------------------------------------------------------
+     *  Version
+     * -------------------------------------------------------------------------
+     *
+     *  Which version of the schema should be considered current.
+     *
+     *  Default value is 0.
+     *
+     */
 
-	'version' => array(
-		'app' => array(
-			'default' => 0,
-		),
+    'version' => [
+        'app' => [
+            'default' => 0,
+        ],
 
-		'module' => array(),
+        'module' => [],
 
-		'package' => array(),
-	),
+        'package' => [],
+    ],
 
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Folder
-	 * -------------------------------------------------------------------------
-	 *
-	 *  Folder name where migrations are stored relative to App, Module
-	 *  and Package paths.
-	 *
-	 *  Default path directory is 'migrations/'.
-	 *
-	 */
+    /**
+     * -------------------------------------------------------------------------
+     *  Folder
+     * -------------------------------------------------------------------------
+     *
+     *  Folder name where migrations are stored relative to App, Module
+     *  and Package paths.
+     *
+     *  Default path directory is 'migrations/'.
+     *
+     */
 
-	'folder' => 'migrations/',
+    'folder' => 'migrations/',
 
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Table Name
-	 * -------------------------------------------------------------------------
-	 *
-	 *  Table name for migrations.
-	 *
-	 *  Default table name is 'migration'.
-	 *
-	 */
+    /**
+     * -------------------------------------------------------------------------
+     *  Table Name
+     * -------------------------------------------------------------------------
+     *
+     *  Table name for migrations.
+     *
+     *  Default table name is 'migration'.
+     *
+     */
 
-	'table' => 'migration',
+    'table' => 'migration',
 
-	/**
-	 * -------------------------------------------------------------------------
-	 *  Cache
-	 * -------------------------------------------------------------------------
-	 *
-	 *  Whether to flush all cache after running migrations.
-	 *
-	 *  Default value is false.
-	 *
-	 */
+    /**
+     * -------------------------------------------------------------------------
+     *  Cache
+     * -------------------------------------------------------------------------
+     *
+     *  Whether to flush all cache after running migrations.
+     *
+     *  Default value is false.
+     *
+     */
 
-	 'flush_cache' => false,
-);
+     'flush_cache' => false,
+];

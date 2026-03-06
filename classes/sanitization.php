@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -14,24 +16,24 @@ namespace Fuel\Core;
 
 interface Sanitization
 {
-	/**
-	 * Enable sanitization mode in the object
-	 *
-	 * @return  $this
-	 */
-	public function sanitize();
+    /**
+     * Enable sanitization mode in the object
+     *
+     * @return  $this
+     */
+    public function sanitize();
 
-	/**
-	 * Disable sanitization mode in the object
-	 *
-	 * @return  $this
-	 */
-	public function unsanitize();
+    /**
+     * Disable sanitization mode in the object
+     *
+     * @return  $this
+     */
+    public function unsanitize();
 
-	/**
-	 * Returns the current sanitization state of the object
-	 *
-	 * @return  bool
-	 */
-	public function sanitized();
+    /**
+     * Returns the current sanitization state of the object
+     *
+     * @return  bool
+     */
+    public function sanitized();
 }

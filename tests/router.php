@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -25,8 +27,8 @@ class Test_Router extends TestCase
      */
     public function provider_test_classnames()
     {
-        return array(
-            array(
+        return [
+            [
                 'api/app',
                 'Controller_Api',
                 'app',
@@ -36,8 +38,8 @@ class Test_Router extends TestCase
                 function () {
                     return 'Controller_';
                 },
-            ),
-            array(
+            ],
+            [
                 'api/app',
                 'Controller\\Api',
                 'app',
@@ -47,8 +49,8 @@ class Test_Router extends TestCase
                 function () {
                     return 'Controller\\';
                 },
-            ),
-            array(
+            ],
+            [
                 'api/app/version',
                 'Controller_Api_App',
                 'version',
@@ -58,8 +60,8 @@ class Test_Router extends TestCase
                 function () {
                     return 'Controller_';
                 },
-            ),
-            array(
+            ],
+            [
                 'api/app/version',
                 'Controller\\Api\\App',
                 'version', function ($class) {
@@ -68,8 +70,8 @@ class Test_Router extends TestCase
                 function () {
                     return 'Controller\\';
                 },
-            ),
-            array(
+            ],
+            [
                 'api/app/version/more',
                 'Controller_Api_App_Version',
                 'more',
@@ -79,8 +81,8 @@ class Test_Router extends TestCase
                 function () {
                     return 'Controller_';
                 },
-            ),
-            array(
+            ],
+            [
                 'api/app/version/more',
                 'Controller\\Api\\App\\Version',
                 'more', function ($class) {
@@ -89,8 +91,8 @@ class Test_Router extends TestCase
                 function () {
                     return 'Controller\\';
                 },
-            ),
-            array(
+            ],
+            [
                 'api/app/version/more/subdirs',
                 'Controller_Api_App_Version_More',
                 'subdirs',
@@ -100,8 +102,8 @@ class Test_Router extends TestCase
                 function () {
                     return 'Controller_';
                 },
-            ),
-            array(
+            ],
+            [
                 'api/app/version/more/subdirs',
                 'Controller\\Api\\App\\Version\\More',
                 'subdirs',
@@ -111,8 +113,8 @@ class Test_Router extends TestCase
                 function () {
                     return 'Controller\\';
                 },
-            ),
-        );
+            ],
+        ];
     }
 
     /**
@@ -133,35 +135,35 @@ class Test_Router extends TestCase
         $match = Test_Router_Mock::process(\Request::forge($url));
         $this->assertEquals($controller, $match->controller);
         $this->assertEquals($action, $match->action);
-        $this->assertEquals(array(), $match->method_params);
+        $this->assertEquals([], $match->method_params);
     }
 
-	public function test_add_route_and_router_name()
-	{
-		$path = 'testing/route';
-		$options = null;
-		$prepend = false;
-		$case_sensitive = null;
-		Router::add($path, $options, $prepend, $case_sensitive);
-		
-		$this->assertEquals($path, Router::$routes[$path]->path);
-		$this->assertEquals($path, Router::$routes[$path]->name);
-		
-		Router::delete($path);
-	}
+    public function test_add_route_and_router_name()
+    {
+        $path = 'testing/route';
+        $options = null;
+        $prepend = false;
+        $case_sensitive = null;
+        Router::add($path, $options, $prepend, $case_sensitive);
 
-	public function test_add_route_and_router_option_name()
-	{
-		$path = 'testing/route';
-		$name = 'option_name';
-		$options = array('name' => $name);
-		$prepend = false;
-		$case_sensitive = null;
-		Router::add($path, $options, $prepend, $case_sensitive);
-		
-		$this->assertEquals($path, Router::$routes[$name]->path);
-		$this->assertEquals($name, Router::$routes[$name]->name);
-		
-		Router::delete($name);
-	}
+        $this->assertEquals($path, Router::$routes[$path]->path);
+        $this->assertEquals($path, Router::$routes[$path]->name);
+
+        Router::delete($path);
+    }
+
+    public function test_add_route_and_router_option_name()
+    {
+        $path = 'testing/route';
+        $name = 'option_name';
+        $options = ['name' => $name];
+        $prepend = false;
+        $case_sensitive = null;
+        Router::add($path, $options, $prepend, $case_sensitive);
+
+        $this->assertEquals($path, Router::$routes[$name]->path);
+        $this->assertEquals($name, Router::$routes[$name]->name);
+
+        Router::delete($name);
+    }
 }

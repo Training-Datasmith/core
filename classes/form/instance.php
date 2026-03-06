@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -22,165 +24,154 @@ namespace Fuel\Core;
  */
 class Form_Instance implements \Stringable
 {
-	/**
-	 * Valid types for input tags (including HTML5)
-	 */
-	protected static $_valid_inputs = [
-		'button', 'checkbox', 'color', 'date', 'datetime',
-		'datetime-local', 'email', 'file', 'hidden', 'image',
-		'month', 'number', 'password', 'radio', 'range',
-		'reset', 'search', 'submit', 'tel', 'text', 'time',
-		'url', 'week',
-	];
+    /**
+     * Valid types for input tags (including HTML5)
+     */
+    protected static $_valid_inputs = [
+        'button', 'checkbox', 'color', 'date', 'datetime',
+        'datetime-local', 'email', 'file', 'hidden', 'image',
+        'month', 'number', 'password', 'radio', 'range',
+        'reset', 'search', 'submit', 'tel', 'text', 'time',
+        'url', 'week',
+    ];
 
-	/**
-	 * @var  Fieldset
-	 */
-	protected $fieldset;
+    /**
+     * @var  Fieldset
+     */
+    protected $fieldset;
 
-	public function __construct($fieldset, array $config = [])
-	{
-		if ($fieldset instanceof Fieldset)
-		{
-			$fieldset->form($this);
-			$this->fieldset = $fieldset;
-		}
-		else
-		{
-			$this->fieldset = \Fieldset::forge($fieldset, ['form_instance' => $this]);
-		}
+    public function __construct($fieldset, array $config = [])
+    {
+        if ($fieldset instanceof Fieldset) {
+            $fieldset->form($this);
+            $this->fieldset = $fieldset;
+        } else {
+            $this->fieldset = \Fieldset::forge($fieldset, ['form_instance' => $this]);
+        }
 
-		foreach ($config as $key => $val)
-		{
-			$this->set_config($key, $val);
-		}
-	}
+        foreach ($config as $key => $val) {
+            $this->set_config($key, $val);
+        }
+    }
 
-	/**
+    /**
      * Set form attribute
      *
      * @param  string  $key
      * @param  mixed   $value
      */
     public function set_attribute($key, $value): static
-	{
-		$attributes = $this->get_config('form_attributes', []);
-		$attributes[$key] = $value;
-		$this->set_config('form_attributes', $attributes);
+    {
+        $attributes = $this->get_config('form_attributes', []);
+        $attributes[$key] = $value;
+        $this->set_config('form_attributes', $attributes);
 
-		return $this;
-	}
+        return $this;
+    }
 
-	/**
-	 * Get form attribute
-	 *
-	 * @param  string  $key
-	 * @param  mixed   $default
-	 * @return mixed
-	 */
-	public function get_attribute($key, $default = null)
-	{
-		$attributes = $this->get_config('form_attributes', []);
+    /**
+     * Get form attribute
+     *
+     * @param  string  $key
+     * @param  mixed   $default
+     * @return mixed
+     */
+    public function get_attribute($key, $default = null)
+    {
+        $attributes = $this->get_config('form_attributes', []);
 
-		return array_key_exists($key, $attributes) ? $attributes[$key] : $default;
-	}
+        return array_key_exists($key, $attributes) ? $attributes[$key] : $default;
+    }
 
-	/**
+    /**
      * Magic method toString that will build this as a form
      */
     public function __toString(): string
-	{
-		return $this->build();
-	}
+    {
+        return $this->build();
+    }
 
-	/**
+    /**
      * Create a form open tag
      *
      * @param   string|array  $attributes  action string or array with more tag attribute settings
      */
     public function open($attributes = [], array $hidden = []): string
-	{
-		$attributes = is_array($attributes) ? $attributes : ['action' => $attributes];
-		$attributes += ($this->get_config('form_attributes') ?: []);
+    {
+        $attributes = is_array($attributes) ? $attributes : ['action' => $attributes];
+        $attributes += ($this->get_config('form_attributes') ?: []);
 
-		// If there is still no action set, Form-post
-		if( ! array_key_exists('action', $attributes) or empty($attributes['action']))
-		{
-			$attributes['action'] = \Uri::main();
-		}
+        // If there is still no action set, Form-post
+        if (! array_key_exists('action', $attributes) or empty($attributes['action'])) {
+            $attributes['action'] = \Uri::main();
+        }
 
-		// If not a full URL, create one
-		elseif ( ! strpos((string) $attributes['action'], '://'))
-		{
-			$attributes['action'] = \Uri::create($attributes['action']);
-		}
+        // If not a full URL, create one
+        elseif (! strpos((string) $attributes['action'], '://')) {
+            $attributes['action'] = \Uri::create($attributes['action']);
+        }
 
-		if (empty($attributes['accept-charset']))
-		{
-			$attributes['accept-charset'] = strtolower(\Fuel::$encoding);
-		}
+        if (empty($attributes['accept-charset'])) {
+            $attributes['accept-charset'] = strtolower(\Fuel::$encoding);
+        }
 
-		// If method is empty, use POST
-		! empty($attributes['method']) || $attributes['method'] = $this->get_config('form_method', 'post');
+        // If method is empty, use POST
+        ! empty($attributes['method']) || $attributes['method'] = $this->get_config('form_method', 'post');
 
-		$form = '<form';
-		foreach ($attributes as $prop => $value)
-		{
-			$form .= ' '.$prop.'="'.$value.'"';
-		}
-		$form .= '>';
+        $form = '<form';
+        foreach ($attributes as $prop => $value) {
+            $form .= ' '.$prop.'="'.$value.'"';
+        }
+        $form .= '>';
 
-		// Add hidden fields when given
-		foreach ($hidden as $field => $value)
-		{
-			$form .= PHP_EOL.$this->hidden($field, $value);
-		}
+        // Add hidden fields when given
+        foreach ($hidden as $field => $value) {
+            $form .= PHP_EOL.$this->hidden($field, $value);
+        }
 
-		// Add CSRF token automatically
-		if (Config::get('security.csrf_auto_token', false))
-		{
-			$form .= PHP_EOL.\Form::csrf();
-		}
+        // Add CSRF token automatically
+        if (Config::get('security.csrf_auto_token', false)) {
+            $form .= PHP_EOL.\Form::csrf();
+        }
 
-		return $form;
-	}
+        return $form;
+    }
 
-	/**
+    /**
      * Create a form close tag
      */
     public function close(): string
-	{
-		return '</form>';
-	}
+    {
+        return '</form>';
+    }
 
-	/**
+    /**
      * Create a fieldset open tag
      *
      * @param   array   $attributes  array with tag attribute settings
      * @param   string  $legend      string for the fieldset legend
      */
     public function fieldset_open(array $attributes = [], $legend = null): string
-	{
-		$fieldset_open = '<fieldset ' . array_to_attr($attributes) . ' >';
+    {
+        $fieldset_open = '<fieldset ' . array_to_attr($attributes) . ' >';
 
-		! is_null($legend) and $attributes['legend'] = $legend;
-		if ( ! empty($attributes['legend']))
-		{
-			$fieldset_open.= "\n<legend>".$attributes['legend']."</legend>";
-		}
+        ! is_null($legend) and $attributes['legend'] = $legend;
+        if (! empty($attributes['legend'])) {
+            $fieldset_open .= "\n<legend>".$attributes['legend'].'</legend>';
+        }
 
-		return $fieldset_open;
-	}
+        return $fieldset_open;
+    }
 
-	/**
+    /**
      * Create a fieldset close tag
      */
     public function fieldset_close(): string
-	{
-		return '</fieldset>';
-	}
+    {
+        return '</fieldset>';
+    }
 
-	/**
+    /**
      * Create a form input
      *
      * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
@@ -188,43 +179,37 @@ class Form_Instance implements \Stringable
      * @return  string
      */
     public function input($field, $value = null, array $attributes = [])
-	{
-		if (is_array($field))
-		{
-			$attributes = $field;
-			! array_key_exists('value', $attributes) and $attributes['value'] = '';
-		}
-		else
-		{
-			$attributes['name'] = (string) $field;
-			$attributes['value'] = (string) $value;
-		}
+    {
+        if (is_array($field)) {
+            $attributes = $field;
+            ! array_key_exists('value', $attributes) and $attributes['value'] = '';
+        } else {
+            $attributes['name'] = (string) $field;
+            $attributes['value'] = (string) $value;
+        }
 
-		$attributes['type'] = empty($attributes['type']) ? 'text' : $attributes['type'];
+        $attributes['type'] = empty($attributes['type']) ? 'text' : $attributes['type'];
 
-		if ( ! in_array($attributes['type'], static::$_valid_inputs))
-		{
-			throw new \InvalidArgumentException(sprintf('"%s" is not a valid input type.', $attributes['type']));
-		}
+        if (! in_array($attributes['type'], static::$_valid_inputs)) {
+            throw new \InvalidArgumentException(sprintf('"%s" is not a valid input type.', $attributes['type']));
+        }
 
-		if ($this->get_config('prep_value', true) && empty($attributes['dont_prep']))
-		{
-			$attributes['value'] = $this->prep_value($attributes['value']);
-		}
-		unset($attributes['dont_prep']);
+        if ($this->get_config('prep_value', true) && empty($attributes['dont_prep'])) {
+            $attributes['value'] = $this->prep_value($attributes['value']);
+        }
+        unset($attributes['dont_prep']);
 
-		if (empty($attributes['id']) && $this->get_config('auto_id', false) == true)
-		{
-			$attributes['id'] = $this->get_config('auto_id_prefix', 'form_').$attributes['name'];
-		}
+        if (empty($attributes['id']) && $this->get_config('auto_id', false) == true) {
+            $attributes['id'] = $this->get_config('auto_id_prefix', 'form_').$attributes['name'];
+        }
 
-		$tag = ! empty($attributes['tag']) ? $attributes['tag'] : 'input';
-		unset($attributes['tag']);
+        $tag = ! empty($attributes['tag']) ? $attributes['tag'] : 'input';
+        unset($attributes['tag']);
 
-		return html_tag($tag, $this->attr_to_string($attributes));
-	}
+        return html_tag($tag, $this->attr_to_string($attributes));
+    }
 
-	/**
+    /**
      * Create a hidden field
      *
      * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
@@ -232,22 +217,19 @@ class Form_Instance implements \Stringable
      * @return  string
      */
     public function hidden($field, $value = null, array $attributes = [])
-	{
-		if (is_array($field))
-		{
-			$attributes = $field;
-		}
-		else
-		{
-			$attributes['name'] = (string) $field;
-			$attributes['value'] = (string) $value;
-		}
-		$attributes['type'] = 'hidden';
+    {
+        if (is_array($field)) {
+            $attributes = $field;
+        } else {
+            $attributes['name'] = (string) $field;
+            $attributes['value'] = (string) $value;
+        }
+        $attributes['type'] = 'hidden';
 
-		return $this->input($attributes);
-	}
+        return $this->input($attributes);
+    }
 
-	/**
+    /**
      * Create a password input field
      *
      * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
@@ -255,22 +237,19 @@ class Form_Instance implements \Stringable
      * @return  string
      */
     public function password($field, $value = null, array $attributes = [])
-	{
-		if (is_array($field))
-		{
-			$attributes = $field;
-		}
-		else
-		{
-			$attributes['name'] = (string) $field;
-			$attributes['value'] = (string) $value;
-		}
-		$attributes['type'] = 'password';
+    {
+        if (is_array($field)) {
+            $attributes = $field;
+        } else {
+            $attributes['name'] = (string) $field;
+            $attributes['value'] = (string) $value;
+        }
+        $attributes['type'] = 'password';
 
-		return $this->input($attributes);
-	}
+        return $this->input($attributes);
+    }
 
-	/**
+    /**
      * Create a radio button
      *
      * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
@@ -279,42 +258,35 @@ class Form_Instance implements \Stringable
      * @return  string
      */
     public function radio($field, $value = null, $checked = null, array $attributes = [])
-	{
-		if (is_array($field))
-		{
-			$attributes = $field;
-		}
-		else
-		{
-			is_array($checked) and $attributes = $checked;
-			$attributes['name'] = (string) $field;
-			$attributes['value'] = (string) $value;
+    {
+        if (is_array($field)) {
+            $attributes = $field;
+        } else {
+            is_array($checked) and $attributes = $checked;
+            $attributes['name'] = (string) $field;
+            $attributes['value'] = (string) $value;
 
-			# Added for 1.2 to allow checked true/false. in 3rd argument, used to be attributes
-			if ( ! is_array($checked))
-			{
-				// If it's true, then go for it
-				if (is_bool($checked))
-				{
-					if($checked === true)
-					{
-						$attributes['checked'] = 'checked';
-					}
-				}
+            # Added for 1.2 to allow checked true/false. in 3rd argument, used to be attributes
+            if (! is_array($checked)) {
+                // If it's true, then go for it
+                if (is_bool($checked)) {
+                    if ($checked === true) {
+                        $attributes['checked'] = 'checked';
+                    }
+                }
 
-				// Otherwise, if the string/number/whatever matches then do it
-				elseif (is_scalar($checked) and $checked == $value)
-				{
-					$attributes['checked'] = 'checked';
-				}
-			}
-		}
-		$attributes['type'] = 'radio';
+                // Otherwise, if the string/number/whatever matches then do it
+                elseif (is_scalar($checked) and $checked == $value) {
+                    $attributes['checked'] = 'checked';
+                }
+            }
+        }
+        $attributes['type'] = 'radio';
 
-		return $this->input($attributes);
-	}
+        return $this->input($attributes);
+    }
 
-	/**
+    /**
      * Create a checkbox
      *
      * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
@@ -323,63 +295,53 @@ class Form_Instance implements \Stringable
      * @return  string
      */
     public function checkbox($field, $value = null, $checked = null, array $attributes = [])
-	{
-		if (is_array($field))
-		{
-			$attributes = $field;
-		}
-		else
-		{
-			is_array($checked) and $attributes = $checked;
-			$attributes['name'] = (string) $field;
-			$attributes['value'] = (string) $value;
+    {
+        if (is_array($field)) {
+            $attributes = $field;
+        } else {
+            is_array($checked) and $attributes = $checked;
+            $attributes['name'] = (string) $field;
+            $attributes['value'] = (string) $value;
 
-			# Added for 1.2 to allow checked true/false. in 3rd argument, used to be attributes
-			if ( ! is_array($checked))
-			{
-				// If it's true, then go for it
-				if (is_bool($checked))
-				{
-					if($checked === true)
-					{
-						$attributes['checked'] = 'checked';
-					}
-				}
+            # Added for 1.2 to allow checked true/false. in 3rd argument, used to be attributes
+            if (! is_array($checked)) {
+                // If it's true, then go for it
+                if (is_bool($checked)) {
+                    if ($checked === true) {
+                        $attributes['checked'] = 'checked';
+                    }
+                }
 
-				// Otherwise, if the string/number/whatever matches then do it
-				elseif (is_scalar($checked) and $checked == $value)
-				{
-					$attributes['checked'] = 'checked';
-				}
-			}
-		}
-		$attributes['type'] = 'checkbox';
+                // Otherwise, if the string/number/whatever matches then do it
+                elseif (is_scalar($checked) and $checked == $value) {
+                    $attributes['checked'] = 'checked';
+                }
+            }
+        }
+        $attributes['type'] = 'checkbox';
 
-		return $this->input($attributes);
-	}
+        return $this->input($attributes);
+    }
 
-	/**
+    /**
      * Create a file upload input field
      *
      * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
      * @return  string
      */
     public function file($field, array $attributes = [])
-	{
-		if (is_array($field))
-		{
-			$attributes = $field;
-		}
-		else
-		{
-			$attributes['name'] = (string) $field;
-		}
-		$attributes['type'] = 'file';
+    {
+        if (is_array($field)) {
+            $attributes = $field;
+        } else {
+            $attributes['name'] = (string) $field;
+        }
+        $attributes['type'] = 'file';
 
-		return $this->input($attributes);
-	}
+        return $this->input($attributes);
+    }
 
-	/**
+    /**
      * Create a button
      *
      * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
@@ -387,22 +349,19 @@ class Form_Instance implements \Stringable
      * @return  string
      */
     public function button($field, $value = null, array $attributes = [])
-	{
-		if (is_array($field))
-		{
-			$attributes = $field;
-			$value = $attributes['value'] ?? $value;
-		}
-		else
-		{
-			$attributes['name'] = (string) $field;
-			$value ??= $attributes['name'];
-		}
+    {
+        if (is_array($field)) {
+            $attributes = $field;
+            $value = $attributes['value'] ?? $value;
+        } else {
+            $attributes['name'] = (string) $field;
+            $value ??= $attributes['name'];
+        }
 
-		return html_tag('button', $this->attr_to_string($attributes), $value);
-	}
+        return html_tag('button', $this->attr_to_string($attributes), $value);
+    }
 
-	/**
+    /**
      * Create a reset button
      *
      * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
@@ -410,22 +369,19 @@ class Form_Instance implements \Stringable
      * @return  string
      */
     public function reset($field = 'reset', $value = 'Reset', array $attributes = [])
-	{
-		if (is_array($field))
-		{
-			$attributes = $field;
-		}
-		else
-		{
-			$attributes['name'] = (string) $field;
-			$attributes['value'] = (string) $value;
-		}
-		$attributes['type'] = 'reset';
+    {
+        if (is_array($field)) {
+            $attributes = $field;
+        } else {
+            $attributes['name'] = (string) $field;
+            $attributes['value'] = (string) $value;
+        }
+        $attributes['type'] = 'reset';
 
-		return $this->input($attributes);
-	}
+        return $this->input($attributes);
+    }
 
-	/**
+    /**
      * Create a submit button
      *
      * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
@@ -433,22 +389,19 @@ class Form_Instance implements \Stringable
      * @return  string
      */
     public function submit($field = 'submit', $value = 'Submit', array $attributes = [])
-	{
-		if (is_array($field))
-		{
-			$attributes = $field;
-		}
-		else
-		{
-			$attributes['name'] = (string) $field;
-			$attributes['value'] = (string) $value;
-		}
-		$attributes['type'] = 'submit';
+    {
+        if (is_array($field)) {
+            $attributes = $field;
+        } else {
+            $attributes['name'] = (string) $field;
+            $attributes['value'] = (string) $value;
+        }
+        $attributes['type'] = 'submit';
 
-		return $this->input($attributes);
-	}
+        return $this->input($attributes);
+    }
 
-	/**
+    /**
      * Create a textarea field
      *
      * @param   string|array  $field       either fieldname or full attributes array (when array other params are ignored)
@@ -456,34 +409,29 @@ class Form_Instance implements \Stringable
      * @return  string
      */
     public function textarea($field, $value = null, array $attributes = [])
-	{
-		if (is_array($field))
-		{
-			$attributes = $field;
-		}
-		else
-		{
-			$attributes['name'] = (string) $field;
-			$attributes['value'] = (string) $value;
-		}
-		$value = is_scalar($attributes['value']) ? $attributes['value'] : '';
-		unset($attributes['value']);
+    {
+        if (is_array($field)) {
+            $attributes = $field;
+        } else {
+            $attributes['name'] = (string) $field;
+            $attributes['value'] = (string) $value;
+        }
+        $value = is_scalar($attributes['value']) ? $attributes['value'] : '';
+        unset($attributes['value']);
 
-		if ($this->get_config('prep_value', true) && empty($attributes['dont_prep']))
-		{
-			$value = $this->prep_value($value);
-		}
-		unset($attributes['dont_prep']);
+        if ($this->get_config('prep_value', true) && empty($attributes['dont_prep'])) {
+            $value = $this->prep_value($value);
+        }
+        unset($attributes['dont_prep']);
 
-		if (empty($attributes['id']) && $this->get_config('auto_id', false) == true)
-		{
-			$attributes['id'] = $this->get_config('auto_id_prefix', '').$attributes['name'];
-		}
+        if (empty($attributes['id']) && $this->get_config('auto_id', false) == true) {
+            $attributes['id'] = $this->get_config('auto_id_prefix', '').$attributes['name'];
+        }
 
-		return html_tag('textarea', $this->attr_to_string($attributes), $value);
-	}
+        return html_tag('textarea', $this->attr_to_string($attributes), $value);
+    }
 
-	/**
+    /**
      * Select
      *
      * Generates a html select element based on the given parameters
@@ -494,90 +442,78 @@ class Form_Instance implements \Stringable
      * @return  string
      */
     public function select($field, $values = null, array $options = [], array $attributes = [])
-	{
-		if (is_array($field))
-		{
-			$attributes = $field;
+    {
+        if (is_array($field)) {
+            $attributes = $field;
 
-			if ( ! isset($attributes['selected']))
-			{
-				$attributes['selected'] = ! isset($attributes['value']) ? ($attributes['default'] ?? null) : $attributes['value'];
-			}
-		}
-		else
-		{
-			$attributes['name'] = (string) $field;
-			$attributes['selected'] = ($values === null or $values === []) ? ($attributes['default'] ?? $values) : $values;
-			$attributes['options'] = $options;
-		}
-		unset($attributes['value']);
-		unset($attributes['default']);
+            if (! isset($attributes['selected'])) {
+                $attributes['selected'] = ! isset($attributes['value']) ? ($attributes['default'] ?? null) : $attributes['value'];
+            }
+        } else {
+            $attributes['name'] = (string) $field;
+            $attributes['selected'] = ($values === null or $values === []) ? ($attributes['default'] ?? $values) : $values;
+            $attributes['options'] = $options;
+        }
+        unset($attributes['value']);
+        unset($attributes['default']);
 
-		if ( ! isset($attributes['options']) || ! is_array($attributes['options']))
-		{
-			throw new \InvalidArgumentException(sprintf('Select element "%s" is either missing the "options" or "options" is not array.', $attributes['name']));
-		}
-		// Get the options then unset them from the array
-		$options = $attributes['options'];
-		unset($attributes['options']);
+        if (! isset($attributes['options']) || ! is_array($attributes['options'])) {
+            throw new \InvalidArgumentException(sprintf('Select element "%s" is either missing the "options" or "options" is not array.', $attributes['name']));
+        }
+        // Get the options then unset them from the array
+        $options = $attributes['options'];
+        unset($attributes['options']);
 
-		// Get the selected options then unset it from the array
-		// and make sure they're all strings to avoid type conversions
-		$selected = ! isset($attributes['selected']) ? [] : array_map(fn($a) => (string) $a, array_values((array) $attributes['selected']));
+        // Get the selected options then unset it from the array
+        // and make sure they're all strings to avoid type conversions
+        $selected = ! isset($attributes['selected']) ? [] : array_map(fn ($a) => (string) $a, array_values((array) $attributes['selected']));
 
-		unset($attributes['selected']);
+        unset($attributes['selected']);
 
-		// workaround to access the current object context in the closure
-		$current_obj =& $this;
+        // workaround to access the current object context in the closure
+        $current_obj = & $this;
 
-		// closure to recursively process the options array
-		$listoptions = function (array $options, $selected, $level = 1) use (&$listoptions, &$current_obj, &$attributes): string
-		{
-			$input = PHP_EOL;
-			foreach ($options as $key => $val)
-			{
-				if (is_array($val))
-				{
-					$optgroup = $listoptions($val, $selected, $level + 1);
-					$optgroup .= str_repeat("\t", $level);
-					$input .= str_repeat("\t", $level).html_tag('optgroup', ['label' => $key, 'style' => 'text-indent: '.(20+10*($level-1)).'px;'], $optgroup).PHP_EOL;
-				}
-				else
-				{
-					$opt_attr = ['value' => $key];
-					$level > 1 and $opt_attr['style'] = 'text-indent: '.(10*($level-1)).'px;';
-					(in_array((string) $key, $selected, true)) && $opt_attr[] = 'selected';
-					$input .= str_repeat("\t", $level);
-					$opt_attr['value'] = ($current_obj->get_config('prep_value', true) && empty($attributes['dont_prep'])) ?
-						$current_obj->prep_value($opt_attr['value']) : $opt_attr['value'];
-					$val = ($current_obj->get_config('prep_value', true) && empty($attributes['dont_prep'])) ?
-						$current_obj->prep_value($val) : $val;
-					$input .= html_tag('option', $opt_attr, $val).PHP_EOL;
-				}
-			}
-			unset($attributes['dont_prep']);
+        // closure to recursively process the options array
+        $listoptions = function (array $options, $selected, $level = 1) use (&$listoptions, &$current_obj, &$attributes): string {
+            $input = PHP_EOL;
+            foreach ($options as $key => $val) {
+                if (is_array($val)) {
+                    $optgroup = $listoptions($val, $selected, $level + 1);
+                    $optgroup .= str_repeat("\t", $level);
+                    $input .= str_repeat("\t", $level).html_tag('optgroup', ['label' => $key, 'style' => 'text-indent: '.(20 + 10 * ($level - 1)).'px;'], $optgroup).PHP_EOL;
+                } else {
+                    $opt_attr = ['value' => $key];
+                    $level > 1 and $opt_attr['style'] = 'text-indent: '.(10 * ($level - 1)).'px;';
+                    (in_array((string) $key, $selected, true)) && $opt_attr[] = 'selected';
+                    $input .= str_repeat("\t", $level);
+                    $opt_attr['value'] = ($current_obj->get_config('prep_value', true) && empty($attributes['dont_prep'])) ?
+                        $current_obj->prep_value($opt_attr['value']) : $opt_attr['value'];
+                    $val = ($current_obj->get_config('prep_value', true) && empty($attributes['dont_prep'])) ?
+                        $current_obj->prep_value($val) : $val;
+                    $input .= html_tag('option', $opt_attr, $val).PHP_EOL;
+                }
+            }
+            unset($attributes['dont_prep']);
 
-			return $input;
-		};
+            return $input;
+        };
 
-		// generate the select options list
-		$input = $listoptions($options, $selected).str_repeat("\t", 0);
+        // generate the select options list
+        $input = $listoptions($options, $selected).str_repeat("\t", 0);
 
-		if (empty($attributes['id']) && $this->get_config('auto_id', false) == true)
-		{
-			$attributes['id'] = $this->get_config('auto_id_prefix', '').$attributes['name'];
-		}
+        if (empty($attributes['id']) && $this->get_config('auto_id', false) == true) {
+            $attributes['id'] = $this->get_config('auto_id_prefix', '').$attributes['name'];
+        }
 
-		// if it's a multiselect, make sure the name is an array
-		if (isset($attributes['multiple']) and !str_ends_with((string) $attributes['name'], '[]'))
-		{
-			$attributes['name'] .= '[]';
-		}
+        // if it's a multiselect, make sure the name is an array
+        if (isset($attributes['multiple']) and !str_ends_with((string) $attributes['name'], '[]')) {
+            $attributes['name'] .= '[]';
+        }
 
-		return html_tag('select', $this->attr_to_string($attributes), $input);
-	}
+        return html_tag('select', $this->attr_to_string($attributes), $input);
+    }
 
-	/**
+    /**
      * Create a label field
      *
      * @param   string|array  $label       either fieldname or full attributes array (when array other params are ignored)
@@ -585,45 +521,40 @@ class Form_Instance implements \Stringable
      * @return  string
      */
     public function label($label, $id = null, array $attributes = [])
-	{
-		if (is_array($label))
-		{
-			$attributes = $label;
-			$label = $attributes['label'];
-			isset($attributes['id']) and $id = $attributes['id'];
-		}
+    {
+        if (is_array($label)) {
+            $attributes = $label;
+            $label = $attributes['label'];
+            isset($attributes['id']) and $id = $attributes['id'];
+        }
 
-		if (empty($attributes['for']) and ! empty($id))
-		{
-			if ($this->get_config('auto_id', false) == true)
-			{
-				$attributes['for'] = $this->get_config('auto_id_prefix', 'form_').$id;
-			}
-			else
-			{
-				$attributes['for'] = $id;
-			}
-		}
+        if (empty($attributes['for']) and ! empty($id)) {
+            if ($this->get_config('auto_id', false) == true) {
+                $attributes['for'] = $this->get_config('auto_id_prefix', 'form_').$id;
+            } else {
+                $attributes['for'] = $id;
+            }
+        }
 
-		unset($attributes['label']);
+        unset($attributes['label']);
 
-		return html_tag('label', $attributes, \Lang::get($label, [], false) ?: $label);
-	}
+        return html_tag('label', $attributes, \Lang::get($label, [], false) ?: $label);
+    }
 
-	/**
-	 * Prep Value
-	 *
-	 * Prepares the value for display in the form
-	 *
-	 * @param   string  $value
-	 * @return  string
-	 */
-	public function prep_value($value)
-	{
-		return \Security::htmlentities($value, ENT_QUOTES);
-	}
+    /**
+     * Prep Value
+     *
+     * Prepares the value for display in the form
+     *
+     * @param   string  $value
+     * @return  string
+     */
+    public function prep_value($value)
+    {
+        return \Security::htmlentities($value, ENT_QUOTES);
+    }
 
-	/**
+    /**
      * Attr to String
      *
      * Wraps the global attributes function and does some form specific work
@@ -631,163 +562,160 @@ class Form_Instance implements \Stringable
      * @return  string
      */
     protected function attr_to_string(array $attr)
-	{
-		unset($attr['label']);
-		return array_to_attr($attr);
-	}
+    {
+        unset($attr['label']);
+        return array_to_attr($attr);
+    }
 
-	// fieldset related methods
+    // fieldset related methods
 
-	/**
-	 * Returns the related fieldset
-	 *
-	 * @return  Fieldset
-	 */
-	public function fieldset()
-	{
-		return $this->fieldset;
-	}
+    /**
+     * Returns the related fieldset
+     *
+     * @return  Fieldset
+     */
+    public function fieldset()
+    {
+        return $this->fieldset;
+    }
 
-	/**
-	 * Build & template individual field
-	 *
-	 * @param   string|Fieldset_Field  $field  field instance or name of a field in this form's fieldset
-	 * @return  string
-	 * @deprecated until v1.2
-	 */
-	public function build_field($field)
-	{
-		! $field instanceof Fieldset_Field && $field = $this->field($field);
+    /**
+     * Build & template individual field
+     *
+     * @param   string|Fieldset_Field  $field  field instance or name of a field in this form's fieldset
+     * @return  string
+     * @deprecated until v1.2
+     */
+    public function build_field($field)
+    {
+        ! $field instanceof Fieldset_Field && $field = $this->field($field);
 
-		return $field->build();
-	}
+        return $field->build();
+    }
 
-	/**
-	 * Add a CSRF token and a validation rule to check it
-	 */
-	public function add_csrf(): static
-	{
-		$this->add(\Config::get('security.csrf_token_key', 'fuel_csrf_token'), 'CSRF Token')
-			->set_type('hidden')
-			->set_value(\Security::fetch_token())
-			->add_rule(['Security', 'check_token']);
+    /**
+     * Add a CSRF token and a validation rule to check it
+     */
+    public function add_csrf(): static
+    {
+        $this->add(\Config::get('security.csrf_token_key', 'fuel_csrf_token'), 'CSRF Token')
+            ->set_type('hidden')
+            ->set_value(\Security::fetch_token())
+            ->add_rule(['Security', 'check_token']);
 
-		return $this;
-	}
+        return $this;
+    }
 
-	/**
-	 * Sets a config value on the fieldset
-	 *
-	 * @param   string  $config
-	 * @param   mixed   $value
-	 * @return  Fieldset  this, to allow chaining
-	 */
-	public function set_config($config, $value = null): static
-	{
-		$this->fieldset->set_config($config, $value);
+    /**
+     * Sets a config value on the fieldset
+     *
+     * @param   string  $config
+     * @param   mixed   $value
+     * @return  Fieldset  this, to allow chaining
+     */
+    public function set_config($config, $value = null): static
+    {
+        $this->fieldset->set_config($config, $value);
 
-		return $this;
-	}
+        return $this;
+    }
 
-	/**
-	 * Get a single or multiple config values by key
-	 *
-	 * @param   string|array  $key      a single key or multiple in an array, empty to fetch all
-	 * @param   mixed         $default  default output when config wasn't set
-	 * @return  mixed|array   a single config value or multiple in an array when $key input was an array
-	 */
-	public function get_config($key = null, $default = null)
-	{
-		if ($key === null)
-		{
-			return $this->fieldset->get_config();
-		}
+    /**
+     * Get a single or multiple config values by key
+     *
+     * @param   string|array  $key      a single key or multiple in an array, empty to fetch all
+     * @param   mixed         $default  default output when config wasn't set
+     * @return  mixed|array   a single config value or multiple in an array when $key input was an array
+     */
+    public function get_config($key = null, $default = null)
+    {
+        if ($key === null) {
+            return $this->fieldset->get_config();
+        }
 
-		if (is_array($key))
-		{
-			$output = [];
-			foreach ($key as $k)
-			{
-				$output[$k] = $this->fieldset->get_config($k) !== null
-					? $this->fieldset->get_config($k, $default)
-					: \Config::get('form.'.$k, $default);
-			}
-			return $output;
-		}
+        if (is_array($key)) {
+            $output = [];
+            foreach ($key as $k) {
+                $output[$k] = $this->fieldset->get_config($k) !== null
+                    ? $this->fieldset->get_config($k, $default)
+                    : \Config::get('form.'.$k, $default);
+            }
+            return $output;
+        }
 
-		return $this->fieldset->get_config($key) !== null
-			? $this->fieldset->get_config($key, $default)
-			: \Config::get('form.'.$key, $default);
-	}
+        return $this->fieldset->get_config($key) !== null
+            ? $this->fieldset->get_config($key, $default)
+            : \Config::get('form.'.$key, $default);
+    }
 
-	/**
-	 * Alias for $this->fieldset->build()
-	 *
-	 * @param mixed  $action
-	 * @return string
-	 */
-	public function build($action = null)
-	{
-		return $this->fieldset()->build($action);
-	}
+    /**
+     * Alias for $this->fieldset->build()
+     *
+     * @param mixed  $action
+     * @return string
+     */
+    public function build($action = null)
+    {
+        return $this->fieldset()->build($action);
+    }
 
-	/**
-	 * Alias for $this->fieldset->add()
-	 *
-	 * @param   string
-	 * @param   string
-	 * @param   array
-	 * @param   array
-	 * @return  Fieldset_Field
-	 */
-	public function add($name, $label = '', array $attributes = [], array $rules = [])
-	{
-		return $this->fieldset->add($name, $label, $attributes, $rules);
-	}
+    /**
+     * Alias for $this->fieldset->add()
+     *
+     * @param   string
+     * @param   string
+     * @param   array
+     * @param   array
+     * @return  Fieldset_Field
+     */
+    public function add($name, $label = '', array $attributes = [], array $rules = [])
+    {
+        return $this->fieldset->add($name, $label, $attributes, $rules);
+    }
 
-	/**
-	 * Alias for $this->fieldset->add_model()
-	 *
-	 * @param	string|Object  $class     either a full classname (including full namespace) or object instance
-	 * @param	array|Object   $instance  array or object that has the exactly same named properties to populate the fields
-	 * @param	string         $method    method name to call on model for field fetching
-	 * @return	Validation	this, to allow chaining
-	 */
-	public function add_model($class, $instance = null, $method = 'set_form_fields'): static
-	{
-		$this->fieldset->add_model($class, $instance, $method);
+    /**
+     * Alias for $this->fieldset->add_model()
+     *
+     * @param	string|Object  $class     either a full classname (including full namespace) or object instance
+     * @param	array|Object   $instance  array or object that has the exactly same named properties to populate the fields
+     * @param	string         $method    method name to call on model for field fetching
+     * @return	Validation	this, to allow chaining
+     */
+    public function add_model($class, $instance = null, $method = 'set_form_fields'): static
+    {
+        $this->fieldset->add_model($class, $instance, $method);
 
-		return $this;
-	}
+        return $this;
+    }
 
-	/**
-	 * Alias for $this->fieldset->field()
-	 *
-	 * @param   string|null           $name     field name or null to fetch an array of all
-	 * @param   bool                  $flatten  whether to get the fields array or flattened array
-	 * @return  Fieldset_Field|false
-	 */
-	public function field($name = null, $flatten = false)
-	{
-		return $this->fieldset->field($name, $flatten);
-	}
+    /**
+     * Alias for $this->fieldset->field()
+     *
+     * @param   string|null           $name     field name or null to fetch an array of all
+     * @param   bool                  $flatten  whether to get the fields array or flattened array
+     * @return  Fieldset_Field|false
+     */
+    public function field($name = null, $flatten = false)
+    {
+        return $this->fieldset->field($name, $flatten);
+    }
 
-	/**
+    /**
      * Alias for $this->fieldset->populate() for this fieldset
      *
      * @param   array|object  $input
      * @param   bool          $repopulate
      */
     public function populate($input, $repopulate = false): void
-	{
-		$this->fieldset->populate($input, $repopulate);
-	}
+    {
+        $this->fieldset->populate($input, $repopulate);
+    }
 
-	/**
+    /**
      * Alias for $this->fieldset->repopulate() for this fieldset
      */
     public function repopulate(): void
-	{
-		$this->fieldset->repopulate();
-	}
+    {
+        $this->fieldset->repopulate();
+    }
 }

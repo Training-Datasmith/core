@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -14,7 +16,7 @@ namespace Fuel\Core;
 
 interface Config_Interface
 {
-	public function load($overwrite = false);
-	public function group();
-	public function save($contents);
+    public function load($overwrite = false);
+    public function group();
+    public function save($contents);
 }
