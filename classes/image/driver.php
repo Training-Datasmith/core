@@ -836,7 +836,7 @@ abstract class Image_Driver
         if ($this->config['debug']) {
             $messages = func_get_args();
             foreach ($messages as $message) {
-                echo '<div>' . $message . '&nbsp;</div>';
+                echo '<div>' . htmlspecialchars((string) $message, ENT_QUOTES, 'UTF-8') . '&nbsp;</div>';
             }
         }
     }

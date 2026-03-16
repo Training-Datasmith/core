@@ -44,6 +44,7 @@ class Ftp
     protected int $_timeout;
     protected bool $_passive;
     protected bool $_debug;
+    protected bool $_ssl_mode = false;
     protected $_conn_id   = false;
 
     /**

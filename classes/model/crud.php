@@ -759,7 +759,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
      */
     public function validates()
     {
-        if (! isset(static::$_rules) or count(static::$_rules) < 0) {
+        if (! isset(static::$_rules) or count(static::$_rules) === 0) {
             return true;
         }
 
@@ -780,7 +780,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
      */
     protected function run_validation($vars)
     {
-        if (! isset(static::$_rules) or count(static::$_rules) < 0) {
+        if (! isset(static::$_rules) or count(static::$_rules) === 0) {
             return true;
         }
 
@@ -916,7 +916,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
         $data = unserialize($data);
 
         if (isset($data['_is_new'])) {
-            $this->is_new = $data['_is_new'];
+            $this->_is_new = $data['_is_new'];
             unset($data['_is_new']);
         } else {
             $this->_is_new = true;

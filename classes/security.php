@@ -175,7 +175,7 @@ class Security
     public static function strip_tags($value)
     {
         if (! is_array($value)) {
-            $value = filter_var($value, FILTER_SANITIZE_STRING);
+            $value = strip_tags((string) $value);
         } else {
             foreach ($value as $k => $v) {
                 $value[$k] = static::strip_tags($v);
@@ -252,7 +252,7 @@ class Security
         $value = $value ?: \Input::param(static::$csrf_token_key, \Input::json(static::$csrf_token_key, 'fail'));
 
         // always reset token once it's been checked and still the same, and we've configured we want to rotate
-        if (static::fetch_token() == static::$csrf_old_token and ! empty($value) and \Config::get('security.csrf_rotate', true)) {
+        if (hash_equals((string) static::fetch_token(), (string) static::$csrf_old_token) and ! empty($value) and \Config::get('security.csrf_rotate', true)) {
             static::set_token(true);
         }
 
@@ -281,13 +281,7 @@ class Security
     public static function generate_token(): string
     {
         // generate a random token base
-        if (function_exists('random_bytes')) {
-            $token_base = \Config::get('security.token_salt', '') .random_bytes(64);
-        } elseif (function_exists('openssl_random_pseudo_bytes')) {
-            $token_base = \Config::get('security.token_salt', '') . openssl_random_pseudo_bytes(64);
-        } else {
-            $token_base = time() . uniqid() . \Config::get('security.token_salt', '') . mt_rand(0, mt_getrandmax());
-        }
+        $token_base = \Config::get('security.token_salt', '') . random_bytes(64);
 
         // return the hashed token
         if (function_exists('hash_algos')) {
@@ -335,7 +329,7 @@ class Security
 	{
 		if (document.cookie.length > 0)
 		{
-			var c_name = "'.static::$csrf_token_key.'";
+			var c_name = '.json_encode(static::$csrf_token_key).';
 			c_start = document.cookie.indexOf(c_name + "=");
 			if (c_start != -1)
 			{
@@ -345,7 +339,7 @@ class Security
 				{
 					c_end=document.cookie.length;
 				}
-				return unescape(document.cookie.substring(c_start, c_end));
+				return decodeURIComponent(document.cookie.substring(c_start, c_end));
 			}
 		}
 		return "";
@@ -367,7 +361,7 @@ class Security
 	{
 		if (document.cookie.length > 0 && typeof form != undefined)
 		{
-			var c_name = "'.static::$csrf_token_key.'";
+			var c_name = '.json_encode(static::$csrf_token_key).';
 			c_start = document.cookie.indexOf(c_name + "=");
 			if (c_start != -1)
 			{
@@ -377,7 +371,7 @@ class Security
 				{
 					c_end=document.cookie.length;
 				}
-				value=unescape(document.cookie.substring(c_start, c_end));
+				value=decodeURIComponent(document.cookie.substring(c_start, c_end));
 				if (value != "")
 				{
 					for(i=0; i<form.elements.length; i++)

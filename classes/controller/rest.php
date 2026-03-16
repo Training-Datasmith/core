@@ -359,7 +359,7 @@ abstract class Controller_Rest extends \Controller
         }
 
         // If actually null (not empty string) then do not check it
-        if ($password !== null and $valid_logins[$username] != $password) {
+        if ($password !== null and ! hash_equals((string) $valid_logins[$username], (string) $password)) {
             return false;
         }
 
@@ -437,7 +437,7 @@ abstract class Controller_Rest extends \Controller
         $A2 = md5(strtoupper(\Input::method()) . ':' . $digest['uri']);
         $valid_response = md5($A1 . ':' . $digest['nonce'] . ':' . $digest['nc'] . ':' . $digest['cnonce'] . ':' . $digest['qop'] . ':' . $A2);
 
-        if ($digest['response'] != $valid_response) {
+        if (! hash_equals((string) $valid_response, (string) $digest['response'])) {
             return false;
         }
 

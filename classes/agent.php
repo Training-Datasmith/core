@@ -97,7 +97,7 @@ class Agent
     protected static $defaults = [
         'browscap' => [
             'enabled' => true,
-            'url' => 'http://browscap.org/stream?q=Lite_PHP_BrowsCapINI',
+            'url' => 'https://browscap.org/stream?q=Lite_PHP_BrowsCapINI',
             'method' => 'wrapper',
              'proxy' => [
                 'host' => null,
@@ -135,7 +135,7 @@ class Agent
     public static function _init(): void
     {
         // fetch and store the user agent
-        static::$user_agent = \Input::server('http_user_agent', '');
+        static::$user_agent = \Input::server('HTTP_USER_AGENT', '');
 
         // fetch and process the configuration
         \Config::load('agent', true);

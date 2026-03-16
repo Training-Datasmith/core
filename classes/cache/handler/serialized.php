@@ -18,7 +18,7 @@ class Cache_Handler_Serialized implements \Cache_Handler_Driver
 {
     public function readable($contents): mixed
     {
-        return unserialize($contents);
+        return unserialize($contents, ['allowed_classes' => false]);
     }
 
     public function writable($contents): string

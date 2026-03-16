@@ -72,7 +72,7 @@ class Config_Db implements Config_Interface
 
         // did we succeed?
         if ($result->count()) {
-            empty($result[0]['config']) or $config = unserialize($this->parse_vars($result[0]['config']));
+            empty($result[0]['config']) or $config = unserialize($this->parse_vars($result[0]['config']), ['allowed_classes' => false]);
         }
 
         return $config;

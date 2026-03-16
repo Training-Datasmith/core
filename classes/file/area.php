@@ -150,7 +150,7 @@ class File_Area
         }
 
         // check file extension
-        if (! empty(static::$extensions) && array_key_exists($pathinfo['extension'], static::$extensions)) {
+        if (! empty($this->extensions) && array_key_exists($pathinfo['extension'], $this->extensions)) {
             throw new \FileAccessException('File operation not allowed: disallowed file extension.');
         }
 

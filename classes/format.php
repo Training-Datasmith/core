@@ -276,6 +276,10 @@ class Format
         $callback or $callback = \Input::param('callback');
         is_null($callback) and $callback = 'response';
 
+        if (! preg_match('/^[a-zA-Z_\$][a-zA-Z0-9_\$\.]*$/', (string) $callback)) {
+            $callback = 'response';
+        }
+
         return $callback.'('.$this->to_json($data, $pretty).')';
     }
 
@@ -357,7 +361,7 @@ class Format
             }
         }
 
-        $_arr = is_string($string) ? simplexml_load_string($string, 'SimpleXMLElement', LIBXML_NOCDATA) : $string;
+        $_arr = is_string($string) ? simplexml_load_string($string, 'SimpleXMLElement', LIBXML_NOCDATA | LIBXML_NONET) : $string;
 
         // Convert all objects SimpleXMLElement to array recursively
         $arr = [];
@@ -458,7 +462,7 @@ class Format
      */
     private function _from_serialize($string): mixed
     {
-        return unserialize(trim($string));
+        return unserialize(trim($string), ['allowed_classes' => false]);
     }
 
     /**

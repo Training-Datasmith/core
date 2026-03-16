@@ -110,7 +110,7 @@ abstract class Request_Driver implements \Stringable
         'text/json' => 'json',
         'text/csv' => 'csv',
         'application/csv' => 'csv',
-        'application/vnd.php.serialized' => 'serialize',
+
     ];
 
     /**

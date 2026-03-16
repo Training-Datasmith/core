@@ -41,7 +41,7 @@ class Image_Imagemagick extends \Image_Driver
         if (!touch($this->config['temp_dir'] . $this->config['temp_append'] . '_touch')) {
             throw new \RuntimeException('Could not write in the temp directory.');
         }
-        $this->exec('convert', "-auto-orient '".$image_fullpath."'[0] '".$this->image_temp."'");
+        $this->exec('convert', '-auto-orient '.escapeshellarg($image_fullpath).'[0] '.escapeshellarg($this->image_temp));
 
         return $this;
     }
@@ -49,7 +49,7 @@ class Image_Imagemagick extends \Image_Driver
     protected function _crop($x1, $y1, $x2, $y2)
     {
         extract(parent::_crop($x1, $y1, $x2, $y2));
-        $image = "'".$this->image_temp."'";
+        $image = escapeshellarg($this->image_temp);
         $this->exec('convert', $image.' -auto-orient -crop '.($x2 - $x1).'x'.($y2 - $y1).'+'.$x1.'+'.$y1.' +repage '.$image);
         $this->clear_sizes();
     }
@@ -58,7 +58,7 @@ class Image_Imagemagick extends \Image_Driver
     {
         extract(parent::_resize($width, $height, $keepar, $pad));
 
-        $image = "'".$this->image_temp."'";
+        $image = escapeshellarg($this->image_temp);
         $this->exec('convert', '-auto-orient -define png:size='.$cwidth.'x'.$cheight.' '.$image.' '.
             '-background none '.
             '-resize "'.($pad ? $width : $cwidth).'x'.($pad ? $height : $cheight).'!" '.
@@ -71,7 +71,7 @@ class Image_Imagemagick extends \Image_Driver
     {
         extract(parent::_rotate($degrees));
 
-        $image = "'".$this->image_temp."'";
+        $image = escapeshellarg($this->image_temp);
         $this->exec('convert', $image.' -background none -auto-orient -virtual-pixel background +distort ScaleRotateTranslate '.$degrees.' +repage '.$image);
 
         $this->clear_sizes();
@@ -94,7 +94,7 @@ class Image_Imagemagick extends \Image_Driver
 
             default: return false;
         }
-        $image = "'".$this->image_temp."'";
+        $image = escapeshellarg($this->image_temp);
         $this->exec('convert', $image.' -auto-orient '.$arg.' '.$image);
     }
 
@@ -109,7 +109,7 @@ class Image_Imagemagick extends \Image_Driver
         $x >= 0 and $x = '+'.$x;
         $y >= 0 and $y = '+'.$y;
 
-        $image = "'".$this->image_temp."'";
+        $image = escapeshellarg($this->image_temp);
         $this->exec(
             'composite',
             '-compose atop -geometry '.$x.$y.' '.
@@ -122,7 +122,7 @@ class Image_Imagemagick extends \Image_Driver
     {
         extract(parent::_border($size, $color));
 
-        $image = "'".$this->image_temp."'";
+        $image = escapeshellarg($this->image_temp);
         $color = $this->create_color($color, 100);
         $command = $image.' -auto-orient -compose copy -bordercolor '.$color.' -border '.$size.'x'.$size.' '.$image;
         $this->exec('convert', $command);
@@ -134,8 +134,8 @@ class Image_Imagemagick extends \Image_Driver
     {
         extract(parent::_mask($maskimage));
 
-        $mimage = "'".$maskimage."'";
-        $image = "'".$this->image_temp."'";
+        $mimage = escapeshellarg($maskimage);
+        $image = escapeshellarg($this->image_temp);
         $command = $image.' '.$mimage.' +matte -auto-orient -compose copy-opacity -composite '.$image;
         $this->exec('convert', $command);
     }
@@ -151,7 +151,7 @@ class Image_Imagemagick extends \Image_Driver
     {
         extract(parent::_rounded($radius, $sides, null));
 
-        $image = "'".$this->image_temp."'";
+        $image = escapeshellarg($this->image_temp);
         $r = $radius;
         $command = $image.' \\( +clone -alpha extract '.
             (! $tr ? '' : "-draw \"fill black polygon 0,0 0,$r $r,0 fill white circle $r,$r $r,0\" ").'-flip '.
@@ -164,7 +164,7 @@ class Image_Imagemagick extends \Image_Driver
 
     protected function _grayscale()
     {
-        $image = "'".$this->image_temp."'";
+        $image = escapeshellarg($this->image_temp);
         $this->exec('convert', $image.' -auto-orient -colorspace Gray '.$image);
     }
 
@@ -179,7 +179,7 @@ class Image_Imagemagick extends \Image_Driver
                 $filename = $this->image_temp;
             }
 
-            $output = $this->exec('identify', "-format '%w %h' '".$filename."'[0]");
+            $output = $this->exec('identify', "-format '%w %h' ".escapeshellarg($filename).'[0]');
             [$width, $height] = explode(' ', (string) $output[0]);
             $return = (object) [
                 'width' => $width,
@@ -205,8 +205,8 @@ class Image_Imagemagick extends \Image_Driver
         $this->add_background();
 
         $filetype = $this->image_extension;
-        $old = "'".$this->image_temp."'";
-        $new = "'".$filename."'";
+        $old = escapeshellarg($this->image_temp);
+        $new = escapeshellarg($filename);
 
         if (($filetype == 'jpeg' or $filetype == 'jpg') and $this->config['quality'] != 100) {
             $quality = "'".$this->config['quality']."%'";
@@ -229,7 +229,7 @@ class Image_Imagemagick extends \Image_Driver
         $this->run_queue();
         $this->add_background();
 
-        $image = "'".$this->image_temp."'";
+        $image = escapeshellarg($this->image_temp);
 
         if (($filetype == 'jpeg' or $filetype == 'jpg') and $this->config['quality'] != 100) {
             $quality = "'".$this->config['quality']."%'";
@@ -263,7 +263,7 @@ class Image_Imagemagick extends \Image_Driver
     {
         if ($this->config['bgcolor'] != null) {
             $bgcolor = $this->config['bgcolor'] == null ? '#000' : $this->config['bgcolor'];
-            $image   = "'".$this->image_temp."'";
+            $image   = escapeshellarg($this->image_temp);
             $color   = $this->create_color($bgcolor, 100);
             $sizes   = $this->sizes();
             $command = '-auto-orient -size '.$sizes->width.'x'.$sizes->height.' '.'canvas:'.$color.' '.

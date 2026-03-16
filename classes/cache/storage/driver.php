@@ -351,6 +351,10 @@ abstract class Cache_Storage_Driver
             }
         }
 
+        static $allowed_handlers = ['string', 'json', 'serialized'];
+        if (! in_array($this->content_handler, $allowed_handlers, true)) {
+            throw new \CacheException('Invalid cache content handler: '.$this->content_handler);
+        }
         $class = '\\Cache_Handler_'.ucfirst($this->content_handler);
         $this->handler_object = new $class();
 

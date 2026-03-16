@@ -477,7 +477,7 @@ class Mongo_Db
     public function where_near($field = '', $co = []): static
     {
         $this->_where_init($field);
-        $this->where[$field]['$near'] = $co;
+        $this->wheres[$field]['$near'] = $co;
         return $this;
     }
 

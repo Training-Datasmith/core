@@ -610,10 +610,6 @@ abstract class Session_Driver
             $cookie = \Input::headers($this->config['http_header_name'], false);
         }
 
-        // if not found, check the URL for a cookie
-        if ($cookie === false) {
-            $cookie = \Input::get($this->config['cookie_name'], false);
-        }
 
         if ($cookie !== false) {
             // fetch the payload
@@ -688,7 +684,7 @@ abstract class Session_Driver
      */
     protected function _unserialize($input)
     {
-        $data = @unserialize($input);
+        $data = unserialize($input, ['allowed_classes' => false]);
         if (is_array($data)) {
             foreach ($data as $key => $val) {
                 if (is_string($val)) {

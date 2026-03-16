@@ -179,17 +179,7 @@ class Crypt
      */
     protected static function secure_compare($a, $b)
     {
-        // make sure we're only comparing equal length strings
-        if (strlen($a) !== strlen($b)) {
-            return false;
-        }
-
-        // and that all comparisons take equal time
-        $result = 0;
-        for ($i = 0; $i < strlen($a); $i++) {
-            $result |= ord($a[$i]) ^ ord($b[$i]);
-        }
-        return $result === 0;
+        return hash_equals((string) $a, (string) $b);
     }
 
     /**
@@ -363,7 +353,7 @@ class Crypt
     protected static function memzero(&$var)
     {
         // check if we have native support
-        if (PHP_VERSION_ID >= 70200 and extension_loaded('sodium')) {
+        if (extension_loaded('sodium')) {
             sodium_memzero($var);
         } elseif (extension_loaded('libsodium') and is_callable('\\Sodium\\memzero')) {
             @call_user_func(\Sodium\memzero(...), $var);
@@ -385,6 +375,12 @@ class Crypt
      * @var	object
      */
     protected $hasher;
+
+    /**
+     * Legacy crypter and hasher for backwards compatibility
+     */
+    protected $legacy_crypter;
+    protected $legacy_hasher;
 
     /**
      * Crypto configuration
