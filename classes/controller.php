@@ -37,18 +37,27 @@ abstract class Controller
     }
 
     /**
-     * This method gets called before the action is called
+     * Runs before the action method is called.
+     *
+     * Override in subclasses to set up authentication checks, load shared data,
+     * or run any pre-action logic. Return value is ignored.
+     *
+     * @return void
      */
-    public function before()
+    public function before(): void
     {
     }
 
     /**
-     * This method gets called after the action is called
-     * @param \Response|string $response
-     * @return \Response
+     * Runs after the action method is called and wraps the result in a Response.
+     *
+     * If $response is not already a Response instance, it is passed to
+     * Response::forge() with the controller's default status code.
+     *
+     * @param  \Response|string|null  $response  The action's return value.
+     * @return \Response                          Always returns a Response instance.
      */
-    public function after($response)
+    public function after(\Response|string|null $response): \Response
     {
         // Make sure the $response is a Response object
         if (! $response instanceof Response) {
@@ -59,24 +68,23 @@ abstract class Controller
     }
 
     /**
-     * This method returns the named parameter requested, or all of them
-     * if no parameter is given.
+     * Returns a named route parameter, or all route parameters if no name is given.
      *
-     * @param   string  $param    The name of the parameter
-     * @param   mixed   $default  Default value
-     * @return  mixed
+     * @param  string  $param    The name of the named route parameter.
+     * @param  mixed   $default  Value to return when the parameter is not present.
+     * @return mixed             The parameter value, or $default.
      */
-    public function param($param, $default = null)
+    public function param(string $param, mixed $default = null): mixed
     {
         return $this->request->param($param, $default);
     }
 
     /**
-     * This method returns all of the named parameters.
+     * Returns all named route parameters as an associative array.
      *
-     * @return  array
+     * @return array<string, mixed>  All named parameters from the matched route.
      */
-    public function params()
+    public function params(): array
     {
         return $this->request->params();
     }

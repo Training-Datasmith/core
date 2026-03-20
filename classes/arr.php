@@ -31,6 +31,8 @@ class Arr
      * @param   mixed   $key      The dot-notated key or array of keys
      * @param   string  $default  The default value
      * @return  mixed
+     * @complexity  O(d) where d is the depth of the dot-notation key.
+     *              O(n*d) when $key is an array of n keys.
      */
     public static function get($array, $key, $default = null)
     {
@@ -311,6 +313,8 @@ class Arr
      * @param   bool    $reset   whether to reset and start over on a new array
      * @param   bool    $indexed whether to flatten only associative array's, or also indexed ones
      * @return  array
+     * @complexity  O(n) where n is the total number of leaf nodes across all nesting levels.
+     *              Uses static state internally — not safe for concurrent use without $reset = true.
      */
     public static function flatten($array, $glue = ':', $reset = true, $indexed = true)
     {
