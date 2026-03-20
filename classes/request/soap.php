@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -22,26 +21,19 @@ namespace Fuel\Core;
  * @package   Fuel\Core
  *
  */
-
 class Request_Soap extends \Request_Driver
 {
     protected static $wsdl_settings = ['wsdl', 'classmap', 'cache_wsdl'];
     protected static $non_wsdl_settings = ['location', 'uri', 'style', 'use'];
-    protected static $generic_settings = [
-        'soap_version', 'compression', 'encoding', 'trace', 'connection_timeout',
-        'typemap', 'user_agent', 'stream_context', 'features',
-    ];
-
+    protected static $generic_settings = ['soap_version', 'compression', 'encoding', 'trace', 'connection_timeout', 'typemap', 'user_agent', 'stream_context', 'features'];
     /**
      * @var  \SoapClient	holds the SoapClient object used for the connection
      */
     protected $connection;
-
     /**
      * @var  string  function to call
      */
     protected $function = '';
-
     /**
      * Extends parent constructor to detect availability of cURL
      *
@@ -52,47 +44,36 @@ class Request_Soap extends \Request_Driver
     public function __construct($resource, array $options)
     {
         // check if we have libcurl available
-        if (! class_exists('SoapClient')) {
+        if (!class_exists('SoapClient')) {
             throw new \RuntimeException('Your PHP installation doesn\'t have Soap enabled. Rebuild PHP with --enable-soap');
         }
-
-        logger(\Fuel::L_INFO, 'Creating a new SOAP Request with URI = "'.$resource.'"', __METHOD__);
-
+        logger(\Fuel::L_INFO, 'Creating a new SOAP Request with URI = "' . $resource . '"', __METHOD__);
         // If authentication is enabled use it
-        if (! empty($options['user']) and ! empty($options['pass'])) {
+        if (!empty($options['user']) and !empty($options['pass'])) {
             $this->set_option('login', $options['user']);
             $this->set_option('password', $options['pass']);
         }
-
         // WSDL-mode only options
-        if (! empty($resource)) {
+        if (!empty($resource)) {
             foreach (static::$wsdl_settings as $setting) {
                 isset($options[$setting]) and $this->set_option($setting, $options[$setting]);
             }
-        }
-        // non-WSDL-mode only options
-        else {
+        } else {
             $resource = null;
-
-            if (! isset($options['location']) or ! isset($options['uri'])) {
-                throw new \RequestException('The keys "location" and "uri" are required in non-WSDL mode.');
+            if (!isset($options['location']) or !isset($options['uri'])) {
+                throw new \Request_Exception('The keys "location" and "uri" are required in non-WSDL mode.');
             }
-
             foreach (static::$non_wsdl_settings as $setting) {
                 isset($options[$setting]) and $this->set_option($setting, $options[$setting]);
             }
         }
-
         foreach (static::$generic_settings as $setting) {
             isset($options[$setting]) and $this->set_option($setting, $options[$setting]);
         }
-
         // make it always throw exceptions
         $this->set_option('exceptions', true);
-
         parent::__construct($resource, $options);
     }
-
     /**
      * Set the function to execute on the SoapClient
      *
@@ -104,7 +85,6 @@ class Request_Soap extends \Request_Driver
         $this->function = $function;
         return $this;
     }
-
     /**
      * Fetch the connection, create if necessary
      *
@@ -113,36 +93,29 @@ class Request_Soap extends \Request_Driver
     protected function connection()
     {
         if (empty($this->connection)) {
-            $this->connection = new \SoapClient($this->resource, $this->options);
+            $this->connection = new \Soap_Client($this->resource, $this->options);
         }
-
         return $this->connection;
     }
-
     public function execute(array $additional_params = [])
     {
         if (empty($this->function)) {
-            throw new \RequestException('No function set to execute on the Soap request.');
+            throw new \Request_Exception('No function set to execute on the Soap request.');
         }
-
         $additional_params and $this->params = \Arr::merge($this->params, $additional_params);
-
         // Execute the request & and hide all output
         try {
-            $body = $this->connection()->__soapCall($this->function, $this->params, [], $this->get_headers(), $headers);
+            $body = $this->connection()->__soap_call($this->function, $this->params, [], $this->get_headers(), $headers);
             $this->response_info = $headers;
-
             $mime = $this->response_info('content_type', 'application/soap+xml');
             $this->set_response($body, $this->response_info('http_code', 200), $mime, $headers, $this->headers['Accept'] ?? null);
-
             $this->set_defaults();
             return $this;
-        } catch (\SoapFault $e) {
+        } catch (\Soap_Fault $e) {
             $this->set_defaults();
-            throw new \RequestException($e->getMessage(), $e->getCode(), $e);
+            throw new \Request_Exception($e->get_message(), $e->get_code(), $e);
         }
     }
-
     /**
      * Extends parent to reset headers as well
      *
@@ -152,10 +125,8 @@ class Request_Soap extends \Request_Driver
     {
         parent::set_defaults();
         $this->function = '';
-
         return $this;
     }
-
     /**
      * Get functions defined in WSDL
      *
@@ -164,12 +135,11 @@ class Request_Soap extends \Request_Driver
      */
     public function get_functions()
     {
-        if (! $this->resource) {
-            throw new \RequestException('SOAP get functions not available in non-WSDL mode.');
+        if (!$this->resource) {
+            throw new \Request_Exception('SOAP get functions not available in non-WSDL mode.');
         }
-        return $this->connection()->__getFunctions();
+        return $this->connection()->__get_functions();
     }
-
     /**
      * Get last request XML
      *
@@ -179,11 +149,10 @@ class Request_Soap extends \Request_Driver
     public function get_request_xml()
     {
         if (empty($this->options['trace'])) {
-            throw new \RequestException('The "trace" option must be true to be able to get the last request.');
+            throw new \Request_Exception('The "trace" option must be true to be able to get the last request.');
         }
-        return $this->connection()->__getLastRequest();
+        return $this->connection()->__get_last_request();
     }
-
     /**
      * Get last request headers
      *
@@ -193,11 +162,10 @@ class Request_Soap extends \Request_Driver
     public function get_request_headers()
     {
         if (empty($this->options['trace'])) {
-            throw new \RequestException('The "trace" option must be true to be able to get the last request headers.');
+            throw new \Request_Exception('The "trace" option must be true to be able to get the last request headers.');
         }
-        return $this->connection()->__getLastRequestHeaders();
+        return $this->connection()->__get_last_request_headers();
     }
-
     /**
      * Get last response XML
      *
@@ -207,11 +175,10 @@ class Request_Soap extends \Request_Driver
     public function get_response_xml()
     {
         if (empty($this->options['trace'])) {
-            throw new \RequestException('The "trace" option must be true to be able to get the last response.');
+            throw new \Request_Exception('The "trace" option must be true to be able to get the last response.');
         }
-        return $this->connection()->__getLastResponse();
+        return $this->connection()->__get_last_response();
     }
-
     /**
      * Get last response headers
      *
@@ -221,11 +188,10 @@ class Request_Soap extends \Request_Driver
     public function get_response_headers()
     {
         if (empty($this->options['trace'])) {
-            throw new \RequestException('The "trace" option must be true to be able to get the last response headers.');
+            throw new \Request_Exception('The "trace" option must be true to be able to get the last response headers.');
         }
-        return $this->connection()->__getLastResponseHeaders();
+        return $this->connection()->__get_last_response_headers();
     }
-
     /**
      * Get last response headers
      *
@@ -234,12 +200,11 @@ class Request_Soap extends \Request_Driver
      */
     public function get_types()
     {
-        if (! $this->resource) {
-            throw new \RequestException('SOAP get types not available in non-WSDL mode.');
+        if (!$this->resource) {
+            throw new \Request_Exception('SOAP get types not available in non-WSDL mode.');
         }
-        return $this->connection()->__getTypes();
+        return $this->connection()->__get_types();
     }
-
     /**
      * Set cookie for subsequent requests
      *
@@ -249,11 +214,8 @@ class Request_Soap extends \Request_Driver
      */
     public function set_cookie($name, $value = null): void
     {
-        is_null($value)
-            ? $this->connection()->__setCookie($name)
-            : $this->connection()->__setCookie($name, $value);
+        is_null($value) ? $this->connection()->__set_cookie($name) : $this->connection()->__set_cookie($name, $value);
     }
-
     /**
      * Change the endpoint location
      *
@@ -262,6 +224,6 @@ class Request_Soap extends \Request_Driver
      */
     public function set_location($location): void
     {
-        $this->connection()->__setLocation($location);
+        $this->connection()->__set_location($location);
     }
 }

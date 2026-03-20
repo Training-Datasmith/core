@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -22,14 +21,12 @@ namespace Fuel\Core;
  * @package   Fuel\Core
  *
  */
-
 class Request_Curl extends \Request_Driver
 {
     /**
      * @var  string  to preserve the original resource url when using get
      */
     protected $preserve_resource;
-
     /**
      * Extends parent constructor to detect availability of cURL
      *
@@ -40,22 +37,17 @@ class Request_Curl extends \Request_Driver
      */
     public function __construct($resource, array $options, $method = null)
     {
-
         // check if we have libcurl available
-        if (! function_exists('curl_init')) {
+        if (!function_exists('curl_init')) {
             throw new \RuntimeException('Your PHP installation doesn\'t have cURL enabled. Rebuild PHP with --with-curl');
         }
-
-        logger(\Fuel::L_INFO, 'Creating a new CURL Request with URI = "'.$resource.'"', __METHOD__);
-
+        logger(\Fuel::L_INFO, 'Creating a new CURL Request with URI = "' . $resource . '"', __METHOD__);
         // If authentication is enabled use it
-        if (! empty($options['auth']) and ! empty($options['user']) and ! empty($options['pass'])) {
+        if (!empty($options['auth']) and !empty($options['user']) and !empty($options['pass'])) {
             $this->http_login($options['user'], $options['pass'], $options['auth']);
         }
-
         parent::__construct($resource, $options, $method);
     }
-
     /**
      * Fetch the connection, create if necessary
      *
@@ -64,11 +56,9 @@ class Request_Curl extends \Request_Driver
     protected function connection()
     {
         // If no a protocol in URL, assume its a local link
-        ! preg_match('!^\w+://! i', $this->resource) and $this->resource = \Uri::create($this->resource);
-
+        !preg_match('!^\w+://! i', $this->resource) and $this->resource = \Uri::create($this->resource);
         return curl_init($this->resource);
     }
-
     /**
      * Authenticate to an http server
      *
@@ -81,10 +71,8 @@ class Request_Curl extends \Request_Driver
     {
         $this->set_option(CURLOPT_HTTPAUTH, constant('CURLAUTH_' . strtoupper($type)));
         $this->set_option(CURLOPT_USERPWD, $username . ':' . $password);
-
         return $this;
     }
-
     /**
      * Overwrites driver method to set options driver specifically
      *
@@ -93,72 +81,59 @@ class Request_Curl extends \Request_Driver
     public function set_options(array $options)
     {
         foreach ($options as $key => $val) {
-            if (is_string($key) and ! is_numeric($key)) {
+            if (is_string($key) and !is_numeric($key)) {
                 $key = constant(defined($key) ? $key : 'CURLOPT_' . strtoupper($key));
             }
-
             $this->options[$key] = $val;
         }
-
         return $this;
     }
-
     public function execute(array $additional_params = [])
     {
         // Reset response
         $this->response = null;
         $this->response_info = [];
-
         // Set two default options, and merge any extra ones in
-        if (! isset($this->options[CURLOPT_TIMEOUT])) {
+        if (!isset($this->options[CURLOPT_TIMEOUT])) {
             $this->options[CURLOPT_TIMEOUT] = 30;
         }
-        if (! isset($this->options[CURLOPT_RETURNTRANSFER])) {
+        if (!isset($this->options[CURLOPT_RETURNTRANSFER])) {
             $this->options[CURLOPT_RETURNTRANSFER] = true;
         }
-        if (! isset($this->options[CURLOPT_FAILONERROR])) {
+        if (!isset($this->options[CURLOPT_FAILONERROR])) {
             $this->options[CURLOPT_FAILONERROR] = false;
         }
-
         // Only set follow location if not running securely
-        if (! ini_get('safe_mode') && ! ini_get('open_basedir')) {
+        if (!ini_get('safe_mode') && !ini_get('open_basedir')) {
             // Ok, follow location is not set already so lets set it to true
-            if (! isset($this->options[CURLOPT_FOLLOWLOCATION])) {
+            if (!isset($this->options[CURLOPT_FOLLOWLOCATION])) {
                 $this->options[CURLOPT_FOLLOWLOCATION] = true;
             }
         }
-
-        if (! empty($this->headers)) {
+        if (!empty($this->headers)) {
             $this->set_option(CURLOPT_HTTPHEADER, $this->get_headers());
         }
-
         $additional_params and $this->params = \Arr::merge($this->params, $additional_params);
         $this->method and $this->options[CURLOPT_CUSTOMREQUEST] = $this->method;
-
-        if (! empty($this->method)) {
+        if (!empty($this->method)) {
             $this->options[CURLOPT_CUSTOMREQUEST] = $this->method;
-            $this->{'method_'.strtolower((string) $this->method)}();
+            $this->{'method_' . strtolower((string) $this->method)}();
         } else {
             $this->method_get();
         }
-
         $connection = $this->connection();
-
         curl_setopt_array($connection, $this->options);
-
         // Execute the request & and hide all output
         $body = curl_exec($connection);
         $this->response_info = curl_getinfo($connection);
         $this->response_info['response'] = $body;
         $mime = $this->response_info('content_type', 'text/plain');
-
         // Was header data requested?
         $headers = [];
         if (isset($this->options[CURLOPT_HEADER]) and $this->options[CURLOPT_HEADER]) {
             // Split the headers from the body
             $raw_headers = explode("\n", str_replace("\r", '', substr($body, 0, $this->response_info['header_size'])));
             $body = $this->response_info['header_size'] >= strlen($body) ? '' : substr($body, $this->response_info['header_size']);
-
             // Convert the header data
             foreach ($raw_headers as $header) {
                 $header = explode(':', $header, 2);
@@ -167,25 +142,22 @@ class Request_Curl extends \Request_Driver
                 }
             }
         }
-
         $this->set_response($body, $this->response_info('http_code', 200), $mime, $headers, $this->headers['Accept'] ?? null);
         // Request failed
         if ($this->response_info['response'] === false) {
             $this->set_defaults();
-            throw new \RequestException(curl_error($connection), curl_errno($connection));
+            throw new \Request_Exception(curl_error($connection), curl_errno($connection));
         }
-
         // Request failed
         if ($this->response->status >= 400) {
             $this->set_defaults();
-            throw new \RequestStatusException($body, $this->response->status);
+            throw new \Request_Status_Exception($body, $this->response->status);
         }
         // Request successful
         curl_close($connection);
         $this->set_defaults();
         return $this;
     }
-
     /**
      * Extends parent to reset headers as well
      *
@@ -195,15 +167,12 @@ class Request_Curl extends \Request_Driver
     {
         parent::set_defaults();
         $this->headers = [];
-
-        if (! empty($this->preserve_resource)) {
+        if (!empty($this->preserve_resource)) {
             $this->resource = $this->preserve_resource;
             $this->preserve_resource = null;
         }
-
         return $this;
     }
-
     /**
      * GET request
      *
@@ -214,7 +183,6 @@ class Request_Curl extends \Request_Driver
         $this->preserve_resource = $this->resource;
         $this->resource = \Uri::create($this->resource, [], $this->params);
     }
-
     /**
      * HEAD request
      *
@@ -223,12 +191,9 @@ class Request_Curl extends \Request_Driver
     protected function method_head()
     {
         $this->method_get();
-
         $this->set_option(CURLOPT_NOBODY, true);
         $this->set_option(CURLOPT_HEADER, true);
-
     }
-
     /**
      * POST request
      *
@@ -237,11 +202,9 @@ class Request_Curl extends \Request_Driver
     protected function method_post()
     {
         $params = is_array($this->params) ? $this->encode($this->params) : $this->params;
-
         $this->set_option(CURLOPT_POST, true);
         $this->set_option(CURLOPT_POSTFIELDS, $params);
     }
-
     /**
      * PUT request
      *
@@ -250,13 +213,10 @@ class Request_Curl extends \Request_Driver
     protected function method_put()
     {
         $params = is_array($this->params) ? $this->encode($this->params) : $this->params;
-
         $this->set_option(CURLOPT_POSTFIELDS, $params);
-
         // Override method, I think this makes $_POST DELETE data but... we'll see eh?
         $this->set_header('X-HTTP-Method-Override', 'PUT');
     }
-
     /**
      * DELETE request
      *
@@ -265,13 +225,10 @@ class Request_Curl extends \Request_Driver
     protected function method_delete()
     {
         $params = is_array($this->params) ? $this->encode($this->params) : $this->params;
-
         $this->set_option(CURLOPT_POSTFIELDS, $params);
-
         // Override method, I think this makes $_POST DELETE data but... we'll see eh?
         $this->set_header('X-HTTP-Method-Override', 'DELETE');
     }
-
     /**
      * Function to encode input array depending on the content type
      *
@@ -281,10 +238,8 @@ class Request_Curl extends \Request_Driver
     {
         // Detect the request content type, default to 'text/plain'
         $content_type = $this->headers['Content-Type'] ?? $this->response_info('content_type', 'text/plain');
-
         // Get the correct format for the current content type
         $format = \Arr::key_exists(static::$auto_detect_formats, $content_type) ? static::$auto_detect_formats[$content_type] : null;
-
         switch ($format) {
             // Format as XML
             case 'xml':
@@ -297,23 +252,18 @@ class Request_Curl extends \Request_Driver
                     return \Format::forge($input[$base_node])->to_xml(null, null, $base_node);
                 }
                 return \Format::forge($input)->to_xml();
-
-                // Format as JSON
+            // Format as JSON
             case 'json':
                 return \Format::forge($input)->to_json();
-
-                // Format as PHP Serialized Array
+            // Format as PHP Serialized Array
             case 'serialize':
                 return \Format::forge($input)->to_serialize();
-
-                // Format as PHP Array
+            // Format as PHP Array
             case 'php':
                 return \Format::forge($input)->to_php();
-
-                // Format as CSV
+            // Format as CSV
             case 'csv':
                 return \Format::forge($input)->to_csv();
-
             default:
                 if (count($input) === 1 and key($input) === 'form-data') {
                     // multipart/form-data

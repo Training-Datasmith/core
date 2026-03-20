@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -19,10 +18,9 @@ namespace Fuel\Core;
  *
  * @package     Core
  */
-class ModuleNotFoundException extends \FuelException
+class Module_Not_Found_Exception extends \Fuel_Exception
 {
 }
-
 /**
  * Handles all the loading, unloading and management of modules.
  *
@@ -34,7 +32,6 @@ class Module
      * @var  array  $modules  Holds all the loaded module information.
      */
     protected static $modules = [];
-
     /**
      * Loads the given module.  If a path is not given, then 'module_paths' is used.
      * It also accepts an array of modules as the first parameter.
@@ -57,52 +54,39 @@ class Module
             }
             return $result;
         }
-
         if (static::loaded($module)) {
             return false;
         }
-
         // if no path is given, try to locate the module
         if ($path === null) {
             $paths = \Config::get('module_paths', []);
-
-            if (! empty($paths)) {
+            if (!empty($paths)) {
                 foreach ($paths as $modpath) {
-                    if (is_dir($path = $modpath.strtolower($module).DS)) {
+                    if (is_dir($path = $modpath . strtolower($module) . DS)) {
                         break;
                     }
                 }
             }
-
         } else {
             // make sure it's terminated properly
-            $path = rtrim($path, DS).DS;
+            $path = rtrim($path, DS) . DS;
         }
-
         // make sure the path exists
-        if (! is_dir($path)) {
-            throw new \ModuleNotFoundException("Module '$module' could not be found at '".\Fuel::clean_path($path)."'");
+        if (!is_dir($path)) {
+            throw new \Module_Not_Found_Exception("Module '{$module}' could not be found at '" . \Fuel::clean_path($path) . "'");
         }
-
         // determine the module namespace
-        $ns = '\\'.ucfirst($module);
-
+        $ns = '\\' . ucfirst($module);
         // add the namespace to the autoloader
-        \Autoloader::add_namespaces([
-            $ns  => $path.'classes'.DS,
-        ], true);
-
+        \Autoloader::add_namespaces([$ns => $path . 'classes' . DS], true);
         // load module routes if required
-        if (\Config::get('routing.module_routes', false) and $routes = Config::load($module.'::routes', 'routes')) {
+        if (\Config::get('routing.module_routes', false) and $routes = Config::load($module . '::routes', 'routes')) {
             \Router::add($routes);
         }
-
         // mark the module as loaded
         static::$modules[$module] = $path;
-
         return true;
     }
-
     /**
      * Unloads a module from the stack.
      *
@@ -113,31 +97,25 @@ class Module
         // we can only unload a loaded module
         if (isset(static::$modules[$module])) {
             $path = static::$modules[$module];
-
             if (is_file($path .= 'config/routes.php')) {
                 // load and add the module routes
                 $module_routes = \Fuel::load($path);
-
                 $route_names = [];
                 foreach ($module_routes as $name => $_route) {
                     if ($name === '_root_') {
                         $name = $module;
-                    } elseif (!str_starts_with($name, $module.'/') and $name != $module and $name !== '_404_') {
-                        $name = $module.'/'.$name;
+                    } elseif (!str_starts_with($name, $module . '/') and $name != $module and $name !== '_404_') {
+                        $name = $module . '/' . $name;
                     }
-
                     $route_names[] = $name;
-                };
-
+                }
                 // delete the defined module routes
                 \Router::delete($route_names);
             }
         }
-
         // delete this module
         unset(static::$modules[$module]);
     }
-
     /**
      * Checks if the given module is loaded, if no module is given then
      * all loaded modules are returned.
@@ -150,10 +128,8 @@ class Module
         if ($module === null) {
             return static::$modules;
         }
-
         return array_key_exists($module, static::$modules);
     }
-
     /**
      * Checks if the given module exists.
      *
@@ -168,11 +144,10 @@ class Module
         $paths = \Config::get('module_paths', []);
         $module = strtolower($module);
         foreach ($paths as $path) {
-            if (is_dir($path.$module)) {
-                return $path.$module.DS;
+            if (is_dir($path . $module)) {
+                return $path . $module . DS;
             }
         }
-
         return false;
     }
 }

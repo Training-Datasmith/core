@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -23,7 +22,6 @@ class Config_Yml extends \Config_File
      * @var  string  the extension used by this yaml file parser
      */
     protected $ext = '.yml';
-
     /**
      * Loads in the given file and parses it.
      *
@@ -35,7 +33,6 @@ class Config_Yml extends \Config_File
         $contents = $this->parse_vars(file_get_contents($file));
         return \Format::forge($contents, 'yaml')->to_array();
     }
-
     /**
      * Returns the formatted config file contents.
      *
@@ -44,11 +41,10 @@ class Config_Yml extends \Config_File
      */
     protected function export_format($contents)
     {
-        if (! function_exists('spyc_load')) {
+        if (!function_exists('spyc_load')) {
             import('spyc/spyc', 'vendor');
         }
-
         $this->prep_vars($contents);
-        return \Spyc::YAMLDump($contents);
+        return \Spyc::yaml_dump($contents);
     }
 }

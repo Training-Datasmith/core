@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -23,7 +22,6 @@ class Config_Ini extends \Config_File
      * @var  string  the extension used by this ini file parser
      */
     protected $ext = '.ini';
-
     /**
      * Loads in the given file and parses it.
      *
@@ -35,7 +33,6 @@ class Config_Ini extends \Config_File
         $contents = $this->parse_vars(file_get_contents($file));
         return parse_ini_string($contents, true);
     }
-
     /**
      * Returns the formatted config file contents.
      *
@@ -45,6 +42,6 @@ class Config_Ini extends \Config_File
      */
     protected function export_format($contents)
     {
-        throw new \ConfigException('Saving config to ini is not supported at this time');
+        throw new \Config_Exception('Saving config to ini is not supported at this time');
     }
 }

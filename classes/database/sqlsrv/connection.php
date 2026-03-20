@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -13,7 +13,6 @@ declare(strict_types=1);
  * @copyright  2008 - 2009 Kohana Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 class Database_Sqlsrv_Connection extends \Database_PDO_Connection
@@ -28,13 +27,11 @@ class Database_Sqlsrv_Connection extends \Database_PDO_Connection
     protected function __construct($name, array $config)
     {
         // this driver only works on Windows
-        if (! is_windows()) {
+        if (!is_windows()) {
             throw new \Database_Exception('The "SQLSRV" database driver works only on Windows. On *nix, use the "DBLib" driver instead.');
         }
-
         parent::__construct($name, $config);
     }
-
     /**
      * List tables
      *
@@ -45,22 +42,17 @@ class Database_Sqlsrv_Connection extends \Database_PDO_Connection
     public function list_tables($like = null)
     {
         $query = "SELECT name FROM sys.objects WHERE type = 'U' AND name != 'sysdiagrams'";
-
         if (is_string($like)) {
-            $query .= ' AND name LIKE '.$this->quote($like);
+            $query .= ' AND name LIKE ' . $this->quote($like);
         }
-
         // Find all table names
         $result = $this->query(\DB::SELECT, $query, false);
-
         $tables = [];
         foreach ($result as $row) {
             $tables[] = reset($row);
         }
-
         return $tables;
     }
-
     /**
      * List table columns
      *
@@ -71,21 +63,19 @@ class Database_Sqlsrv_Connection extends \Database_PDO_Connection
     public function list_columns($table, $like = null)
     {
         $query = "SELECT * FROM Sys.Columns WHERE id = object_id('" . $this->quote_table($table) . "')";
-
         if (is_string($like)) {
             // Search for column names
-            $query .= ' AND name LIKE '.$this->quote($like);
+            $query .= ' AND name LIKE ' . $this->quote($like);
         }
-
         $count = 0;
         $columns = [];
         foreach ($result as $row) {
             [$type, $length] = $this->_parse_type($row['Type']);
             $column = $this->datatype($type);
-            $column['name']             = $row['Field'];
-            $column['default']          = $row['Default'];
-            $column['data_type']        = $type;
-            $column['null']             = ($row['Null'] == 'YES');
+            $column['name'] = $row['Field'];
+            $column['default'] = $row['Default'];
+            $column['data_type'] = $type;
+            $column['null'] = $row['Null'] == 'YES';
             $column['ordinal_position'] = ++$count;
             switch ($column['type']) {
                 case 'float':
@@ -107,7 +97,7 @@ class Database_Sqlsrv_Connection extends \Database_PDO_Connection
                         case 'char':
                         case 'varchar':
                             $column['character_maximum_length'] = $length;
-                            // no break
+                        // no break
                         case 'text':
                         case 'tinytext':
                         case 'mediumtext':
@@ -122,15 +112,14 @@ class Database_Sqlsrv_Connection extends \Database_PDO_Connection
                     }
                     break;
             }
-            $column['comment']      = $row['Comment'];
-            $column['extra']        = $row['Extra'];
-            $column['key']          = $row['Key'];
-            $column['privileges']   = $row['Privileges'];
+            $column['comment'] = $row['Comment'];
+            $column['extra'] = $row['Extra'];
+            $column['key'] = $row['Key'];
+            $column['privileges'] = $row['Privileges'];
             $columns[$row['Field']] = $column;
         }
         return $columns;
     }
-
     /**
      * Set the charset
      *
@@ -140,17 +129,16 @@ class Database_Sqlsrv_Connection extends \Database_PDO_Connection
     {
         if ($charset == 'utf8' or $charset = 'utf-8') {
             // use utf8 encoding
-            $this->_connection->setAttribute(\PDO::SQLSRV_ATTR_ENCODING, \PDO::SQLSRV_ENCODING_UTF8);
+            $this->_connection->set_attribute(\PDO::SQLSRV_ATTR_ENCODING, \PDO::SQLSRV_ENCODING_UTF8);
         } elseif ($charset == 'system') {
             // use system encoding
-            $this->_connection->setAttribute(\PDO::SQLSRV_ATTR_ENCODING, \PDO::SQLSRV_ENCODING_SYSTEM);
+            $this->_connection->set_attribute(\PDO::SQLSRV_ATTR_ENCODING, \PDO::SQLSRV_ENCODING_SYSTEM);
         } elseif (is_numeric($charset)) {
             // charset code passed directly
-            $this->_connection->setAttribute(\PDO::SQLSRV_ATTR_ENCODING, $charset);
+            $this->_connection->set_attribute(\PDO::SQLSRV_ATTR_ENCODING, $charset);
         } else {
             // unknown charset, use the default encoding
-            $this->_connection->setAttribute(\PDO::SQLSRV_ATTR_ENCODING, \PDO::SQLSRV_ENCODING_DEFAULT);
+            $this->_connection->set_attribute(\PDO::SQLSRV_ATTR_ENCODING, \PDO::SQLSRV_ENCODING_DEFAULT);
         }
     }
-
 }

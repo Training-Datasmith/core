@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,20 +11,17 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 class Image
 {
     protected static $_instance;
-
     /**
      * Holds the config until an instance is initiated.
      *
      * @var  array   Config options to be passed when the instance is created.
      */
     protected static $_config = [];
-
     /**
      * Initialize by loading config
      */
@@ -32,7 +29,6 @@ class Image
     {
         \Config::load('image', true);
     }
-
     /**
      * Creates a new instance for static use of the class.
      *
@@ -45,7 +41,6 @@ class Image
         }
         return static::$_instance;
     }
-
     /**
      * Creates a new instance of the image driver
      *
@@ -57,13 +52,11 @@ class Image
     public static function forge($config = [], $filename = null): object
     {
         !is_array($config) and $config = [];
-
         $config = array_merge(\Config::get('image', []), $config);
-
-        $protocol = ucfirst(! empty($config['driver']) ? $config['driver'] : 'gd');
-        $class = 'Image_'.$protocol;
-        if ($protocol == 'Driver' || ! class_exists($class)) {
-            throw new \FuelException('Driver '.$protocol.' is not a valid driver for image manipulation.');
+        $protocol = ucfirst(!empty($config['driver']) ? $config['driver'] : 'gd');
+        $class = 'Image_' . $protocol;
+        if ($protocol == 'Driver' || !class_exists($class)) {
+            throw new \Fuel_Exception('Driver ' . $protocol . ' is not a valid driver for image manipulation.');
         }
         $return = new $class($config);
         if ($filename !== null) {
@@ -71,7 +64,6 @@ class Image
         }
         return $return;
     }
-
     /**
      * Used to set configuration options.
      *
@@ -98,7 +90,6 @@ class Image
         }
         return static::instance()->config($index, $value);
     }
-
     /**
      * Loads the image and checks if its compatible.
      *
@@ -111,7 +102,6 @@ class Image
     {
         return static::instance()->load($filename, $return_data, $force_extension);
     }
-
     /**
      * Crops the image using coordinates or percentages.
      *
@@ -127,7 +117,6 @@ class Image
     {
         return static::instance()->crop($x1, $y1, $x2, $y2);
     }
-
     /**
      * Resize the image. If the width or height is null, it will resize retaining the original aspect ratio.
      *
@@ -141,7 +130,6 @@ class Image
     {
         return static::instance()->resize($width, $height, $keepar, $pad);
     }
-
     /**
      * Resize the image. If the width or height is null, it will resize retaining the original aspect ratio.
      *
@@ -153,7 +141,6 @@ class Image
     {
         return static::instance()->crop_resize($width, $height);
     }
-
     /**
      * Rotates the image
      *
@@ -164,7 +151,6 @@ class Image
     {
         return static::instance()->rotate($degrees);
     }
-
     /**
      * Creates a vertical / horizontal or both mirror image.
      *
@@ -175,7 +161,6 @@ class Image
     {
         return static::instance()->flip($direction);
     }
-
     /**
      * Adds a watermark to the image.
      *
@@ -184,11 +169,10 @@ class Image
      * @param   integer|array  $padding   The spacing between the edge of the image, or an array with seperate horizontal and vertical padding
      * @return  Image_Driver
      */
-    public static function watermark($filename, $position, $padding = [5,5])
+    public static function watermark($filename, $position, $padding = [5, 5])
     {
         return static::instance()->watermark($filename, $position, $padding);
     }
-
     /**
      * Adds a border to the image.
      *
@@ -200,7 +184,6 @@ class Image
     {
         return static::instance()->border($size, $color);
     }
-
     /**
      * Masks the image using the alpha channel of the image input.
      *
@@ -211,7 +194,6 @@ class Image
     {
         return static::instance()->mask($maskimage);
     }
-
     /**
      * Adds rounded corners to the image.
      *
@@ -224,7 +206,6 @@ class Image
     {
         return static::instance()->rounded($radius, $sides, $antialias);
     }
-
     /**
      * Turns the image into a grayscale version
      *
@@ -234,7 +215,6 @@ class Image
     {
         return static::instance()->grayscale();
     }
-
     /**
      * Saves the image, and optionally attempts to set permissions
      *
@@ -246,7 +226,6 @@ class Image
     {
         return static::instance()->save($filename, $permissions);
     }
-
     /**
      * Saves the image, and optionally attempts to set permissions
      *
@@ -259,7 +238,6 @@ class Image
     {
         return static::instance()->save_pa($prepend, $append, $permissions);
     }
-
     /**
      * Outputs the file directly to the user.
      *
@@ -270,7 +248,6 @@ class Image
     {
         return static::instance()->output($filetype);
     }
-
     /**
      * Returns  sizes for the currently loaded image, or the image given in the $filename.
      *
@@ -281,7 +258,6 @@ class Image
     {
         return static::instance()->sizes($filename);
     }
-
     /**
      * Reloads the image.
      *
@@ -291,7 +267,6 @@ class Image
     {
         return static::instance()->reload();
     }
-
     /**
      * Get the extension of the file.
      *

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -12,10 +12,9 @@ declare(strict_types=1);
  * @copyright  2008 - 2009 Kohana Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
-class Database_MySQLi_Result extends \Database_Result
+class Database_my_Sq_Li_result extends \Database_Result
 {
     /**
      * Sets the total number of rows and stores the result locally.
@@ -27,21 +26,18 @@ class Database_MySQLi_Result extends \Database_Result
     public function __construct($result, $sql, $as_object)
     {
         parent::__construct($result, $sql, $as_object);
-
         // Find the number of rows in the result
         $this->_total_rows = $result->num_rows;
     }
-
     /**
      * Result destruction cleans up all open result sets.
      */
     public function __destruct()
     {
-        if ($this->_result instanceof \MySQLi_Result) {
+        if ($this->_result instanceof \My_Sq_Li_result) {
             $this->_result->free();
         }
     }
-
     /**
      * Get a cached database result from the current result iterator.
      *
@@ -51,13 +47,11 @@ class Database_MySQLi_Result extends \Database_Result
      */
     public function cached()
     {
-        return new \Database_MySQLi_Cached($this->_result, $this->_query, $this->_as_object);
+        return new \Database_my_Sq_Li_cached($this->_result, $this->_query, $this->_as_object);
     }
-
     /**************************
      * Iterable methods
      *************************/
-
     /**
      * Implements [Iterator::next], returns the next row.
      *
@@ -73,13 +67,10 @@ class Database_MySQLi_Result extends \Database_Result
         } else {
             $this->_row = $this->_result->fetch_object();
         }
-
         // sanitize the data if needed
         if ($this->_sanitization_enabled) {
             $this->_row = \Security::clean($result, null, 'security.output_filter');
         }
-
         return $this->_row;
     }
-
 }

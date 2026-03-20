@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -26,13 +25,9 @@ namespace Fuel\Core;
 class Debug
 {
     public static $max_nesting_level = 5;
-
     public static $js_toggle_open = false;
-
     protected static $js_displayed = false;
-
     protected static $files = [];
-
     /**
      * Quick and nice way to output a mixed variable to the browser
      *
@@ -48,7 +43,6 @@ class Debug
             }
         } else {
             $backtrace = debug_backtrace();
-
             // locate the first file entry that isn't this class itself
             foreach ($backtrace as $stack => $trace) {
                 if (isset($trace['file'])) {
@@ -60,37 +54,30 @@ class Debug
                         $callee = $trace;
                         $label = 'Debug';
                     }
-
                     $callee['file'] = \Fuel::clean_path($callee['file']);
-
                     break;
                 }
             }
-
             $arguments = func_get_args();
-
-            if (! static::$js_displayed) {
+            if (!static::$js_displayed) {
                 echo <<<JS
-	<script type="text/javascript">function fuel_debug_toggle(a){if(document.getElementById){if(document.getElementById(a).style.display=="none"){document.getElementById(a).style.display="block"}else{document.getElementById(a).style.display="none"}}else{if(document.layers){if(document.id.display=="none"){document.id.display="block"}else{document.id.display="none"}}else{if(document.all.id.style.display=="none"){document.all.id.style.display="block"}else{document.all.id.style.display="none"}}}};</script>
-JS;
+                \t<script type="text/javascript">function fuel_debug_toggle(a){if(document.getElementById){if(document.getElementById(a).style.display=="none"){document.getElementById(a).style.display="block"}else{document.getElementById(a).style.display="none"}}else{if(document.layers){if(document.id.display=="none"){document.id.display="block"}else{document.id.display="none"}}else{if(document.all.id.style.display=="none"){document.all.id.style.display="block"}else{document.all.id.style.display="none"}}}};</script>
+                JS;
                 static::$js_displayed = true;
             }
             echo '<div class="fuelphp-dump" style="font-size: 13px;background: #EEE !important; border:1px solid #666; color: #000 !important; padding:10px;">';
-            echo '<h1 style="border-bottom: 1px solid #CCC; padding: 0 0 5px 0; margin: 0 0 5px 0; font: bold 120% sans-serif;">'.$callee['file'].' @ line: '.$callee['line'].'</h1>';
+            echo '<h1 style="border-bottom: 1px solid #CCC; padding: 0 0 5px 0; margin: 0 0 5px 0; font: bold 120% sans-serif;">' . $callee['file'] . ' @ line: ' . $callee['line'] . '</h1>';
             echo '<pre style="overflow:auto;font-size:100%;">';
-
             $count = count($arguments);
             for ($i = 1; $i <= $count; $i++) {
-                echo '<strong>Variable #'.$i.':</strong>'.PHP_EOL;
+                echo '<strong>Variable #' . $i . ':</strong>' . PHP_EOL;
                 echo static::format('', $arguments[$i - 1]);
-                echo PHP_EOL.PHP_EOL;
+                echo PHP_EOL . PHP_EOL;
             }
-
             echo '</pre>';
             echo '</div>';
         }
     }
-
     /**
      * Quick and nice way to output a mixed variable to the browser
      *
@@ -100,7 +87,6 @@ JS;
     public static function inspect(): void
     {
         $backtrace = debug_backtrace();
-
         // If being called from within, show the file above in the backtrack
         if (str_contains($backtrace[0]['file'], 'core/classes/debug.php')) {
             $callee = $backtrace[1];
@@ -109,32 +95,27 @@ JS;
             $callee = $backtrace[0];
             $label = 'Debug';
         }
-
         $arguments = func_get_args();
         $total_arguments = count($arguments);
-
         $callee['file'] = \Fuel::clean_path($callee['file']);
-
-        if (! static::$js_displayed) {
+        if (!static::$js_displayed) {
             echo <<<JS
-<script type="text/javascript">function fuel_debug_toggle(a){if(document.getElementById){if(document.getElementById(a).style.display=="none"){document.getElementById(a).style.display="block"}else{document.getElementById(a).style.display="none"}}else{if(document.layers){if(document.id.display=="none"){document.id.display="block"}else{document.id.display="none"}}else{if(document.all.id.style.display=="none"){document.all.id.style.display="block"}else{document.all.id.style.display="none"}}}};</script>
-JS;
+            <script type="text/javascript">function fuel_debug_toggle(a){if(document.getElementById){if(document.getElementById(a).style.display=="none"){document.getElementById(a).style.display="block"}else{document.getElementById(a).style.display="none"}}else{if(document.layers){if(document.id.display=="none"){document.id.display="block"}else{document.id.display="none"}}else{if(document.all.id.style.display=="none"){document.all.id.style.display="block"}else{document.all.id.style.display="none"}}}};</script>
+            JS;
             static::$js_displayed = true;
         }
         echo '<div class="fuelphp-inspect" style="font-size: 13px;background: #EEE !important; border:1px solid #666; color: #000 !important; padding:10px;">';
-        echo '<h1 style="border-bottom: 1px solid #CCC; padding: 0 0 5px 0; margin: 0 0 5px 0; font: bold 120% sans-serif;">'.$callee['file'].' @ line: '.$callee['line'].'</h1>';
+        echo '<h1 style="border-bottom: 1px solid #CCC; padding: 0 0 5px 0; margin: 0 0 5px 0; font: bold 120% sans-serif;">' . $callee['file'] . ' @ line: ' . $callee['line'] . '</h1>';
         echo '<pre style="overflow:auto;font-size:100%;">';
         $i = 0;
         foreach ($arguments as $argument) {
-            echo '<strong>'.$label.' #'.(++$i).' of '.$total_arguments.'</strong>:<br />';
+            echo '<strong>' . $label . ' #' . ++$i . ' of ' . $total_arguments . '</strong>:<br />';
             echo static::format('...', $argument);
             echo '<br />';
         }
-
         echo '</pre>';
         echo '</div>';
     }
-
     /**
      * Formats the given $var's output in a nice looking, Foldable interface.
      *
@@ -149,48 +130,45 @@ JS;
     {
         $return = str_repeat($indent_char, $level);
         if (is_array($var)) {
-            $id = 'fuel_debug_'.mt_rand();
-            $return .= "<i>{$scope}</i> <strong>".htmlentities($name).'</strong>';
-            $return .=  ' (Array, '.count($var).' element'.(count($var) != 1 ? 's' : '').')';
+            $id = 'fuel_debug_' . mt_rand();
+            $return .= "<i>{$scope}</i> <strong>" . htmlentities($name) . '</strong>';
+            $return .= ' (Array, ' . count($var) . ' element' . (count($var) != 1 ? 's' : '') . ')';
             if (count($var) > 0 and static::$max_nesting_level > $level) {
-                $return .= " <a href=\"javascript:fuel_debug_toggle('$id');\" title=\"Click to ".(static::$js_toggle_open ? 'close' : 'open')."\">&crarr;</a>\n";
+                $return .= " <a href=\"javascript:fuel_debug_toggle('{$id}');\" title=\"Click to " . (static::$js_toggle_open ? 'close' : 'open') . "\">&crarr;</a>\n";
             } else {
                 $return .= "\n";
             }
-
             if (static::$max_nesting_level <= $level) {
-                $return .= str_repeat($indent_char, $level + 1)."...\n";
+                $return .= str_repeat($indent_char, $level + 1) . "...\n";
             } else {
                 $sub_return = '';
                 foreach ($var as $key => $val) {
                     $sub_return .= static::format($key, $val, $level + 1);
                 }
                 if (count($var) > 0) {
-                    $return .= "<span id=\"$id\" style=\"display: ".(static::$js_toggle_open ? 'block' : 'none').";\">$sub_return</span>";
+                    $return .= "<span id=\"{$id}\" style=\"display: " . (static::$js_toggle_open ? 'block' : 'none') . ";\">{$sub_return}</span>";
                 } else {
                     $return .= $sub_return;
                 }
             }
-
         } elseif (is_string($var)) {
-            $return .= "<i>{$scope}</i> <strong>".htmlentities($name).'</strong> (String): <span style="color:#E00000;">"'.\Security::htmlentities($var).'"</span> ('.strlen($var)." characters)\n";
+            $return .= "<i>{$scope}</i> <strong>" . htmlentities($name) . '</strong> (String): <span style="color:#E00000;">"' . \Security::htmlentities($var) . '"</span> (' . strlen($var) . " characters)\n";
         } elseif (is_float($var)) {
-            $return .= "<i>{$scope}</i> <strong>".htmlentities($name)."</strong> (Float): {$var}\n";
+            $return .= "<i>{$scope}</i> <strong>" . htmlentities($name) . "</strong> (Float): {$var}\n";
         } elseif (is_long($var)) {
-            $return .= "<i>{$scope}</i> <strong>".htmlentities($name)."</strong> (Integer): {$var}\n";
+            $return .= "<i>{$scope}</i> <strong>" . htmlentities($name) . "</strong> (Integer): {$var}\n";
         } elseif (is_null($var)) {
-            $return .= "<i>{$scope}</i> <strong>".htmlentities($name)."</strong> : null\n";
+            $return .= "<i>{$scope}</i> <strong>" . htmlentities($name) . "</strong> : null\n";
         } elseif (is_bool($var)) {
-            $return .= "<i>{$scope}</i> <strong>".htmlentities($name).'</strong> (Boolean): '.($var ? 'true' : 'false')."\n";
+            $return .= "<i>{$scope}</i> <strong>" . htmlentities($name) . '</strong> (Boolean): ' . ($var ? 'true' : 'false') . "\n";
         } elseif (is_double($var)) {
-            $return .= "<i>{$scope}</i> <strong>".htmlentities($name)."</strong> (Double): {$var}\n";
+            $return .= "<i>{$scope}</i> <strong>" . htmlentities($name) . "</strong> (Double): {$var}\n";
         } elseif (is_object($var)) {
             // dirty hack to get the object id
             ob_start();
             var_dump($var);
             $contents = ob_get_contents();
             ob_end_clean();
-
             // process it based on the xdebug presence and configuration
             if (extension_loaded('xdebug') and ini_get('xdebug.overload_var_dump')) {
                 if (ini_get('html_errors')) {
@@ -201,44 +179,40 @@ JS;
             } else {
                 preg_match('~object\((.*?)#(\d+)(.*)~', $contents, $matches);
             }
-
-            $id = 'fuel_debug_'.mt_rand();
-            $rvar = new \ReflectionObject($var);
-            $vars = $rvar->getProperties();
-            $return .= "<i>{$scope}</i> <strong>{$name}</strong> (Object #".$matches[2].'): '.$var::class;
+            $id = 'fuel_debug_' . mt_rand();
+            $rvar = new \Reflection_Object($var);
+            $vars = $rvar->get_properties();
+            $return .= "<i>{$scope}</i> <strong>{$name}</strong> (Object #" . $matches[2] . '): ' . $var::class;
             if (count($vars) > 0 and static::$max_nesting_level > $level) {
-                $return .= " <a href=\"javascript:fuel_debug_toggle('$id');\" title=\"Click to ".(static::$js_toggle_open ? 'close' : 'open')."\">&crarr;</a>\n";
+                $return .= " <a href=\"javascript:fuel_debug_toggle('{$id}');\" title=\"Click to " . (static::$js_toggle_open ? 'close' : 'open') . "\">&crarr;</a>\n";
             }
             $return .= "\n";
-
             $sub_return = '';
-            foreach ($rvar->getProperties() as $prop) {
-                $prop->isPublic() or $prop->setAccessible(true);
-                if ($prop->isPrivate()) {
+            foreach ($rvar->get_properties() as $prop) {
+                $prop->is_public() or $prop->set_accessible(true);
+                if ($prop->is_private()) {
                     $scope = 'private';
-                } elseif ($prop->isProtected()) {
+                } elseif ($prop->is_protected()) {
                     $scope = 'protected';
                 } else {
                     $scope = 'public';
                 }
                 if (static::$max_nesting_level <= $level) {
-                    $sub_return .= str_repeat($indent_char, $level + 1)."...\n";
+                    $sub_return .= str_repeat($indent_char, $level + 1) . "...\n";
                 } else {
-                    $sub_return .= static::format($prop->name, $prop->getValue($var), $level + 1, $indent_char, $scope);
+                    $sub_return .= static::format($prop->name, $prop->get_value($var), $level + 1, $indent_char, $scope);
                 }
             }
-
             if (count($vars) > 0) {
-                $return .= "<span id=\"$id\" style=\"display: ".(static::$js_toggle_open ? 'block' : 'none').";\">$sub_return</span>";
+                $return .= "<span id=\"{$id}\" style=\"display: " . (static::$js_toggle_open ? 'block' : 'none') . ";\">{$sub_return}</span>";
             } else {
                 $return .= $sub_return;
             }
         } else {
-            $return .= "<i>{$scope}</i> <strong>".htmlentities($name)."</strong>: {$var}\n";
+            $return .= "<i>{$scope}</i> <strong>" . htmlentities($name) . "</strong>: {$var}\n";
         }
         return $return;
     }
-
     /**
      * Returns the debug lines from the specified file
      *
@@ -255,37 +229,29 @@ JS;
         if (str_contains($filepath, 'eval()\'d code') or str_contains($filepath, 'runtime-created function')) {
             return '';
         }
-
         // We cache the entire file to reduce disk IO for multiple errors
-        if (! isset(static::$files[$filepath])) {
+        if (!isset(static::$files[$filepath])) {
             static::$files[$filepath] = file($filepath, FILE_IGNORE_NEW_LINES);
             array_unshift(static::$files[$filepath], '');
         }
-
         $start = $line_num - $padding;
         if ($start < 0) {
             $start = 0;
         }
-
-        $length = ($line_num - $start) + $padding + 1;
-        if (($start + $length) > count(static::$files[$filepath]) - 1) {
+        $length = $line_num - $start + $padding + 1;
+        if ($start + $length > count(static::$files[$filepath]) - 1) {
             $length = null;
         }
-
         $debug_lines = array_slice(static::$files[$filepath], $start, $length, true);
-
         if ($highlight) {
             $to_replace = ['<code>', '</code>', '<span style="color: #0000BB">&lt;?php&nbsp;', "\n"];
             $replace_with = ['', '', '<span style="color: #0000BB">', ''];
-
-            foreach ($debug_lines as & $line) {
+            foreach ($debug_lines as &$line) {
                 $line = str_replace($to_replace, $replace_with, highlight_string('<?php ' . $line, true));
             }
         }
-
         return $debug_lines;
     }
-
     /**
      * Output the call stack from here, or the supplied one.
      *
@@ -295,71 +261,59 @@ JS;
     public static function backtrace($trace = null)
     {
         $trace or $trace = debug_backtrace();
-
         if (\Fuel::$is_cli) {
             // Special case for CLI since the var_dump of a backtrace is of little use.
             $str = '';
             foreach ($trace as $i => $frame) {
-                $line = "#$i\t";
-
-                if (! isset($frame['file'])) {
+                $line = "#{$i}\t";
+                if (!isset($frame['file'])) {
                     $line .= '[internal function]';
                 } else {
                     $line .= $frame['file'] . ':' . $frame['line'];
                 }
-
                 $line .= "\t";
-
                 if (isset($frame['function'])) {
                     if (isset($frame['class'])) {
                         $line .= $frame['class'] . '::';
                     }
-
                     $line .= $frame['function'] . '()';
                 }
-
                 $str .= $line . "\n";
-
             }
-
             return $str;
         }
         return static::dump($trace);
     }
-
     /**
-    * Prints a list of all currently declared classes.
-    *
-    * @access public
-    * @static
-    */
+     * Prints a list of all currently declared classes.
+     *
+     * @access public
+     * @static
+     */
     public static function classes()
     {
         return static::dump(get_declared_classes());
     }
-
     /**
-    * Prints a list of all currently declared interfaces (PHP5 only).
-    *
-    * @access public
-    * @static
-    */
+     * Prints a list of all currently declared interfaces (PHP5 only).
+     *
+     * @access public
+     * @static
+     */
     public static function interfaces()
     {
         return static::dump(get_declared_interfaces());
     }
-
     /**
-    * Prints a list of all currently included (or required) files.
-    *
-    * @access public
-    * @static
-    */
+     * Prints a list of all currently included (or required) files.
+     *
+     * @access public
+     * @static
+     */
     public static function includes()
     {
         return static::dump(get_included_files());
     }
-
     /**
      * Prints a list of all currently declared functions.
      *
@@ -370,7 +324,6 @@ JS;
     {
         return static::dump(get_defined_functions());
     }
-
     /**
      * Prints a list of all currently declared constants.
      *
@@ -381,7 +334,6 @@ JS;
     {
         return static::dump(get_defined_constants());
     }
-
     /**
      * Prints a list of all currently loaded PHP extensions.
      *
@@ -392,7 +344,6 @@ JS;
     {
         return static::dump(get_loaded_extensions());
     }
-
     /**
      * Prints a list of all HTTP request headers.
      *
@@ -404,7 +355,6 @@ JS;
         // get the current request headers and dump them
         return static::dump(\Input::headers());
     }
-
     /**
      * Prints a list of the configuration settings read from <i>php.ini</i>
      *
@@ -413,14 +363,12 @@ JS;
      */
     public static function phpini()
     {
-        if (! is_readable(get_cfg_var('cfg_file_path'))) {
+        if (!is_readable(get_cfg_var('cfg_file_path'))) {
             return false;
         }
-
         // render it
         return static::dump(parse_ini_file(get_cfg_var('cfg_file_path'), true));
     }
-
     /**
      * Benchmark anything that is callable
      *
@@ -437,13 +385,11 @@ JS;
             $stime_before = $dat['ru_stime.tv_sec'] + round($dat['ru_stime.tv_usec'] / 1000000, 4);
         } else {
             [$usec, $sec] = explode(' ', microtime());
-            $utime_before = ((float) $usec + (float) $sec);
+            $utime_before = (float) $usec + (float) $sec;
             $stime_before = 0;
         }
-
         // call the function to be benchmarked
         $result = is_callable($callable) ? call_fuel_func_array($callable, $params) : null;
-
         // get the after-benchmark time
         if (function_exists('getrusage')) {
             $dat = getrusage();
@@ -451,15 +397,9 @@ JS;
             $stime_after = $dat['ru_stime.tv_sec'] + round($dat['ru_stime.tv_usec'] / 1000000, 4);
         } else {
             [$usec, $sec] = explode(' ', microtime());
-            $utime_after = ((float) $usec + (float) $sec);
+            $utime_after = (float) $usec + (float) $sec;
             $stime_after = 0;
         }
-
-        return [
-            'user' => sprintf('%1.6f', $utime_after - $utime_before),
-            'system' => sprintf('%1.6f', $stime_after - $stime_before),
-            'result' => $result,
-        ];
+        return ['user' => sprintf('%1.6f', $utime_after - $utime_before), 'system' => sprintf('%1.6f', $stime_after - $stime_before), 'result' => $result];
     }
-
 }

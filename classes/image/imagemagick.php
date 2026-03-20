@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 class Image_Imagemagick extends \Image_Driver
@@ -20,126 +19,96 @@ class Image_Imagemagick extends \Image_Driver
     protected $accepted_extensions = ['png', 'gif', 'jpg', 'jpeg'];
     protected $sizes_cache;
     protected $im_path;
-
     public function load($filename, $return_data = false, $force_extension = false)
     {
         extract(parent::load($filename, $return_data, $force_extension));
-
         $this->clear_sizes();
         if (empty($this->image_temp)) {
             do {
-                $this->image_temp = $this->config['temp_dir'].substr($this->config['temp_append'].\Str::random('unique'), 0, 32).'.png';
+                $this->image_temp = $this->config['temp_dir'] . substr($this->config['temp_append'] . \Str::random('unique'), 0, 32) . '.png';
             } while (is_file($this->image_temp));
         } elseif (is_file($this->image_temp)) {
             $this->debug('Removing previous temporary image.');
             unlink($this->image_temp);
         }
-        $this->debug('Temp file: '.$this->image_temp);
-        if (! is_dir($this->config['temp_dir'])) {
+        $this->debug('Temp file: ' . $this->image_temp);
+        if (!is_dir($this->config['temp_dir'])) {
             throw new \RuntimeException('The temp directory that was given does not exist.');
         }
         if (!touch($this->config['temp_dir'] . $this->config['temp_append'] . '_touch')) {
             throw new \RuntimeException('Could not write in the temp directory.');
         }
-        $this->exec('convert', '-auto-orient '.escapeshellarg($image_fullpath).'[0] '.escapeshellarg($this->image_temp));
-
+        $this->exec('convert', '-auto-orient ' . escapeshellarg($image_fullpath) . '[0] ' . escapeshellarg($this->image_temp));
         return $this;
     }
-
     protected function _crop($x1, $y1, $x2, $y2)
     {
         extract(parent::_crop($x1, $y1, $x2, $y2));
         $image = escapeshellarg($this->image_temp);
-        $this->exec('convert', $image.' -auto-orient -crop '.($x2 - $x1).'x'.($y2 - $y1).'+'.$x1.'+'.$y1.' +repage '.$image);
+        $this->exec('convert', $image . ' -auto-orient -crop ' . ($x2 - $x1) . 'x' . ($y2 - $y1) . '+' . $x1 . '+' . $y1 . ' +repage ' . $image);
         $this->clear_sizes();
     }
-
     protected function _resize($width, $height = null, $keepar = true, $pad = true)
     {
         extract(parent::_resize($width, $height, $keepar, $pad));
-
         $image = escapeshellarg($this->image_temp);
-        $this->exec('convert', '-auto-orient -define png:size='.$cwidth.'x'.$cheight.' '.$image.' '.
-            '-background none '.
-            '-resize "'.($pad ? $width : $cwidth).'x'.($pad ? $height : $cheight).'!" '.
-            '-gravity center '.
-            '-extent '.$cwidth.'x'.$cheight.' '.$image);
+        $this->exec('convert', '-auto-orient -define png:size=' . $cwidth . 'x' . $cheight . ' ' . $image . ' ' . '-background none ' . '-resize "' . ($pad ? $width : $cwidth) . 'x' . ($pad ? $height : $cheight) . '!" ' . '-gravity center ' . '-extent ' . $cwidth . 'x' . $cheight . ' ' . $image);
         $this->clear_sizes();
     }
-
     protected function _rotate($degrees)
     {
         extract(parent::_rotate($degrees));
-
         $image = escapeshellarg($this->image_temp);
-        $this->exec('convert', $image.' -background none -auto-orient -virtual-pixel background +distort ScaleRotateTranslate '.$degrees.' +repage '.$image);
-
+        $this->exec('convert', $image . ' -background none -auto-orient -virtual-pixel background +distort ScaleRotateTranslate ' . $degrees . ' +repage ' . $image);
         $this->clear_sizes();
     }
-
     protected function _flip($direction)
     {
         switch ($direction) {
             case 'vertical':
                 $arg = '-flip';
                 break;
-
             case 'horizontal':
                 $arg = '-flop';
                 break;
-
             case 'both':
                 $arg = '-flip -flop';
                 break;
-
-            default: return false;
+            default:
+                return false;
         }
         $image = escapeshellarg($this->image_temp);
-        $this->exec('convert', $image.' -auto-orient '.$arg.' '.$image);
+        $this->exec('convert', $image . ' -auto-orient ' . $arg . ' ' . $image);
     }
-
-    protected function _watermark($filename, $position, $padding = [5,5])
+    protected function _watermark($filename, $position, $padding = [5, 5])
     {
         $values = parent::_watermark($filename, $position, $padding);
         if ($values == false) {
             throw new \InvalidArgumentException('Watermark image not found or invalid filetype.');
         }
-
         extract($values);
-        $x >= 0 and $x = '+'.$x;
-        $y >= 0 and $y = '+'.$y;
-
+        $x >= 0 and $x = '+' . $x;
+        $y >= 0 and $y = '+' . $y;
         $image = escapeshellarg($this->image_temp);
-        $this->exec(
-            'composite',
-            '-compose atop -geometry '.$x.$y.' '.
-            '-dissolve '.$this->config['watermark_alpha'].'% '.
-            '"'.$filename.'" "'.$this->image_temp.'" '.$image
-        );
+        $this->exec('composite', '-compose atop -geometry ' . $x . $y . ' ' . '-dissolve ' . $this->config['watermark_alpha'] . '% ' . '"' . $filename . '" "' . $this->image_temp . '" ' . $image);
     }
-
     protected function _border($size, $color = null)
     {
         extract(parent::_border($size, $color));
-
         $image = escapeshellarg($this->image_temp);
         $color = $this->create_color($color, 100);
-        $command = $image.' -auto-orient -compose copy -bordercolor '.$color.' -border '.$size.'x'.$size.' '.$image;
+        $command = $image . ' -auto-orient -compose copy -bordercolor ' . $color . ' -border ' . $size . 'x' . $size . ' ' . $image;
         $this->exec('convert', $command);
-
         $this->clear_sizes();
     }
-
     protected function _mask($maskimage)
     {
         extract(parent::_mask($maskimage));
-
         $mimage = escapeshellarg($maskimage);
         $image = escapeshellarg($this->image_temp);
-        $command = $image.' '.$mimage.' +matte -auto-orient -compose copy-opacity -composite '.$image;
+        $command = $image . ' ' . $mimage . ' +matte -auto-orient -compose copy-opacity -composite ' . $image;
         $this->exec('convert', $command);
     }
-
     /**
      * Credit to Leif Åstrand <leif@sitelogic.fi> for the base of the round corners.
      *
@@ -150,107 +119,77 @@ class Image_Imagemagick extends \Image_Driver
     protected function _rounded($radius, $sides, $antialias = 0)
     {
         extract(parent::_rounded($radius, $sides, null));
-
         $image = escapeshellarg($this->image_temp);
         $r = $radius;
-        $command = $image.' \\( +clone -alpha extract '.
-            (! $tr ? '' : "-draw \"fill black polygon 0,0 0,$r $r,0 fill white circle $r,$r $r,0\" ").'-flip '.
-            (! $br ? '' : "-draw \"fill black polygon 0,0 0,$r $r,0 fill white circle $r,$r $r,0\" ").'-flop '.
-            (! $bl ? '' : "-draw \"fill black polygon 0,0 0,$r $r,0 fill white circle $r,$r $r,0\" ").'-flip '.
-            (! $tl ? '' : "-draw \"fill black polygon 0,0 0,$r $r,0 fill white circle $r,$r $r,0\" ").
-            '\\) -alpha off -auto-orient -compose CopyOpacity -composite '.$image;
+        $command = $image . ' \( +clone -alpha extract ' . (!$tr ? '' : "-draw \"fill black polygon 0,0 0,{$r} {$r},0 fill white circle {$r},{$r} {$r},0\" ") . '-flip ' . (!$br ? '' : "-draw \"fill black polygon 0,0 0,{$r} {$r},0 fill white circle {$r},{$r} {$r},0\" ") . '-flop ' . (!$bl ? '' : "-draw \"fill black polygon 0,0 0,{$r} {$r},0 fill white circle {$r},{$r} {$r},0\" ") . '-flip ' . (!$tl ? '' : "-draw \"fill black polygon 0,0 0,{$r} {$r},0 fill white circle {$r},{$r} {$r},0\" ") . '\) -alpha off -auto-orient -compose CopyOpacity -composite ' . $image;
         $this->exec('convert', $command);
     }
-
     protected function _grayscale()
     {
         $image = escapeshellarg($this->image_temp);
-        $this->exec('convert', $image.' -auto-orient -colorspace Gray '.$image);
+        $this->exec('convert', $image . ' -auto-orient -colorspace Gray ' . $image);
     }
-
     public function sizes($filename = null, $usecache = true)
     {
         $is_loaded_file = $filename == null;
-        if (! $is_loaded_file or $this->sizes_cache == null or !$usecache) {
-            $reason = ($filename != null ? 'filename' : ($this->sizes_cache == null ? 'cache' : 'option'));
-            $this->debug("Generating size of image... (triggered by $reason)");
-
-            if ($is_loaded_file and ! empty($this->image_temp)) {
+        if (!$is_loaded_file or $this->sizes_cache == null or !$usecache) {
+            $reason = $filename != null ? 'filename' : ($this->sizes_cache == null ? 'cache' : 'option');
+            $this->debug("Generating size of image... (triggered by {$reason})");
+            if ($is_loaded_file and !empty($this->image_temp)) {
                 $filename = $this->image_temp;
             }
-
-            $output = $this->exec('identify', "-format '%w %h' ".escapeshellarg($filename).'[0]');
+            $output = $this->exec('identify', "-format '%w %h' " . escapeshellarg($filename) . '[0]');
             [$width, $height] = explode(' ', (string) $output[0]);
-            $return = (object) [
-                'width' => $width,
-                'height' => $height,
-            ];
-
+            $return = (object) ['width' => $width, 'height' => $height];
             if ($is_loaded_file) {
                 $this->sizes_cache = $return;
             }
-            $this->debug('Sizes '.(!$is_loaded_file ? "for <code>$filename</code> " : '')."are now $width and $height");
+            $this->debug('Sizes ' . (!$is_loaded_file ? "for <code>{$filename}</code> " : '') . "are now {$width} and {$height}");
         } else {
             $return = $this->sizes_cache;
         }
-
         return $return;
     }
-
     public function save($filename = null, $permissions = null)
     {
         extract(parent::save($filename, $permissions));
-
         $this->run_queue();
         $this->add_background();
-
         $filetype = $this->image_extension;
         $old = escapeshellarg($this->image_temp);
         $new = escapeshellarg($filename);
-
         if (($filetype == 'jpeg' or $filetype == 'jpg') and $this->config['quality'] != 100) {
-            $quality = "'".$this->config['quality']."%'";
-            $this->exec('convert', $old.' -auto-orient -quality '.$quality.' '.$new);
+            $quality = "'" . $this->config['quality'] . "%'";
+            $this->exec('convert', $old . ' -auto-orient -quality ' . $quality . ' ' . $new);
         } else {
-            $this->exec('convert', $old.' '.$new);
+            $this->exec('convert', $old . ' ' . $new);
         }
-
         if ($this->config['persistence'] === false) {
             $this->reload();
         }
-
         return $this;
     }
-
     public function output($filetype = null)
     {
         extract(parent::output($filetype));
-
         $this->run_queue();
         $this->add_background();
-
         $image = escapeshellarg($this->image_temp);
-
         if (($filetype == 'jpeg' or $filetype == 'jpg') and $this->config['quality'] != 100) {
-            $quality = "'".$this->config['quality']."%'";
-            $this->exec('convert', $image.' -auto-orient -quality '.$quality.' '.strtolower((string) $filetype).':-', true);
+            $quality = "'" . $this->config['quality'] . "%'";
+            $this->exec('convert', $image . ' -auto-orient -quality ' . $quality . ' ' . strtolower((string) $filetype) . ':-', true);
         } elseif (substr((string) $this->image_temp, -1 * strlen((string) $filetype)) != $filetype) {
-            if (! $this->config['debug']) {
-                $this->exec('convert', $image.' -auto-orient '.strtolower((string) $filetype).':-', true);
+            if (!$this->config['debug']) {
+                $this->exec('convert', $image . ' -auto-orient ' . strtolower((string) $filetype) . ':-', true);
             }
-        } else {
-            if (! $this->config['debug']) {
-                echo file_get_contents($this->image_temp);
-            }
+        } else if (!$this->config['debug']) {
+            echo file_get_contents($this->image_temp);
         }
-
         if ($this->config['persistence'] === false) {
             $this->reload();
         }
-
         return $this;
     }
-
     /**
      * Cleared the currently loaded sizes, used to removed cached sizes.
      */
@@ -258,20 +197,17 @@ class Image_Imagemagick extends \Image_Driver
     {
         $this->sizes_cache = null;
     }
-
     protected function add_background()
     {
         if ($this->config['bgcolor'] != null) {
             $bgcolor = $this->config['bgcolor'] == null ? '#000' : $this->config['bgcolor'];
-            $image   = escapeshellarg($this->image_temp);
-            $color   = $this->create_color($bgcolor, 100);
-            $sizes   = $this->sizes();
-            $command = '-auto-orient -size '.$sizes->width.'x'.$sizes->height.' '.'canvas:'.$color.' '.
-                $image.' -composite '.$image;
+            $image = escapeshellarg($this->image_temp);
+            $color = $this->create_color($bgcolor, 100);
+            $sizes = $this->sizes();
+            $command = '-auto-orient -size ' . $sizes->width . 'x' . $sizes->height . ' ' . 'canvas:' . $color . ' ' . $image . ' -composite ' . $image;
             $this->exec('convert', $command);
         }
     }
-
     /**
      * Executes the specified imagemagick executable and returns the output.
      *
@@ -283,28 +219,23 @@ class Image_Imagemagick extends \Image_Driver
     protected function exec($program, $params, $passthru = false)
     {
         //  Determine the path
-        $this->im_path = realpath($this->config['imagemagick_dir'].$program);
-        if (! $this->im_path) {
-            $this->im_path = realpath($this->config['imagemagick_dir'].$program.'.exe');
+        $this->im_path = realpath($this->config['imagemagick_dir'] . $program);
+        if (!$this->im_path) {
+            $this->im_path = realpath($this->config['imagemagick_dir'] . $program . '.exe');
         }
-        if (! $this->im_path) {
-            throw new \RuntimeException('Imagemagick executables not found in '.$this->config['imagemagick_dir']);
+        if (!$this->im_path) {
+            throw new \RuntimeException('Imagemagick executables not found in ' . $this->config['imagemagick_dir']);
         }
-
-        $command = $this->im_path.' '.$params;
-        $this->debug("Running command: <code>$command</code>");
+        $command = $this->im_path . ' ' . $params;
+        $this->debug("Running command: <code>{$command}</code>");
         $code = 0;
         $output = null;
-
         $passthru ? passthru($command) : exec($command, $output, $code);
-
         if ($code != 0) {
-            throw new \FuelException("Imagemagick failed to manipulate the image. Return code = $code. Command: $command");
+            throw new \Fuel_Exception("Imagemagick failed to manipulate the image. Return code = {$code}. Command: {$command}");
         }
-
         return $output;
     }
-
     /**
      * Creates a new color usable by ImageMagick.
      *
@@ -315,9 +246,8 @@ class Image_Imagemagick extends \Image_Driver
     protected function create_color($hex, $alpha)
     {
         extract($this->create_hex_color($hex));
-        return '"rgba('.$red.', '.$green.', '.$blue.', '.round($alpha / 100, 2).')"';
+        return '"rgba(' . $red . ', ' . $green . ', ' . $blue . ', ' . round($alpha / 100, 2) . ')"';
     }
-
     public function __destruct()
     {
         if (is_file($this->image_temp)) {

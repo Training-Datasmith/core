@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,13 +11,12 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
  * A Fuel Specific extension of the PHPUnit TestCase.  This will
  * be used for custom functionality in the future.
  */
-abstract class TestCase extends \PHPUnit\Framework\TestCase
+abstract class Test_Case extends \Php_Unit\Framework\Test_Case
 {
 }

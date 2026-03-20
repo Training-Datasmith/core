@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,10 +11,9 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
-abstract class HttpException extends \FuelException
+abstract class Http_Exception extends \Fuel_Exception
 {
     /**
      * Must return a response object for the handle method
@@ -22,7 +21,6 @@ abstract class HttpException extends \FuelException
      * @return  Response
      */
     abstract protected function response();
-
     /**
      * When this type of exception isn't caught this method is called by
      * Errorhandler::exception_handler() to deal with the problem.
@@ -31,13 +29,10 @@ abstract class HttpException extends \FuelException
     {
         // get the exception response
         $response = $this->response();
-
         // fire any app shutdown events
         \Event::instance()->trigger('shutdown', '', 'none', true);
-
         // fire any framework shutdown events
         \Event::instance()->trigger('fuel-shutdown', '', 'none', true);
-
         // send the response out
         $response->send(true);
     }

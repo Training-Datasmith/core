@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -28,93 +27,67 @@ class Session
      * default session driver instance
      */
     protected static $_instance;
-
     /**
      * array of loaded instances
      */
     protected static $_instances = [];
-
     /**
      * array of global config defaults
      */
-    protected static $_defaults = [
-        'driver'                    => 'cookie',
-        'match_ip'                  => false,
-        'match_ua'                  => true,
-        'cookie_domain'             => '',
-        'cookie_path'               => '/',
-        'cookie_http_only'          => null,
-        'encrypt_cookie'            => true,
-        'expire_on_close'           => false,
-        'expiration_time'           => 7200,
-        'rotation_time'             => 300,
-        'flash_id'                  => 'flash',
-        'flash_auto_expire'         => true,
-        'flash_expire_after_get'    => true,
-        'post_cookie_name'          => '',
-    ];
-
+    protected static $_defaults = ['driver' => 'cookie', 'match_ip' => false, 'match_ua' => true, 'cookie_domain' => '', 'cookie_path' => '/', 'cookie_http_only' => null, 'encrypt_cookie' => true, 'expire_on_close' => false, 'expiration_time' => 7200, 'rotation_time' => 300, 'flash_id' => 'flash', 'flash_auto_expire' => true, 'flash_expire_after_get' => true, 'post_cookie_name' => ''];
     // --------------------------------------------------------------------
-
     /**
      * Initialize by loading config & starting default session
      */
     public static function _init(): void
     {
         \Config::load('session', true);
-
         if (\Config::get('session.auto_initialize', true)) {
             // create the default instance if required
             static::$_instance = static::forge();
-
             // and start it if it wasn't auto-started
-            if (! \Config::get('session.auto_start', true)) {
+            if (!\Config::get('session.auto_start', true)) {
                 static::$_instance->start();
             }
         }
-
         if (\Config::get('session.native_emulation', false)) {
             // emulate native PHP sessions
             session_set_save_handler(
                 // open
-                fn ($savePath, $sessionName) => true,
+                fn($save_path, $session_name) => true,
                 // close
-                fn () => true,
+                fn() => true,
                 // read
-                function ($sessionId): string {
+                function ($session_id): string {
                     // copy all existing session vars into the PHP session store
                     $_SESSION = \Session::get();
                     $_SESSION['__org__'] = $_SESSION;
                     return '';
                 },
                 // write
-                function ($sessionId, $data): true {
+                function ($session_id, $data): true {
                     // get the original data
                     $org = $_SESSION['__org__'] ?? [];
                     unset($_SESSION['__org__']);
-
                     // do we need to remove stuff?
                     if ($remove = array_diff_key($org, $_SESSION)) {
                         \Session::delete(array_keys($remove));
                     }
-
                     // add or update the remainder
                     empty($_SESSION) or \Session::set($_SESSION);
                     return true;
                 },
                 // destroy
-                function ($sessionId): true {
+                function ($session_id): true {
                     \Session::destroy();
                     return true;
                 },
                 // gc
-                fn ($lifetime) => true
+                fn($lifetime) => true
             );
         }
     }
-
     // --------------------------------------------------------------------
-
     /**
      * Factory
      *
@@ -128,49 +101,38 @@ class Session
     public static function forge($custom = [])
     {
         $config = \Config::get('session', []);
-
         // When a string was passed it's just the driver type
-        if (! empty($custom) and ! is_array($custom)) {
+        if (!empty($custom) and !is_array($custom)) {
             $custom = ['driver' => $custom];
         }
-
         $config = array_merge(static::$_defaults, $config, $custom);
-
         if (empty($config['driver'])) {
             throw new \Session_Exception('No session driver given or no default session driver set.');
         }
-
         // determine the driver to load
-        $class = '\\Session_'.ucfirst((string) $config['driver']);
-
+        $class = '\Session_' . ucfirst((string) $config['driver']);
         $driver = new $class($config);
-
         // get the driver's cookie name
         $cookie = $driver->get_config('cookie_name');
-
         // do we already have a driver instance for this cookie?
         if (isset(static::$_instances[$cookie])) {
             // if so, they must be using the same driver class!
-            $class_instance = 'Fuel\\Core'.$class;
-            if (! static::$_instances[$cookie] instanceof $class_instance) {
-                throw new \FuelException('You can not instantiate two different sessions using the same cookie name "'.$cookie.'"');
+            $class_instance = 'Fuel\Core' . $class;
+            if (!static::$_instances[$cookie] instanceof $class_instance) {
+                throw new \Fuel_Exception('You can not instantiate two different sessions using the same cookie name "' . $cookie . '"');
             }
         } else {
             // store this instance
-            static::$_instances[$cookie] = & $driver;
-
+            static::$_instances[$cookie] =& $driver;
             // start the session if needed
             if (\Config::get('session.auto_start', true)) {
                 $driver->start();
             }
         }
-
         // return the session instance
         return static::instance($cookie);
     }
-
     // --------------------------------------------------------------------
-
     /**
      * class constructor
      *
@@ -179,9 +141,7 @@ class Session
     final private function __construct()
     {
     }
-
     // --------------------------------------------------------------------
-
     /**
      * create or return the driver instance
      *
@@ -193,19 +153,15 @@ class Session
         // if a named instance is requested
         if ($instance !== null) {
             // return it if it exists
-            if (! array_key_exists($instance, static::$_instances)) {
+            if (!array_key_exists($instance, static::$_instances)) {
                 return false;
             }
-
             return static::$_instances[$instance];
         }
-
         // return the default instance
         return static::forge();
     }
-
     // --------------------------------------------------------------------
-
     /**
      * set session variables
      *
@@ -217,9 +173,7 @@ class Session
     {
         return static::instance()->set($name, $value);
     }
-
     // --------------------------------------------------------------------
-
     /**
      * get session variables
      *
@@ -231,9 +185,7 @@ class Session
     {
         return static::instance()->get($name, $default);
     }
-
     // --------------------------------------------------------------------
-
     /**
      * delete a session variable
      *
@@ -244,9 +196,7 @@ class Session
     {
         return static::instance()->delete($name);
     }
-
     // --------------------------------------------------------------------
-
     /**
      * get session key variables
      *
@@ -257,9 +207,7 @@ class Session
     {
         return static::$_instance ? static::instance()->key($name) : null;
     }
-
     // --------------------------------------------------------------------
-
     /**
      * set session flash variables
      *
@@ -271,9 +219,7 @@ class Session
     {
         return static::instance()->set_flash($name, $value);
     }
-
     // --------------------------------------------------------------------
-
     /**
      * get session flash variables
      *
@@ -286,9 +232,7 @@ class Session
     {
         return static::instance()->get_flash($name, $default, $expire);
     }
-
     // --------------------------------------------------------------------
-
     /**
      * keep session flash variables
      *
@@ -299,9 +243,7 @@ class Session
     {
         return static::instance()->keep_flash($name);
     }
-
     // --------------------------------------------------------------------
-
     /**
      * delete session flash variables
      *
@@ -312,9 +254,7 @@ class Session
     {
         return static::instance()->delete_flash($name);
     }
-
     // --------------------------------------------------------------------
-
     /**
      * start the session
      *
@@ -324,9 +264,7 @@ class Session
     {
         return static::instance()->start();
     }
-
     // --------------------------------------------------------------------
-
     /**
      * write the session
      *
@@ -338,9 +276,7 @@ class Session
     {
         return static::instance()->close($save);
     }
-
     // --------------------------------------------------------------------
-
     /**
      * reset the session
      *
@@ -350,9 +286,7 @@ class Session
     {
         return static::instance()->reset();
     }
-
     // --------------------------------------------------------------------
-
     /**
      * rotate the session id
      *
@@ -362,9 +296,7 @@ class Session
     {
         return static::instance()->rotate();
     }
-
     // --------------------------------------------------------------------
-
     /**
      * destroy the current session
      *
@@ -374,5 +306,4 @@ class Session
     {
         return static::instance()->destroy();
     }
-
 }

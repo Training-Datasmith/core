@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -12,36 +12,39 @@ declare(strict_types=1);
  * @copyright  2008 - 2009 Kohana Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
-class Database_Exception extends \FuelException
+class Database_Exception extends \Fuel_Exception
 {
     /**
      * Overload the constructor to allow an additional error code to be passed
      * @param mixed $code
      * @param mixed $dbcode
      */
-    public function __construct($message, /**
-     * @var mixed  The exception code
-     *
-     * Redefine the exception code property, as PDO uses alphanumeric codes
-     */
-        protected $code = 0, $previous = null, /**
-     * @var mixed  The original databaase error code
-     *
-     * We also store the original error code of the underlying driver
-     */
-        protected $dbcode = 0)
+    public function __construct(
+        $message,
+        /**
+         * @var mixed  The exception code
+         *
+         * Redefine the exception code property, as PDO uses alphanumeric codes
+         */
+        protected $code = 0,
+        $previous = null,
+        /**
+         * @var mixed  The original databaase error code
+         *
+         * We also store the original error code of the underlying driver
+         */
+        protected $dbcode = 0
+    )
     {
         // call the parent without a code, the interface is defined as numeric
         parent::__construct($message, 0, $previous);
     }
-
     /**
      * Return the original database error code if given
      */
-    final public function getDbCode()
+    final public function get_db_code()
     {
         return $this->dbcode;
     }

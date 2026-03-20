@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -12,7 +12,6 @@ declare(strict_types=1);
  * @copyright  2008 - 2009 Kohana Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 class Database_Query implements \Stringable
@@ -21,37 +20,30 @@ class Database_Query implements \Stringable
      * @var  int  Cache lifetime
      */
     protected $_lifetime;
-
     /**
      * @var  string  Cache key
      */
     protected $_cache_key;
-
     /**
      * @var  boolean  Cache all results
      */
     protected $_cache_all = true;
-
     /**
      * @var  boolean  To allow restore of the global caching status
      */
     protected $_caching;
-
     /**
      * @var  array  Quoted query parameters
      */
     protected $_parameters = [];
-
     /**
      * @var  bool  Return results as associative arrays or objects
      */
     protected $_as_object = false;
-
     /**
      * @var  Database_Connection  Connection to use when compiling the SQL
      */
     protected $_connection;
-
     /**
      * Creates a new SQL query of the specified type.
      *
@@ -61,7 +53,6 @@ class Database_Query implements \Stringable
     public function __construct(protected $_sql, protected $_type = null)
     {
     }
-
     /**
      * Return the SQL query string.
      */
@@ -71,10 +62,9 @@ class Database_Query implements \Stringable
             // Return the SQL string
             return $this->compile();
         } catch (\Exception $e) {
-            return $e->getMessage();
+            return $e->get_message();
         }
     }
-
     /**
      * Get the type of the query.
      *
@@ -84,7 +74,6 @@ class Database_Query implements \Stringable
     {
         return $this->_type;
     }
-
     /**
      * Enables the query to be cached for a specified amount of time.
      *
@@ -99,7 +88,6 @@ class Database_Query implements \Stringable
         $this->_lifetime = $lifetime;
         $this->_cache_all = (bool) $cache_all;
         is_string($cache_key) and $this->_cache_key = $cache_key;
-
         return $this;
     }
     /**
@@ -114,10 +102,8 @@ class Database_Query implements \Stringable
         if (is_bool($bool) or is_null($bool)) {
             $this->_caching = $bool;
         }
-
         return $this;
     }
-
     /**
      * Returns results as associative arrays
      *
@@ -126,10 +112,8 @@ class Database_Query implements \Stringable
     public function as_assoc(): static
     {
         $this->_as_object = false;
-
         return $this;
     }
-
     /**
      * Returns results as objects
      *
@@ -140,10 +124,8 @@ class Database_Query implements \Stringable
     public function as_object($class = true): static
     {
         $this->_as_object = $class;
-
         return $this;
     }
-
     /**
      * Set the value of a parameter in the query.
      *
@@ -156,10 +138,8 @@ class Database_Query implements \Stringable
     {
         // Add or overload a new parameter
         $this->_parameters[$param] = $value;
-
         return $this;
     }
-
     /**
      * Bind a variable to a parameter in the query.
      *
@@ -168,14 +148,12 @@ class Database_Query implements \Stringable
      *
      * @return $this
      */
-    public function bind($param, & $var): static
+    public function bind($param, &$var): static
     {
         // Bind a value to a variable
-        $this->_parameters[$param] = & $var;
-
+        $this->_parameters[$param] =& $var;
         return $this;
     }
-
     /**
      * Add multiple parameters to the query.
      *
@@ -187,10 +165,8 @@ class Database_Query implements \Stringable
     {
         // Merge the new parameters in
         $this->_parameters = $params + $this->_parameters;
-
         return $this;
     }
-
     /**
      * Set a DB connection to use when compiling the SQL
      *
@@ -200,15 +176,13 @@ class Database_Query implements \Stringable
      */
     public function set_connection($db): static
     {
-        if (! $db instanceof \Database_Connection) {
+        if (!$db instanceof \Database_Connection) {
             // Get the database instance
             $db = \Database_Connection::instance($db);
         }
         $this->_connection = $db;
-
         return $this;
     }
-
     /**
      * Compile the SQL query and return it. Replaces any parameters with their
      * given values.
@@ -220,26 +194,20 @@ class Database_Query implements \Stringable
         if ($this->_connection !== null and $db === null) {
             $db = $this->_connection;
         }
-
-        if (! $db instanceof \Database_Connection) {
+        if (!$db instanceof \Database_Connection) {
             // Get the database instance
             $db = $this->_connection ?: \Database_Connection::instance($db);
         }
-
         // Import the SQL locally
         $sql = $this->_sql;
-
-        if (! empty($this->_parameters)) {
+        if (!empty($this->_parameters)) {
             // Quote all of the values
             $values = array_map([$db, 'quote'], $this->_parameters);
-
             // Replace the values in the SQL
             $sql = \Str::tr($sql, $values);
         }
-
         return trim((string) $sql);
     }
-
     /**
      * Execute the current query on the given database.
      *
@@ -254,16 +222,13 @@ class Database_Query implements \Stringable
         if ($this->_connection !== null and $db === null) {
             $db = $this->_connection;
         }
-
-        if (! is_object($db)) {
+        if (!is_object($db)) {
             // Get the database instance. If this query is a instance of
             // Database_Query_Builder_Select then use the slave connection if configured
-            $db = \Database_Connection::instance($db, null, ! $this instanceof \Database_Query_Builder_Select);
+            $db = \Database_Connection::instance($db, null, !$this instanceof \Database_Query_Builder_Select);
         }
-
         // Compile the SQL query
         $sql = $this->compile($db);
-
         // make sure we have a SQL type to work with
         if (is_null($this->_type)) {
             // get the SQL statement type without having to duplicate the entire statement
@@ -276,30 +241,23 @@ class Database_Query implements \Stringable
                 default => 0,
             };
         }
-
         // fetch the result caching flag
         $caching = $this->_caching or $db->caching();
-
-        if ($caching and ! empty($this->_lifetime) and $this->_type === \DB::SELECT) {
-            $cache_key = empty($this->_cache_key) ?
-                'db.'.md5('Database_Connection::query("'.$db.'", "'.$sql.'")') : $this->_cache_key;
+        if ($caching and !empty($this->_lifetime) and $this->_type === \DB::SELECT) {
+            $cache_key = empty($this->_cache_key) ? 'db.' . md5('Database_Connection::query("' . $db . '", "' . $sql . '")') : $this->_cache_key;
             $cache = \Cache::forge($cache_key);
             try {
                 return $db->cache($cache->get(), $sql, $this->_as_object);
-            } catch (\CacheNotFoundException) {
+            } catch (\Cache_Not_Found_Exception) {
             }
         }
-
         // Execute the query
         \DB::$query_count++;
         $result = $db->query($this->_type, $sql, $this->_as_object, $caching);
-
         // Cache the result if needed
         if (isset($cache) and ($this->_cache_all or $result->count())) {
             $cache->set_expiration($this->_lifetime)->set_contents($result->as_array())->set();
         }
-
         return $result;
     }
-
 }

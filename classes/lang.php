@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,35 +11,29 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
-class LangException extends \FuelException
+class Lang_Exception extends \Fuel_Exception
 {
 }
-
 class Lang
 {
     /**
      * @var    array    $loaded_files    array of loaded files
      */
     public static $loaded_files = [];
-
     /**
      * @var  array  language lines
      */
     public static $lines = [];
-
     /**
      * @var  array  language(s) to fall back on when loading a file from the current lang fails
      */
     public static $fallback;
-
     public static function _init(): void
     {
         static::$fallback = (array) \Config::get('language_fallback', 'en');
     }
-
     /**
      * Returns currently active language.
      *
@@ -51,7 +45,6 @@ class Lang
         empty($language) and $language = static::$fallback[0];
         return $language;
     }
-
     /**
      * Loads a language file.
      *
@@ -68,26 +61,19 @@ class Lang
         // get the active language and all fallback languages
         $language or $language = static::get_lang();
         $languages = static::$fallback;
-
         // make sure we don't have the active language in the fallback array
         if (in_array($language, $languages)) {
             unset($languages[array_search($language, $languages)]);
         }
-
         // stick the active language to the front of the list
         array_unshift($languages, $language);
-
-        if (! $reload and
-             ! is_array($file) and
-             ! is_object($file) and
-            array_key_exists($language.'/'.$file, static::$loaded_files)) {
+        if (!$reload and !is_array($file) and !is_object($file) and array_key_exists($language . '/' . $file, static::$loaded_files)) {
             $group === true and $group = $file;
-            if ($group === null or $group === false or ! isset(static::$lines[$language][$group])) {
+            if ($group === null or $group === false or !isset(static::$lines[$language][$group])) {
                 return false;
             }
             return static::$lines[$language][$group];
         }
-
         $lang = [];
         if (is_array($file)) {
             $lang = $file;
@@ -101,40 +87,35 @@ class Lang
                     $file = substr($file, 0, -(strlen($type) + 1));
                 }
             }
-            $class = '\\Lang_'.ucfirst($type);
-
+            $class = '\Lang_' . ucfirst($type);
             if (class_exists($class)) {
-                static::$loaded_files[$language.'/'.$file] = func_get_args();
+                static::$loaded_files[$language . '/' . $file] = func_get_args();
                 $file = new $class($file, $languages);
             } else {
-                throw new \FuelException(sprintf('Invalid lang type "%s".', $type));
+                throw new \Fuel_Exception(sprintf('Invalid lang type "%s".', $type));
             }
         }
-
         if ($file instanceof Lang_Interface) {
             try {
                 $lang = $file->load($overwrite);
-            } catch (\LangException) {
+            } catch (\Lang_Exception) {
                 $lang = [];
             }
             $group = $group === true ? $file->group() : $group;
         }
-
         isset(static::$lines[$language]) or static::$lines[$language] = [];
         if ($group === null) {
             static::$lines[$language] = $overwrite ? array_merge(static::$lines[$language], $lang) : \Arr::merge(static::$lines[$language], $lang);
         } else {
-            $group = ($group === true) ? $file : $group;
+            $group = $group === true ? $file : $group;
             if ($overwrite) {
                 \Arr::set(static::$lines[$language], $group, array_merge(\Arr::get(static::$lines[$language], $group, []), $lang));
             } else {
                 \Arr::set(static::$lines[$language], $group, \Arr::merge(\Arr::get(static::$lines[$language], $group, []), $lang));
             }
         }
-
         return $lang;
     }
-
     /**
      * Save a language array to disk.
      *
@@ -146,38 +127,31 @@ class Lang
      */
     public static function save($file, $lang, $language = null)
     {
-        ($language === null) and $language = static::get_lang();
-
+        $language === null and $language = static::get_lang();
         // prefix the file with the language
-        if (! is_null($language)) {
+        if (!is_null($language)) {
             $file = explode('::', $file);
-            $file[array_key_last($file)] = $language.DS.end($file);
+            $file[array_key_last($file)] = $language . DS . end($file);
             $file = implode('::', $file);
         }
-
-        if (! is_array($lang)) {
-            if (! isset(static::$lines[$language][$lang])) {
+        if (!is_array($lang)) {
+            if (!isset(static::$lines[$language][$lang])) {
                 return false;
             }
             $lang = static::$lines[$language][$lang];
         }
-
         $type = pathinfo($file, PATHINFO_EXTENSION);
-        if (! $type) {
+        if (!$type) {
             $type = 'php';
-            $file .= '.'.$type;
+            $file .= '.' . $type;
         }
-
-        $class = '\\Lang_'.ucfirst($type);
-
-        if (! class_exists($class, true)) {
-            throw new \LangException('Cannot save a language file of type: '.$type);
+        $class = '\Lang_' . ucfirst($type);
+        if (!class_exists($class, true)) {
+            throw new \Lang_Exception('Cannot save a language file of type: ' . $type);
         }
-
         $driver = new $class();
         return $driver->save($file, $lang);
     }
-
     /**
      * Returns a (dot notated) language string
      *
@@ -189,11 +163,9 @@ class Lang
      */
     public static function get($line, array $params = [], $default = null, $language = null)
     {
-        ($language === null) and $language = static::get_lang();
-
+        $language === null and $language = static::get_lang();
         return isset(static::$lines[$language]) ? \Str::tr(\Fuel::value(\Arr::get(static::$lines[$language], $line, $default)), $params) : $default;
     }
-
     /**
      * Sets a (dot notated) language string
      *
@@ -205,15 +177,11 @@ class Lang
      */
     public static function set($line, $value, $group = null, $language = null): void
     {
-        $group === null or $line = $group.'.'.$line;
-
-        ($language === null) and $language = static::get_lang();
-
+        $group === null or $line = $group . '.' . $line;
+        $language === null and $language = static::get_lang();
         isset(static::$lines[$language]) or static::$lines[$language] = [];
-
         \Arr::set(static::$lines[$language], $line, \Fuel::value($value));
     }
-
     /**
      * Deletes a (dot notated) language string
      *
@@ -224,13 +192,10 @@ class Lang
      */
     public static function delete($item, $group = null, $language = null)
     {
-        $group === null or $item = $group.'.'.$item;
-
-        ($language === null) and $language = static::get_lang();
-
+        $group === null or $item = $group . '.' . $item;
+        $language === null and $language = static::get_lang();
         return isset(static::$lines[$language]) ? \Arr::delete(static::$lines[$language], $item) : false;
     }
-
     /**
      * Sets the current language, and optionally reloads all language files loaded in another language
      *
@@ -241,24 +206,21 @@ class Lang
     public static function set_lang(?string $language, $reload = false): bool
     {
         // check if a language was passedd
-        if (! empty($language) and $language != static::get_lang()) {
+        if (!empty($language) and $language != static::get_lang()) {
             // set it
             \Config::set('language', $language);
-
             // do we need to reload?
             if ($reload) {
                 foreach (static::$loaded_files as $file => $args) {
                     // reload with exactly the same arguments
-                    if (!str_starts_with((string) $file, $language.'/')) {
+                    if (!str_starts_with((string) $file, $language . '/')) {
                         call_user_func_array(Lang::load(...), $args);
                     }
                 }
             }
-
             // return success
             return true;
         }
-
         // no language or the current language was passed
         return false;
     }

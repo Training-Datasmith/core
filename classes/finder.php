@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -27,11 +26,9 @@ class Finder
      * @var  Finder  $instance  Singleton master instance
      */
     protected static $instance;
-
     public static function _init(): void
     {
         \Config::load('file', true);
-
         // make sure the configured chmod values are octal
         $chmod = \Config::get('file.chmod.folders', 0777);
         is_string($chmod) and \Config::set('file.chmod.folders', octdec($chmod));
@@ -52,7 +49,6 @@ class Finder
     {
         return static::instance()->locate($dir, $file, $ext, $multiple, $cache);
     }
-
     /**
      * Gets a singleton instance of Finder
      *
@@ -60,13 +56,11 @@ class Finder
      */
     public static function instance()
     {
-        if (! static::$instance) {
+        if (!static::$instance) {
             static::$instance = static::forge([APPPATH, COREPATH]);
         }
-
         return static::$instance;
     }
-
     /**
      * Forges new Finders.
      *
@@ -76,37 +70,30 @@ class Finder
     {
         return new static($paths);
     }
-
     /**
      * @var  array  $paths  Holds all of the search paths
      */
     protected $paths = [];
-
     /**
      * @var  array  $flash_paths  Search paths that only last for one lookup
      */
     protected $flash_paths = [];
-
     /**
      * @var  int  $cache_lifetime the amount of time to cache in seconds
      */
     protected $cache_lifetime;
-
     /**
      * @var  string  $cache_dir path to the cache file location
      */
     protected $cache_dir;
-
     /**
      * @var  array  $cached_paths  Cached lookup paths
      */
     protected $cached_paths = [];
-
     /**
      * @var  bool  $cache_valid  Whether the path cache is valid or not
      */
     protected $cache_valid = true;
-
     /**
      * Takes in an array of paths, preps them and gets the party started.
      *
@@ -116,7 +103,6 @@ class Finder
     {
         $this->add_path($paths);
     }
-
     /**
      * Adds a path (or paths) to the search path at a given position.
      *
@@ -132,10 +118,9 @@ class Finder
      */
     public function add_path($paths, $pos = null): static
     {
-        if (! is_array($paths)) {
+        if (!is_array($paths)) {
             $paths = [$paths];
         }
-
         foreach ($paths as $path) {
             if ($pos === null) {
                 $this->paths[] = $this->prep_path($path);
@@ -148,10 +133,8 @@ class Finder
                 array_splice($this->paths, $pos, 0, $this->prep_path($path));
             }
         }
-
         return $this;
     }
-
     /**
      * Removes a path from the search path.
      *
@@ -166,10 +149,8 @@ class Finder
                 break;
             }
         }
-
         return $this;
     }
-
     /**
      * Adds multiple flash paths.
      *
@@ -178,17 +159,14 @@ class Finder
      */
     public function flash($paths): static
     {
-        if (! is_array($paths)) {
+        if (!is_array($paths)) {
             $paths = [$paths];
         }
-
         foreach ($paths as $path) {
             $this->flash_paths[] = $this->prep_path($path);
         }
-
         return $this;
     }
-
     /**
      * Clears the flash paths.
      *
@@ -197,10 +175,8 @@ class Finder
     public function clear_flash(): static
     {
         $this->flash_paths = [];
-
         return $this;
     }
-
     /**
      * Returns the current search paths...including flash paths.
      *
@@ -210,7 +186,6 @@ class Finder
     {
         return array_merge($this->flash_paths, $this->paths);
     }
-
     /**
      * Prepares a path for usage.  It ensures that the path has a trailing
      * Directory Separator.
@@ -220,9 +195,8 @@ class Finder
     public function prep_path($path): string
     {
         $path = str_replace(['/', '\\'], DS, $path);
-        return rtrim($path, DS).DS;
+        return rtrim($path, DS) . DS;
     }
-
     /**
      * Prepares an array of paths.
      *
@@ -235,7 +209,6 @@ class Finder
         }
         return $paths;
     }
-
     /**
      * Gets a list of all the files in a given directory inside all of the
      * loaded search paths (e.g. the cascading file system).  This is useful
@@ -248,26 +221,21 @@ class Finder
     public function list_files($directory = null, string $filter = '*.php'): array
     {
         $paths = $this->paths;
-
         // get extra information of the active request
         if (class_exists('Request', false) and ($uri = \Uri::string()) !== null) {
             $paths = array_merge(\Request::active()->get_paths(), $paths);
         }
-
         // Merge in the flash paths then reset the flash paths
         $paths = array_merge($this->flash_paths, $paths);
         $this->clear_flash();
-
         $found = [];
         foreach ($paths as $path) {
-            foreach (new \GlobIterator(rtrim($path.$directory, DS).DS.$filter) as $file) {
-                $found[] = $file->getPathname();
+            foreach (new \Glob_Iterator(rtrim($path . $directory, DS) . DS . $filter) as $file) {
+                $found[] = $file->get_pathname();
             }
         }
-
         return $found;
     }
-
     /**
      * Locates a given file in the search paths.
      *
@@ -281,20 +249,18 @@ class Finder
     public function locate(string $dir, $file, string $ext = '.php', $multiple = false, $cache = true)
     {
         $found = $multiple ? [] : false;
-
         // absolute path requested?
         if ($file[0] === '/' or substr($file, 1, 2) === ':\\') {
             // if the base file does not exist, stick the extension to the back of it
-            if (! is_file($file)) {
+            if (!is_file($file)) {
                 $file .= $ext;
             }
-            if (! is_file($file)) {
+            if (!is_file($file)) {
                 // at this point, found would be either empty array or false
                 return $found;
             }
             return $multiple ? [$file] : $file;
         }
-
         // determine the cache prefix
         if ($multiple) {
             // make sure cache is not used if the loaded package and module list is changed
@@ -302,67 +268,53 @@ class Finder
             class_exists('Module', false) and $cachekey .= implode('|', \Module::loaded());
             $cachekey .= '|';
             class_exists('Package', false) and $cachekey .= implode('|', \Package::loaded());
-            $cache_id = md5($cachekey).'.';
+            $cache_id = md5($cachekey) . '.';
         } else {
             $cache_id = 'S.';
         }
-
         $paths = [];
-
         // If a filename contains a :: then it is trying to be found in a namespace.
         // This is sometimes used to load a view from a non-loaded module.
         if ($pos = strripos($file, '::')) {
             // get the namespace path
-            if ($path = \Autoloader::namespace_path('\\'.ucfirst(substr($file, 0, $pos)))) {
+            if ($path = \Autoloader::namespace_path('\\' . ucfirst(substr($file, 0, $pos)))) {
                 $cache_id .= substr($file, 0, $pos);
-
                 // and strip the classes directory as we need the module root
                 $paths = [substr($path, 0, -8)];
-
                 // strip the namespace from the filename
                 $file = substr($file, $pos + 2);
             }
         } else {
             $paths = $this->paths;
-
             // get extra information of the active request
-            if (class_exists('Request', false) and ($request = \Request::active())) {
+            if (class_exists('Request', false) and $request = \Request::active()) {
                 $request->module and $cache_id .= $request->module;
                 $paths = array_merge($request->get_paths(), $paths);
             }
         }
-
         // Merge in the flash paths then reset the flash paths
         $paths = array_merge($this->flash_paths, $paths);
         $this->clear_flash();
-
-        $file = $this->prep_path($dir).$file.$ext;
+        $file = $this->prep_path($dir) . $file . $ext;
         $cache_id .= $file;
-
         if ($cache and $cached_path = $this->from_cache($cache_id)) {
             return $cached_path;
         }
-
         foreach ($paths as $dir) {
-            $file_path = $dir.$file;
-
+            $file_path = $dir . $file;
             if (is_file($file_path)) {
-                if (! $multiple) {
+                if (!$multiple) {
                     $found = $file_path;
                     break;
                 }
-
                 $found[] = $file_path;
             }
         }
-
-        if (! empty($found) and $cache) {
+        if (!empty($found) and $cache) {
             $this->add_to_cache($cache_id, $found);
         }
-
         return $found;
     }
-
     /**
      * Reads in the cached paths with the given cache id.
      *
@@ -371,14 +323,12 @@ class Finder
     public function read_cache($cache_id): void
     {
         // make sure we have all config data
-        empty($this->cache_dir) and $this->cache_dir = \Config::get('cache_dir', APPPATH.'cache/');
+        empty($this->cache_dir) and $this->cache_dir = \Config::get('cache_dir', APPPATH . 'cache/');
         empty($this->cache_lifetime) and $this->cache_lifetime = \Config::get('cache_lifetime', 3600);
-
         if ($cached = $this->cache($cache_id)) {
             $this->cached_paths = $cached;
         }
     }
-
     /**
      * Writes out the cached paths if they need to be.
      *
@@ -388,7 +338,6 @@ class Finder
     {
         $this->cache_valid or $this->cache($cache_id, $this->cached_paths);
     }
-
     /**
      * Loads in the given cache_id from the cache if it exists.
      *
@@ -401,10 +350,8 @@ class Finder
         if (array_key_exists($cache_id, $this->cached_paths)) {
             return $this->cached_paths[$cache_id];
         }
-
         return false;
     }
-
     /**
      * Loads in the given cache_id from the cache if it exists.
      *
@@ -417,7 +364,6 @@ class Finder
         $this->cached_paths[$cache_id] = $path;
         $this->cache_valid = false;
     }
-
     /**
      * This method does basic filesystem caching.  It is used for things like path caching.
      *
@@ -430,69 +376,59 @@ class Finder
     protected function cache(string $name, $data = null, $lifetime = null): bool
     {
         // Cache file is a hash of the name
-        $file = $name.'.pathcache';
-
+        $file = $name . '.pathcache';
         // Cache directories are split by keys to prevent filesystem overload
-        $dir = rtrim($this->cache_dir, DS).DS;
-
+        $dir = rtrim($this->cache_dir, DS) . DS;
         if ($lifetime === null) {
             // Use the default lifetime
             $lifetime = $this->cache_lifetime;
         }
-
         if ($data === null) {
-            if (is_file($dir.$file)) {
-                if ((time() - filemtime($dir.$file)) < $lifetime) {
+            if (is_file($dir . $file)) {
+                if (time() - filemtime($dir . $file) < $lifetime) {
                     // Return the cache
                     try {
-                        return unserialize(file_get_contents($dir.$file));
+                        return unserialize(file_get_contents($dir . $file));
                     } catch (\Exception) {
                         // Cache exists but could not be read, ignore it
                     }
                 } else {
                     try {
                         // Cache has expired
-                        unlink($dir.$file);
+                        unlink($dir . $file);
                     } catch (Exception) {
                         // Cache has mostly likely already been deleted,
                         // let return happen normally.
                     }
                 }
             }
-
             // Cache not found
             return null;
         }
-
-        if (! is_dir($dir)) {
+        if (!is_dir($dir)) {
             // Create the cache directory
             mkdir($dir, \Config::get('file.chmod.folders', 0777), true);
-
             // Set permissions (must be manually set to fix umask issues)
             chmod($dir, \Config::get('file.chmod.folders', 0777));
         }
-
         // Force the data to be a string
         $data = serialize($data);
-
         try {
             // Write the cache, and set permissions
-            if ($result = (bool) file_put_contents($dir.$file, $data, LOCK_EX)) {
+            if ($result = (bool) file_put_contents($dir . $file, $data, LOCK_EX)) {
                 try {
-                    chmod($dir.$file, \Config::get('file.chmod.files', 0666));
-                } catch (\PhpErrorException $e) {
+                    chmod($dir . $file, \Config::get('file.chmod.files', 0666));
+                } catch (\Php_Error_Exception $e) {
                     // if we get something else then a chmod error, bail out
-                    if (!str_starts_with($e->getMessage(), 'chmod():')) {
+                    if (!str_starts_with($e->get_message(), 'chmod():')) {
                         throw new $e();
                     }
                 }
             }
-
             return $result;
         } catch (\Exception) {
             // Failed to write cache
             return false;
         }
     }
-
 }

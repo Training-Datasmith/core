@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -27,31 +26,22 @@ class Migrate
      * @var	array	current migrations registered in the database
      */
     protected static $migrations = [];
-
     /**
      * @var	string	migration classes namespace prefix
      */
-    protected static $prefix = 'Fuel\\Migrations\\';
-
+    protected static $prefix = 'Fuel\Migrations\\';
     /**
      * @var	string	name of the migration table
      */
     protected static $table = 'migration';
-
     /**
      * @var string  database connection group
      */
     protected static $connection;
-
     /**
      * @var	array	migration table schema
      */
-    protected static $table_definition = [
-        'type' => ['type' => 'varchar', 'constraint' => 25],
-        'name' => ['type' => 'varchar', 'constraint' => 50],
-        'migration' => ['type' => 'varchar', 'constraint' => 100, 'null' => false, 'default' => ''],
-    ];
-
+    protected static $table_definition = ['type' => ['type' => 'varchar', 'constraint' => 25], 'name' => ['type' => 'varchar', 'constraint' => 50], 'migration' => ['type' => 'varchar', 'constraint' => 100, 'null' => false, 'default' => '']];
     /**
      * loads in the migrations config file, checks to see if the migrations
      * table is set in the database (if not, create it), and reads in all of
@@ -60,46 +50,32 @@ class Migrate
     public static function _init(): void
     {
         logger(\Fuel::L_DEBUG, 'Migrate class initialized');
-
         // load the migrations config
         \Config::load('migrations', true);
-
         // set the name of the table containing the installed migrations
         static::$table = \Config::get('migrations.table', static::$table);
-
         // set the name of the connection group to use
         static::$connection = \Config::get('migrations.connection', static::$connection);
-
         // installs or upgrades the migration table to the current schema
         static::table_version_check();
-
         //get all installed migrations from db
-        $migrations = \DB::select()
-            ->from(static::$table)
-            ->order_by('type', 'ASC')
-            ->order_by('name', 'ASC')
-            ->order_by('migration', 'ASC')
-            ->execute(static::$connection)
-            ->as_array();
-
+        $migrations = \DB::select()->from(static::$table)->order_by('type', 'ASC')->order_by('name', 'ASC')->order_by('migration', 'ASC')->execute(static::$connection)->as_array();
         foreach ($migrations as $migration) {
             // convert the db migrations to match the config file structure
             isset(static::$migrations[$migration['type']]) or static::$migrations[$migration['type']] = [];
             static::$migrations[$migration['type']][$migration['name']][] = $migration['migration'];
-
             // make sure we have this in the config too
-            $config = \Config::get('migrations.version.'.$migration['type'].'.'.$migration['name'], []);
+            $config = \Config::get('migrations.version.' . $migration['type'] . '.' . $migration['name'], []);
             is_array($config) or $config = [];
-            if (! in_array($migration['migration'], $config)) {
+            if (!in_array($migration['migration'], $config)) {
                 $config[] = $migration['migration'];
                 sort($config);
-                \Config::set('migrations.version.'.$migration['type'].'.'.$migration['name'], $config);
+                \Config::set('migrations.version.' . $migration['type'] . '.' . $migration['name'], $config);
             }
         }
         // write the updated config
-        \Config::save(\Fuel::$env.DS.'migrations', 'migrations');
+        \Config::save(\Fuel::$env . DS . 'migrations', 'migrations');
     }
-
     /**
      * migrate to a specific version, range of versions, or all
      *
@@ -114,35 +90,29 @@ class Migrate
     public static function version($version = null, string $name = 'default', string $type = 'app', $all = false)
     {
         // get the current version from the config
-        $all or $current = \Config::get('migrations.version.'.$type.'.'.$name);
-
+        $all or $current = \Config::get('migrations.version.' . $type . '.' . $name);
         // any migrations defined?
-        if (! empty($current)) {
+        if (!empty($current)) {
             // get the timestamp of the last installed migration
             if (preg_match('/^(.*?)_(.*)$/', end($current), $match)) {
                 // determine the direction
                 $direction = (is_null($version) or $match[1] < $version) ? 'up' : 'down';
-
                 // fetch the migrations
                 if ($direction == 'up') {
                     $migrations = static::find_migrations($name, $type, $match[1], $version);
                 } else {
                     $migrations = static::find_migrations($name, $type, $version, $match[1], $direction);
-
                     // we're going down, so reverse the order of mygrations
                     $migrations = array_reverse($migrations, true);
                 }
-
                 // run migrations from current version to given version
                 return static::run($migrations, $name, $type, $direction);
             }
-            throw new \UnexpectedValueException('Could not determine a valid version from '.$current.'.');
+            throw new \UnexpectedValueException('Could not determine a valid version from ' . $current . '.');
         }
-
         // run migrations from the beginning to given version
         return static::run(static::find_migrations($name, $type, null, $version), $name, $type, 'up');
     }
-
     /**
      * migrate to a latest version
      *
@@ -157,7 +127,6 @@ class Migrate
         // equivalent to from current version (or all) to latest
         return static::version(null, $name, $type, $all);
     }
-
     /**
      * migrate to the version defined in the config file
      *
@@ -169,8 +138,7 @@ class Migrate
     public static function current(string $name = 'default', string $type = 'app')
     {
         // get the current version from the config
-        $current = \Config::get('migrations.version.'.$type.'.'.$name);
-
+        $current = \Config::get('migrations.version.' . $type . '.' . $name);
         // any migrations defined?
         if (empty($current)) {
             // nothing to migrate
@@ -181,11 +149,9 @@ class Migrate
             // run migrations from start to current version
             return static::run(static::find_migrations($name, $type, null, $match[1]), $name, $type, 'up');
         }
-
         // nothing to migrate
         return [];
     }
-
     /**
      * migrate up to the next version
      *
@@ -198,27 +164,21 @@ class Migrate
     public static function up($version = null, string $name = 'default', string $type = 'app')
     {
         // get the current version info from the config
-        $current = \Config::get('migrations.version.'.$type.'.'.$name);
-
+        $current = \Config::get('migrations.version.' . $type . '.' . $name);
         // get the last migration installed
         $current = empty($current) ? null : end($current);
-
         // get the available migrations after the current one
         $migrations = static::find_migrations($name, $type, $current, $version);
-
         // found any?
-        if (! empty($migrations)) {
+        if (!empty($migrations)) {
             // if no version was given, only install the next migration
             is_null($version) and $migrations = [reset($migrations)];
-
             // install migrations found
             return static::run($migrations, $name, $type, 'up');
         }
-
         // nothing to migrate
         return [];
     }
-
     /**
      * migrate down to the previous version
      *
@@ -231,18 +191,15 @@ class Migrate
     public static function down($version = null, string $name = 'default', string $type = 'app')
     {
         // get the current version info from the config
-        $current = \Config::get('migrations.version.'.$type.'.'.$name);
-
+        $current = \Config::get('migrations.version.' . $type . '.' . $name);
         // any migrations defined?
-        if (! empty($current)) {
+        if (!empty($current)) {
             // get the last entry
             $current = end($current);
-
             // get the available migrations before the last current one
             $migrations = static::find_migrations($name, $type, $version, $current, 'down');
-
             // found any?
-            if (! empty($migrations)) {
+            if (!empty($migrations)) {
                 // if no version was given, only revert the last migration
                 if (is_null($version)) {
                     $migrations = array_slice($migrations, -1, 1, true);
@@ -250,16 +207,13 @@ class Migrate
                     // we're going down, so reverse the order of migrations
                     $migrations = array_reverse($migrations, true);
                 }
-
                 // revert the installed migrations
                 return static::run($migrations, $name, $type, 'down');
             }
         }
-
         // nothing to migrate
         return [];
     }
-
     /**
      * run the action migrations found
      *
@@ -272,44 +226,34 @@ class Migrate
     {
         // storage for installed migrations
         $done = [];
-
-        static::$connection === null or \DBUtil::set_connection(static::$connection);
-
+        static::$connection === null or \Db_Util::set_connection(static::$connection);
         // Make sure we have class access
         switch ($type) {
             case 'package':
                 \Package::load($name);
                 break;
-
             case 'module':
                 \Module::load($name);
                 break;
-
             default:
         }
-
         // Loop through the runnable migrations and run them
         foreach ($migrations as $ver => $migration) {
-            logger(\Fuel::L_INFO, 'Migrating to version: '.$ver);
+            logger(\Fuel::L_INFO, 'Migrating to version: ' . $ver);
             $result = static::_run($migration['class'], $method);
             if ($result === false) {
-                logger(\Fuel::L_INFO, 'Skipped migration to '.$ver.'.');
+                logger(\Fuel::L_INFO, 'Skipped migration to ' . $ver . '.');
                 $done[] = false;
                 return $done;
             }
-
             $file = basename((string) $migration['path'], '.php');
             $method == 'up' ? static::write_install($name, $type, $file) : static::write_revert($name, $type, $file);
             $done[] = $file;
         }
-
-        static::$connection === null or \DBUtil::set_connection(null);
-
-        empty($done) or logger(\Fuel::L_INFO, 'Migrated to '.$ver.' successfully.');
-
+        static::$connection === null or \Db_Util::set_connection(null);
+        empty($done) or logger(\Fuel::L_INFO, 'Migrated to ' . $ver . ' successfully.');
         return $done;
     }
-
     /**
      * add an installed migration to the database
      *
@@ -322,23 +266,15 @@ class Migrate
     protected static function write_install(string $name, string $type, $file)
     {
         // add the migration just run
-        \DB::insert(static::$table)->set([
-            'name' => $name,
-            'type' => $type,
-            'migration' => $file,
-        ])->execute(static::$connection);
-
+        \DB::insert(static::$table)->set(['name' => $name, 'type' => $type, 'migration' => $file])->execute(static::$connection);
         // add the file to the list of run migrations
         static::$migrations[$type][$name][] = $file;
-
         // make sure the migrations are in the correct order
         sort(static::$migrations[$type][$name]);
-
         // and save the update to the environment config file
-        \Config::set('migrations.version.'.$type.'.'.$name, static::$migrations[$type][$name]);
-        \Config::save(\Fuel::$env.DS.'migrations', 'migrations');
+        \Config::set('migrations.version.' . $type . '.' . $name, static::$migrations[$type][$name]);
+        \Config::save(\Fuel::$env . DS . 'migrations', 'migrations');
     }
-
     /**
      * remove a reverted migration from the database
      *
@@ -351,25 +287,17 @@ class Migrate
     protected static function write_revert(string $name, string $type, $file)
     {
         // remove the migration just run
-        \DB::delete(static::$table)
-            ->where('name', $name)
-            ->where('type', $type)
-            ->where('migration', $file)
-        ->execute(static::$connection);
-
+        \DB::delete(static::$table)->where('name', $name)->where('type', $type)->where('migration', $file)->execute(static::$connection);
         // remove the file from the list of run migrations
         if (($key = array_search($file, static::$migrations[$type][$name])) !== false) {
             unset(static::$migrations[$type][$name][$key]);
         }
-
         // make sure the migrations are in the correct order
         sort(static::$migrations[$type][$name]);
-
         // and save the update to the config file
-        \Config::set('migrations.version.'.$type.'.'.$name, static::$migrations[$type][$name]);
-        \Config::save(\Fuel::$env.DS.'migrations', 'migrations');
+        \Config::set('migrations.version.' . $type . '.' . $name, static::$migrations[$type][$name]);
+        \Config::save(\Fuel::$env . DS . 'migrations', 'migrations');
     }
-
     /**
      * migrate down to the previous version
      *
@@ -384,36 +312,31 @@ class Migrate
     protected static function find_migrations(string $name, string $type, $start = null, $end = null, $direction = 'up'): array
     {
         // Load all *_*.php files in the migrations path
-        $method = '_find_'.$type;
-        if (! $files = static::$method($name)) {
+        $method = '_find_' . $type;
+        if (!$files = static::$method($name)) {
             return [];
         }
-
         // get the currently installed migrations from the DB
-        $current = \Arr::get(static::$migrations, $type.'.'.$name, []);
-
+        $current = \Arr::get(static::$migrations, $type . '.' . $name, []);
         // storage for the result
         $migrations = [];
-
         // normalize start and end values
-        if (! is_null($start)) {
+        if (!is_null($start)) {
             // if we have a prefix, use that
             ($pos = strpos($start, '_')) === false or $start = ltrim(substr($start, 0, $pos), '0');
             is_numeric($start) and $start = (int) $start;
         }
-        if (! is_null($end)) {
+        if (!is_null($end)) {
             // if we have a prefix, use that
             ($pos = strpos((string) $end, '_')) === false or $end = ltrim(substr((string) $end, 0, $pos), '0');
             is_numeric($end) and $end = (int) $end;
         }
-
         // filter the migrations out of bounds
         foreach ($files as $file) {
             // get the version for this migration and normalize it
             $migration = basename((string) $file);
             ($pos = strpos($migration, '_')) === false or $migration = ltrim(substr($migration, 0, $pos), '0');
             is_numeric($migration) and $migration = (int) $migration;
-
             // add the file to the migrations list if it's in between version bounds
             if ((is_null($start) or $migration > $start) and (is_null($end) or $migration <= $end)) {
                 // see if it is already installed
@@ -426,44 +349,35 @@ class Migrate
                 }
             }
         }
-
         // We now prepare to actually DO the migrations
         // But first let's make sure that everything is the way it should be
         foreach ($migrations as $ver => $migration) {
             // get the migration filename from the path
             $migration['file'] = basename((string) $migration['path']);
-
             // make sure the migration filename has a valid format
             if (preg_match('/^.*?_(.*).php$/', $migration['file'], $match)) {
                 // determine the classname for this migration
                 $class_name = ucfirst(strtolower($match[1]));
-
                 // load the file and determine the classname
                 include_once $migration['path'];
-                $class = static::$prefix.$class_name;
-
+                $class = static::$prefix . $class_name;
                 // make sure it exists in the migration file loaded
-                if (! class_exists($class, false)) {
-                    throw new \FuelException(sprintf('Migration "%s" does not contain expected class "%s"', $migration['path'], $class));
+                if (!class_exists($class, false)) {
+                    throw new \Fuel_Exception(sprintf('Migration "%s" does not contain expected class "%s"', $migration['path'], $class));
                 }
-
                 // and that it contains an "up" and "down" method
-                if (! is_callable([$class, 'up']) or ! is_callable([$class, 'down'])) {
-                    throw new \FuelException(sprintf('Migration class "%s" must include public methods "up" and "down"', $name));
+                if (!is_callable([$class, 'up']) or !is_callable([$class, 'down'])) {
+                    throw new \Fuel_Exception(sprintf('Migration class "%s" must include public methods "up" and "down"', $name));
                 }
-
                 $migrations[$ver]['class'] = $class;
             } else {
-                throw new \FuelException(sprintf('Invalid Migration filename "%s"', $migration['path']));
+                throw new \Fuel_Exception(sprintf('Invalid Migration filename "%s"', $migration['path']));
             }
         }
-
         // make sure the result is sorted properly with all version types
         uksort($migrations, strnatcasecmp(...));
-
         return $migrations;
     }
-
     /**
      * run the actual migration, and it's before and after methods if present
      *
@@ -472,23 +386,19 @@ class Migrate
     {
         // create an instance of the migration class
         $class = new $class();
-
         // if it has a before method, call that first
         if (method_exists($class, 'before')) {
             if (false === call_user_func([$class, 'before'])) {
                 return false;
             }
         }
-
         // run the actual migration
         $result = call_user_func([$class, $method]);
-
         // if it has a after method, call that if the migration has run
         if ($result !== false and method_exists($class, 'after')) {
             if (false === call_user_func([$class, 'after'])) {
                 // revert the migration
                 logger(\Fuel::L_INFO, 'Migration is reverted due to failure of the after method.');
-
                 if ($method == 'up') {
                     call_user_func([$class, 'down']);
                 } else {
@@ -497,10 +407,8 @@ class Migrate
                 return false;
             }
         }
-
         return $result;
     }
-
     /**
      * finds migrations for the given app
      *
@@ -509,14 +417,11 @@ class Migrate
     protected static function _find_app($name = null): array
     {
         $found = [];
-
-        foreach (new \GlobIterator(APPPATH.\Config::get('migrations.folder').'*_*.php') as $file) {
-            $found[] = $file->getPathname();
+        foreach (new \Glob_Iterator(APPPATH . \Config::get('migrations.folder') . '*_*.php') as $file) {
+            $found[] = $file->get_pathname();
         }
-
         return $found;
     }
-
     /**
      * finds migrations for the given module (or all if name is not given)
      *
@@ -525,23 +430,18 @@ class Migrate
     protected static function _find_module($name = null): array
     {
         is_null($name) and $name = '*';
-
         $files = [];
-
         foreach (\Config::get('module_paths') as $m) {
-            foreach (new \GlobIterator($m.$name.DS.\Config::get('migrations.folder').'*_*.php') as $file) {
-                $files[] = $file->getPathname();
+            foreach (new \Glob_Iterator($m . $name . DS . \Config::get('migrations.folder') . '*_*.php') as $file) {
+                $files[] = $file->get_pathname();
             }
-
             // if we were looking for a specific module, bail out when we've found it
-            if ($name !== '*' and ! empty($files)) {
+            if ($name !== '*' and !empty($files)) {
                 break;
             }
         }
-
         return $files;
     }
-
     /**
      * finds migrations for the given package (or all if name is not given)
      *
@@ -550,24 +450,19 @@ class Migrate
     protected static function _find_package($name = null): array
     {
         is_null($name) and $name = '*';
-
         $files = [];
-
         // find a package
         foreach (\Config::get('package_paths', [PKGPATH]) as $p) {
-            foreach (new \GlobIterator($p.$name.DS.\Config::get('migrations.folder').'*_*.php') as $file) {
-                $files[] = $file->getPathname();
+            foreach (new \Glob_Iterator($p . $name . DS . \Config::get('migrations.folder') . '*_*.php') as $file) {
+                $files[] = $file->get_pathname();
             }
-
             // if we were looking for a specific package, bail out when we've found it
-            if ($name !== '*' and ! empty($files)) {
+            if ($name !== '*' and !empty($files)) {
                 break;
             }
         }
-
         return $files;
     }
-
     /**
      * installs or upgrades the migration table to the current schema
      *
@@ -578,72 +473,52 @@ class Migrate
     protected static function table_version_check()
     {
         // set connection
-        static::$connection === null or \DBUtil::set_connection(static::$connection);
-
+        static::$connection === null or \Db_Util::set_connection(static::$connection);
         // if table does not exist
-        if (! \DBUtil::table_exists(static::$table)) {
+        if (!\Db_Util::table_exists(static::$table)) {
             // create table
-            \DBUtil::create_table(static::$table, static::$table_definition);
-        }
-
-        // check if a table upgrade is needed
-        elseif (! \DBUtil::field_exists(static::$table, ['migration'])) {
+            \Db_Util::create_table(static::$table, static::$table_definition);
+        } elseif (!\Db_Util::field_exists(static::$table, ['migration'])) {
             // get the current migration status
             $current = \DB::select()->from(static::$table)->order_by('type', 'ASC')->order_by('name', 'ASC')->execute(static::$connection)->as_array();
-
             // drop the existing table, and recreate it in the new layout
-            \DBUtil::drop_table(static::$table);
-            \DBUtil::create_table(static::$table, static::$table_definition);
-
+            \Db_Util::drop_table(static::$table);
+            \Db_Util::create_table(static::$table, static::$table_definition);
             // check if we had a current migration status
-            if (! empty($current)) {
+            if (!empty($current)) {
                 // do we need to migrate from a v1.0 migration environment?
                 if (isset($current[0]['current'])) {
                     // convert the current result into a v1.1. migration environment structure
                     $current = [0 => ['name' => 'default', 'type' => 'app', 'version' => $current[0]['current']]];
                 }
-
                 // build a new config structure
                 $configs = [];
-
                 // convert the v1.1 structure to the v1.2 structure
                 foreach ($current as $migration) {
                     // find the migrations for this entry
                     $migrations = static::find_migrations($migration['name'], $migration['type'], null, $migration['version']);
-
                     // array to keep track of the migrations already run
                     $config = [];
-
                     // add the individual migrations found
                     foreach ($migrations as $file) {
                         $file = pathinfo((string) $file['path']);
-
                         // add this migration to the table
-                        \DB::insert(static::$table)->set([
-                            'name' => $migration['name'],
-                            'type' => $migration['type'],
-                            'migration' => $file['filename'],
-                        ])->execute(static::$connection);
-
+                        \DB::insert(static::$table)->set(['name' => $migration['name'], 'type' => $migration['type'], 'migration' => $file['filename']])->execute(static::$connection);
                         // and to the config
                         $config[] = $file['filename'];
                     }
-
                     // create a config entry for this name and type if needed
                     isset($configs[$migration['type']]) or $configs[$migration['type']] = [];
                     $configs[$migration['type']][$migration['name']] = $config;
                 }
-
                 // write the updated migrations config back
                 \Config::set('migrations.version', $configs);
-                \Config::save(\Fuel::$env.DS.'migrations', 'migrations');
+                \Config::save(\Fuel::$env . DS . 'migrations', 'migrations');
             }
-
             // delete any old migration config file that may exist
-            is_file(APPPATH.'config'.DS.'migrations.php') and unlink(APPPATH.'config'.DS.'migrations.php');
+            is_file(APPPATH . 'config' . DS . 'migrations.php') and unlink(APPPATH . 'config' . DS . 'migrations.php');
         }
-
         // set connection to default
-        static::$connection === null or \DBUtil::set_connection(null);
+        static::$connection === null or \Db_Util::set_connection(null);
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,14 +11,12 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 // Exception thrown when the Cache was found but expired (auto deleted)
-class CacheExpiredException extends \CacheNotFoundException
+class Cache_Expired_Exception extends \Cache_Not_Found_Exception
 {
 }
-
 class Cache
 {
     /**
@@ -28,7 +26,6 @@ class Cache
     {
         \Config::load('cache', true);
     }
-
     /**
      * Creates a new cache instance.
      *
@@ -40,28 +37,21 @@ class Cache
     {
         // load the default config
         $defaults = \Config::get('cache', []);
-
         // $config can be either an array of config settings or the name of the storage driver
-        if (! empty($config) and ! is_array($config) and ! is_null($config)) {
+        if (!empty($config) and !is_array($config) and !is_null($config)) {
             $config = ['driver' => $config];
         }
-
         // Overwrite default values with given config
         $config = array_merge($defaults, (array) $config);
-
         if (empty($config['driver'])) {
-            throw new \FuelException('No cache driver given or no default cache driver set.');
+            throw new \Fuel_Exception('No cache driver given or no default cache driver set.');
         }
-
-        $class = '\\Cache_Storage_'.ucfirst((string) $config['driver']);
-
+        $class = '\Cache_Storage_' . ucfirst((string) $config['driver']);
         // Convert the name to a string when necessary
-        $identifier = call_user_func($class.'::stringify_identifier', $identifier);
-
+        $identifier = call_user_func($class . '::stringify_identifier', $identifier);
         // Return instance of the requested cache object
         return new $class($identifier, $config);
     }
-
     /**
      * Front for writing the cache, ensures interchangeability of storage drivers. Actual writing
      * is being done by the _set() method which needs to be extended.
@@ -75,11 +65,9 @@ class Cache
     public static function set($identifier, $contents = null, $expiration = false, $dependencies = [])
     {
         $contents = \Fuel::value($contents);
-
         $cache = static::forge($identifier);
         return $cache->set($contents, $expiration, $dependencies);
     }
-
     /**
      * Does get() & set() in one call that takes a callback and it's arguments to generate the contents
      *
@@ -95,7 +83,6 @@ class Cache
         $cache = static::forge($identifier);
         return $cache->call($callback, $args, $expiration, $dependencies);
     }
-
     /**
      * Front for reading the cache, ensures interchangeability of storage drivers. Actual reading
      * is being done by the _get() method which needs to be extended.
@@ -109,7 +96,6 @@ class Cache
         $cache = static::forge($identifier);
         return $cache->get($use_expiration);
     }
-
     /**
      * Frontend for deleting item from the cache, interchangeable storage methods. Actual operation
      * handled by delete() call on storage driver class
@@ -121,7 +107,6 @@ class Cache
         $cache = static::forge($identifier);
         return $cache->delete();
     }
-
     /**
      * Flushes the whole cache for a specific storage driver or just a part of it when $section is set
      * (might not work with all storage drivers), defaults to the default storage driver

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -26,26 +25,23 @@ namespace Fuel\Core;
 abstract class Controller_Hybrid extends \Controller_Rest
 {
     /**
-    * @var string page template
-    */
+     * @var string page template
+     */
     public $template = 'template';
-
     /**
      * Load the template and create the $this->template object if needed
      */
     public function before()
     {
         // setup the template if this isn't a RESTful call
-        if (! $this->is_restful()) {
-            if (! empty($this->template) and is_string($this->template)) {
+        if (!$this->is_restful()) {
+            if (!empty($this->template) and is_string($this->template)) {
                 // Load the template
                 $this->template = \View::forge($this->template);
             }
         }
-
         return parent::before();
     }
-
     /**
      * router
      *
@@ -64,24 +60,19 @@ abstract class Controller_Hybrid extends \Controller_Rest
             // have the Controller_Rest router deal with it
             return parent::router($resource, $arguments);
         }
-
         // check if a input specific method exists
         $controller_method = strtolower(\Input::method()) . '_' . $resource;
-
         // fall back to action_ if no rest method is provided
-        if (! method_exists($this, $controller_method)) {
-            $controller_method = 'action_'.$resource;
+        if (!method_exists($this, $controller_method)) {
+            $controller_method = 'action_' . $resource;
         }
-
         // check if the action method exists
         if (method_exists($this, $controller_method)) {
             return call_fuel_func_array([$this, $controller_method], $arguments);
         }
-
         // if not, we got ourselfs a genuine 404!
-        throw new \HttpNotFoundException();
+        throw new \Http_Not_Found_Exception();
     }
-
     /**
      * After controller method has run output the template
      *
@@ -90,7 +81,7 @@ abstract class Controller_Hybrid extends \Controller_Rest
     public function after($response)
     {
         // return the template if no response is present and this isn't a RESTful call
-        if (! $this->is_restful()) {
+        if (!$this->is_restful()) {
             // do we have a response passed?
             if ($response === null) {
                 // maybe one in the rest body?
@@ -99,22 +90,16 @@ abstract class Controller_Hybrid extends \Controller_Rest
                     // fall back to the defined template
                     $response = $this->template;
                 }
-            }
-
-            // deal with returned array's in non-restful calls
-            elseif (is_array($response)) {
+            } elseif (is_array($response)) {
                 $response = \Format::forge()->to_json($response, true);
             }
-
             // and make sure we have a valid Response object
-            if (! $response instanceof Response) {
+            if (!$response instanceof Response) {
                 $response = \Response::forge($response, $this->response_status);
             }
         }
-
         return parent::after($response);
     }
-
     /**
      * Decide whether to return RESTful or templated response
      * Override in subclass to introduce custom switching logic.

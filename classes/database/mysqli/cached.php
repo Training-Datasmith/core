@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -12,10 +12,9 @@ declare(strict_types=1);
  * @copyright  2008 - 2009 Kohana Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
-class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterator, \ArrayAccess
+class Database_my_Sq_Li_cached extends \Database_Result implements \Seekable_Iterator, \ArrayAccess
 {
     /**
      * @param  array   $result
@@ -26,14 +25,10 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
     {
         // go the generic construction processing
         parent::__construct($result, $sql, $as_object);
-
         // if an array is passed, use it
         if (is_array($result)) {
             $this->_results = $result;
-        }
-
-        // else we're getting a mysqli object. convert the result into an array
-        elseif ($result instanceof \MySQLi_Result) {
+        } elseif ($result instanceof \My_Sq_Li_result) {
             if ($this->_as_object === false) {
                 $this->_results = $this->_result->fetch_all(MYSQLI_ASSOC);
             } elseif (is_string($this->_as_object)) {
@@ -48,12 +43,10 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
                 }
             }
         } else {
-            throw new \FuelException('Database_Cached requires database results in either an array or a database object');
+            throw new \Fuel_Exception('Database_Cached requires database results in either an array or a database object');
         }
-
         $this->_total_rows = count($this->_results);
     }
-
     /**
      * Result destruction cleans up all open result sets.
      */
@@ -61,7 +54,6 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
     {
         // Cached results do not use driver resources
     }
-
     /**
      * @return $this
      */
@@ -69,11 +61,9 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
     {
         return $this;
     }
-
     /**************************
      * SeekableIterator methods
      *************************/
-
     /**
      * @param integer $offset
      *
@@ -81,19 +71,15 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
      */
     public function seek($offset)
     {
-        if (! $this->offsetExists($offset)) {
+        if (!$this->offsetExists($offset)) {
             return false;
         }
-
         $this->_current_row = $offset;
-
         return true;
     }
-
     /**************************
      * Iterable methods
      *************************/
-
     /**
      * Implements [Iterator::current], returns the current row.
      *
@@ -103,7 +89,6 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
     {
         if ($this->valid()) {
             $this->_row = $this->_results[$this->_current_row];
-
             // sanitize the data if needed
             if ($this->_sanitization_enabled) {
                 $this->_row = \Security::clean($this->_row, null, 'security.output_filter');
@@ -111,24 +96,19 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
         } else {
             $this->rewind();
         }
-
         return $this->_row;
     }
-
     /**
      * Implements [Iterator::next], returns the next row.
      */
     public function next(): void
     {
         parent::next();
-
         isset($this->_results[$this->_current_row]) and $this->_row = $this->_results[$this->_current_row];
     }
-
     /**************************
      * ArrayAccess methods
      *************************/
-
     /**
      * Implements [ArrayAccess::offsetExists], determines if row exists.
      *
@@ -145,7 +125,6 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
     {
         return isset($this->_results[$offset]);
     }
-
     /**
      * Implements [ArrayAccess::offsetGet], gets a given row.
      *
@@ -157,19 +136,16 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
      */
     public function offsetGet($offset)
     {
-        if (! $this->offsetExists($offset)) {
+        if (!$this->offsetExists($offset)) {
             return false;
         }
         $result = $this->_results[$offset];
-
         // sanitize the data if needed
         if ($this->_sanitization_enabled) {
             return \Security::clean($result, null, 'security.output_filter');
         }
-
         return $result;
     }
-
     /**
      * Implements [ArrayAccess::offsetSet], throws an error.
      * [!!] You cannot modify a database result.
@@ -181,9 +157,8 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
      */
     final public function offsetSet($offset, $value)
     {
-        throw new \FuelException('Database results are read-only');
+        throw new \Fuel_Exception('Database results are read-only');
     }
-
     /**
      * Implements [ArrayAccess::offsetUnset], throws an error.
      * [!!] You cannot modify a database result.
@@ -194,6 +169,6 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
      */
     final public function offsetUnset($offset)
     {
-        throw new \FuelException('Database results are read-only');
+        throw new \Fuel_Exception('Database results are read-only');
     }
 }

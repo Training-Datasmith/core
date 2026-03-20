@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -28,62 +27,50 @@ class Fieldset_Field implements \Stringable
      * @var  Fieldset  Fieldset this field belongs to
      */
     protected ?\Fuel\Core\Fieldset $fieldset;
-
     /**
      * @var  string  Name of this field
      */
     protected string $name;
-
     /**
      * @var  string  Base name of this field
      */
     protected string $basename;
-
     /**
      * @var  string  Field type for form generation, false to prevent it showing
      */
     protected $type = 'text';
-
     /**
      * @var  string  Field label for validation errors and form label generation
      */
     protected $label = '';
-
     /**
      * @var  mixed  (Default) value of this field
      */
     protected $value;
-
     /**
      * @var  string  Description text to show with the field
      */
     protected $description = '';
-
     /**
      * @var  array  Rules for validation
      */
     protected $rules = [];
-
     /**
      * @var  array  Attributes for form generation
      */
     protected array $attributes = [];
-
     /**
      * @var  array  Options, only available for select, radio & checkbox types
      */
     protected $options = [];
-
     /**
      * @var  string  Template for form building
      */
     protected $template;
-
     /**
      * @var  array  overwrites for default error messages
      */
     protected $error_messages = [];
-
     /**
      * Constructor
      *
@@ -95,43 +82,32 @@ class Fieldset_Field implements \Stringable
     public function __construct($name, $label = '', array $attributes = [], array $rules = [], $fieldset = null)
     {
         $this->name = (string) $name;
-
         if ($this->name === '') {
             throw new \RuntimeException('Fieldset field name may not be empty.');
         }
-
         // determine the field's base name (for fields with array indices)
         $this->basename = ($pos = strpos($this->name, '[')) ? rtrim(substr(strrchr($this->name, '['), 1), ']') : $this->name;
-
         $this->fieldset = $fieldset instanceof Fieldset ? $fieldset : null;
-
         // Don't allow name in attributes
         unset($attributes['name']);
-
         // Take rules out of attributes
         unset($attributes['rules']);
-
         // Use specific setter when available
         foreach ($attributes as $attr => $val) {
-            if (method_exists($this, $method = 'set_'.$attr)) {
+            if (method_exists($this, $method = 'set_' . $attr)) {
                 $this->{$method}($val);
                 unset($attributes[$attr]);
             }
         }
-
         // Add default "type" attribute if not specified
         empty($attributes['type']) and $this->set_type($this->type);
-
         // only when non-empty, will supersede what was given in $attributes
         $label and $this->set_label($label);
-
         $this->attributes = array_merge($this->attributes, $attributes);
-
         foreach ($rules as $rule) {
             call_fuel_func_array($this->add_rule(...), (array) $rule);
         }
     }
-
     /**
      * @param   Fieldset        $fieldset  Fieldset to assign the field to
      * @throws  \RuntimeException
@@ -142,20 +118,15 @@ class Fieldset_Field implements \Stringable
         if ($this->fieldset) {
             // remove the field from the fieldset
             $this->fieldset->delete($this->name);
-
             // reset the fieldset
             $this->fieldset = null;
-
             // add this field to the new fieldset
             $fieldset->add($this);
         }
-
         // assign the new fieldset
         $this->fieldset = $fieldset;
-
         return $this;
     }
-
     /**
      * Change the field name
      *
@@ -169,29 +140,22 @@ class Fieldset_Field implements \Stringable
             // new name already exists
             throw new \RuntimeException('New Fieldset field name already exists in the fieldset.');
         }
-
         // save the current name
         $current = $this->name;
-
         // update the name of this field
         $this->name = $name;
-
         // add this field to the fieldset
         if ($update and $this->fieldset) {
             $this->fieldset->add_after($this, '', [], [], $current);
         }
-
         // and delete the current one
         if ($update and $this->fieldset) {
             $this->fieldset->delete($current);
         }
-
         // determine the field's base name (for fields with array indices)
         $this->basename = ($pos = strpos($this->name, '[')) ? rtrim(substr(strrchr($this->name, '['), 1), ']') : $this->name;
-
         return $this;
     }
-
     /**
      * Change the field label
      *
@@ -202,10 +166,8 @@ class Fieldset_Field implements \Stringable
     {
         $this->label = $label;
         $this->set_attribute('label', $label);
-
         return $this;
     }
-
     /**
      * Change the field type for form generation
      *
@@ -216,10 +178,8 @@ class Fieldset_Field implements \Stringable
     {
         $this->type = $type;
         $this->set_attribute('type', $type);
-
         return $this;
     }
-
     /**
      * Change the field's current or default value
      *
@@ -235,17 +195,13 @@ class Fieldset_Field implements \Stringable
                 if ($this->value == $value) {
                     $this->set_attribute('checked', 'checked');
                 }
-
                 return $this;
             }
         }
-
         $this->value = $value;
         $this->set_attribute('value', $value);
-
         return $this;
     }
-
     /**
      * Change the field description
      *
@@ -255,10 +211,8 @@ class Fieldset_Field implements \Stringable
     public function set_description($description): static
     {
         $this->description = strval($description);
-
         return $this;
     }
-
     /**
      * Template the output
      *
@@ -268,10 +222,8 @@ class Fieldset_Field implements \Stringable
     public function set_template($template = null): static
     {
         $this->template = $template;
-
         return $this;
     }
-
     /**
      * Overwrite a default error message
      *
@@ -282,10 +234,8 @@ class Fieldset_Field implements \Stringable
     {
         empty($rule) and $rule = 0;
         $this->error_messages[$rule] = strval($msg);
-
         return $this;
     }
-
     /**
      * Check if a rule has an error message overwrite
      *
@@ -297,10 +247,8 @@ class Fieldset_Field implements \Stringable
         if (isset($this->error_messages[$rule])) {
             return $this->error_messages[$rule];
         }
-
         return $this->error_messages[0] ?? null;
     }
-
     /**
      * Add a validation rule
      * any further arguements after the callback will be used as arguements for the callback
@@ -312,15 +260,12 @@ class Fieldset_Field implements \Stringable
     {
         $args = array_slice(func_get_args(), 1);
         $this->rules[] = [$callback, $args];
-
         // Set required setting for forms when rule was applied
         if ($callback === 'required') {
             $this->set_attribute('required', 'required');
         }
-
         return $this;
     }
-
     /**
      * Delete a validation rule
      *
@@ -336,14 +281,11 @@ class Fieldset_Field implements \Stringable
                 break;
             }
         }
-
         if ($callback === 'required' and $set_attr) {
             unset($this->attributes[$callback]);
         }
-
         return $this;
     }
-
     /**
      * Sets an attribute on the field
      *
@@ -361,10 +303,8 @@ class Fieldset_Field implements \Stringable
                 $this->attributes[$key] = $value;
             }
         }
-
         return $this;
     }
-
     /**
      * Get a single or multiple attributes by key
      *
@@ -377,7 +317,6 @@ class Fieldset_Field implements \Stringable
         if ($key === null) {
             return $this->attributes;
         }
-
         if (is_array($key)) {
             $output = [];
             foreach ($key as $k) {
@@ -385,10 +324,8 @@ class Fieldset_Field implements \Stringable
             }
             return $output;
         }
-
         return array_key_exists($key, $this->attributes) ? $this->attributes[$key] : $default;
     }
-
     /**
      * Add an option value with label
      *
@@ -399,11 +336,10 @@ class Fieldset_Field implements \Stringable
      */
     public function set_options($value, $label = null, $replace_options = false): static
     {
-        if (! is_array($value)) {
+        if (!is_array($value)) {
             \Arr::set($this->options, $value, $label);
             return $this;
         }
-
         $merge = function (array &$array, $new, $merge): void {
             foreach ($new as $k => $v) {
                 if (isset($array[$k]) and is_array($array[$k]) and is_array($v)) {
@@ -413,21 +349,17 @@ class Fieldset_Field implements \Stringable
                 }
             }
         };
-
         ($replace_options or empty($this->options)) ? $this->options = $value : $merge($this->options, $value, $merge);
-
         return $this;
     }
-
     /**
      * Magic get method to allow getting class properties but still having them protected
      * to disallow writing.
      */
     public function __get(string $property): mixed
     {
-        return $this->$property;
+        return $this->{$property};
     }
-
     /**
      * Build the field
      */
@@ -436,10 +368,9 @@ class Fieldset_Field implements \Stringable
         try {
             return $this->build();
         } catch (\Exception $e) {
-            return $e->getMessage();
+            return $e->get_message();
         }
     }
-
     /**
      * Return the parent Fieldset object
      *
@@ -449,7 +380,6 @@ class Fieldset_Field implements \Stringable
     {
         return $this->fieldset;
     }
-
     /**
      * Alias for $this->fieldset->add() to allow chaining
      *
@@ -459,7 +389,6 @@ class Fieldset_Field implements \Stringable
     {
         return $this->fieldset()->add($name, $label, $attributes, $rules);
     }
-
     /**
      * Alias for $this->fieldset->add_before() to allow chaining
      *
@@ -469,7 +398,6 @@ class Fieldset_Field implements \Stringable
     {
         return $this->fieldset()->add_before($name, $label, $attributes, $rules, $fieldname);
     }
-
     /**
      * Alias for $this->fieldset->add_after() to allow chaining
      *
@@ -479,7 +407,6 @@ class Fieldset_Field implements \Stringable
     {
         return $this->fieldset()->add_after($name, $label, $attributes, $rules, $fieldname);
     }
-
     /**
      * Build the field
      *
@@ -488,19 +415,15 @@ class Fieldset_Field implements \Stringable
     public function build()
     {
         $form = $this->fieldset()->form();
-
         // Add IDs when auto-id is on
         if ($form->get_config('auto_id', false) === true and $this->get_attribute('id') == '') {
-            $auto_id = $form->get_config('auto_id_prefix', '')
-                .str_replace(['[', ']'], ['-', ''], $this->name);
+            $auto_id = $form->get_config('auto_id_prefix', '') . str_replace(['[', ']'], ['-', ''], $this->name);
             $this->set_attribute('id', $auto_id);
         }
-
-        switch (! empty($this->attributes['tag']) ? $this->attributes['tag'] : $this->type) {
+        switch (!empty($this->attributes['tag']) ? $this->attributes['tag'] : $this->type) {
             case 'hidden':
                 $build_field = $form->hidden($this->name, $this->value, $this->attributes);
                 break;
-
             case 'radio':
             case 'checkbox':
                 if ($this->options) {
@@ -509,33 +432,24 @@ class Fieldset_Field implements \Stringable
                     foreach ($this->options as $value => $label) {
                         $attributes = $this->attributes;
                         $attributes['name'] = $this->name;
-                        $this->type == 'checkbox' and $attributes['name'] .= '['.$i.']';
-
+                        $this->type == 'checkbox' and $attributes['name'] .= '[' . $i . ']';
                         $attributes['value'] = $value;
                         $attributes['label'] = $label;
-
                         if (is_array($this->value) ? in_array($value, $this->value) : $value == $this->value) {
                             $attributes['checked'] = 'checked';
                         }
-
-                        if (! empty($attributes['id'])) {
-                            $attributes['id'] .= '_'.$i;
+                        if (!empty($attributes['id'])) {
+                            $attributes['id'] .= '_' . $i;
                         } else {
                             $attributes['id'] = null;
                         }
-                        $build_field[$form->label($label, null, ['for' => $attributes['id']])] = $this->type == 'radio'
-                            ? $form->radio($attributes)
-                            : $form->checkbox($attributes);
-
+                        $build_field[$form->label($label, null, ['for' => $attributes['id']])] = $this->type == 'radio' ? $form->radio($attributes) : $form->checkbox($attributes);
                         $i++;
                     }
                 } else {
-                    $build_field = $this->type == 'radio'
-                        ? $form->radio($this->name, $this->value, $this->attributes)
-                        : $form->checkbox($this->name, $this->value, $this->attributes);
+                    $build_field = $this->type == 'radio' ? $form->radio($this->name, $this->value, $this->attributes) : $form->checkbox($this->name, $this->value, $this->attributes);
                 }
                 break;
-
             case 'select':
                 $attributes = $this->attributes;
                 $name = $this->name;
@@ -543,43 +457,34 @@ class Fieldset_Field implements \Stringable
                 array_key_exists('multiple', $attributes) and $name .= '[]';
                 $build_field = $form->select($name, $this->value, $this->options, $attributes);
                 break;
-
             case 'textarea':
                 $attributes = $this->attributes;
                 unset($attributes['type']);
                 $build_field = $form->textarea($this->name, $this->value, $attributes);
                 break;
-
             case 'button':
                 $build_field = $form->button($this->name, $this->value, $this->attributes);
                 break;
-
             case false:
                 $build_field = '';
                 break;
-
             default:
                 $build_field = $form->input($this->name, $this->value, $this->attributes);
                 break;
         }
-
         if (empty($build_field)) {
             return $build_field;
         }
-
         return $this->template($build_field);
     }
-
     protected function template($build_field)
     {
         $form = $this->fieldset()->form();
-
         $required_mark = $this->get_attribute('required') ? $form->get_config('required_mark', null) : null;
-        $label = $this->label ? $form->label($this->label, null, ['id' => 'label_'.$this->name, 'for' => $this->get_attribute('id'), 'class' => $form->get_config('label_class', null)]) : '';
+        $label = $this->label ? $form->label($this->label, null, ['id' => 'label_' . $this->name, 'for' => $this->get_attribute('id'), 'class' => $form->get_config('label_class', null)]) : '';
         $error_template = $form->get_config('error_template', '');
-        $error_msg = ($form->get_config('inline_errors') && $this->error()) ? str_replace('{error_msg}', $this->error(), $error_template) : '';
+        $error_msg = $form->get_config('inline_errors') && $this->error() ? str_replace('{error_msg}', $this->error(), $error_template) : '';
         $error_class = $this->error() ? $form->get_config('error_class') : '';
-
         if (is_array($build_field)) {
             $label = $this->label ? str_replace('{label}', $this->label, $form->get_config('group_label', '<span>{label}</span>')) : '';
             $template = $this->template ?: $form->get_config('multi_field_template', "\t\t<tr>\n\t\t\t<td class=\"{error_class}\">{group_label}{required}</td>\n\t\t\t<td class=\"{error_class}\">{fields}\n\t\t\t\t{field} {label}<br />\n{fields}\t\t\t{error_msg}\n\t\t\t</td>\n\t\t</tr>\n");
@@ -591,57 +496,35 @@ class Fieldset_Field implements \Stringable
                     $bf_temp = str_replace('{field}', $bf, $bf_temp);
                     $build_fields .= $bf_temp;
                 }
-
                 $template = str_replace($match[0], '{fields}', $template);
-
                 return str_replace(['{group_label}', '{required}', '{fields}', '{error_msg}', '{error_class}', '{description}'], [$label, $required_mark, $build_fields, $error_msg, $error_class, $this->description], $template);
             }
-
             // still here? wasn't a multi field template available, try the normal one with imploded $build_field
             $build_field = implode(' ', $build_field);
         }
-
         // check if this is a tabular form
         $tabular_form = '';
         $parent = $this->fieldset()->parent() and $tabular_form = $parent->get_tabular_form();
-
         // determine the field_id, which allows us to identify the field for CSS purposes
         if (empty($tabular_form)) {
             if ($this->type == 'hidden') {
                 return $build_field;
             }
-            $field_id = 'col_'.$this->name;
+            $field_id = 'col_' . $this->name;
         } else {
-            $field_id = $tabular_form.'_col_'.$this->basename;
+            $field_id = $tabular_form . '_col_' . $this->basename;
         }
-
         $template = $this->template ?: $form->get_config('field_template', "\t\t<tr>\n\t\t\t<td class=\"{error_class}\">{label}{required}</td>\n\t\t\t<td class=\"{error_class}\">{field} {description} {error_msg}</td>\n\t\t</tr>\n");
-
         // hidden fields need special treatment
         if ($this->type == 'hidden') {
-            $template = str_replace(
-                ['{label}', '{required}', '{field}', '{error_msg}', '{error_class}', '{description}', '{field_id}'],
-                [$label, '', $build_field, '', '" style="display:none;', $this->description, $field_id],
-                $template
-            );
-
+            $template = str_replace(['{label}', '{required}', '{field}', '{error_msg}', '{error_class}', '{description}', '{field_id}'], [$label, '', $build_field, '', '" style="display:none;', $this->description, $field_id], $template);
         } elseif ($this->type == 'checkbox') {
-            $template = str_replace(
-                ['{label}', '{required}', '{field}', '{error_msg}', '{error_class}', '{description}', '{field_id}'],
-                [$label, $required_mark, $build_field, $error_msg, $error_class, $this->description, $field_id.'" style="text-align:center;'],
-                $template
-            );
+            $template = str_replace(['{label}', '{required}', '{field}', '{error_msg}', '{error_class}', '{description}', '{field_id}'], [$label, $required_mark, $build_field, $error_msg, $error_class, $this->description, $field_id . '" style="text-align:center;'], $template);
         } else {
-            $template = str_replace(
-                ['{label}', '{required}', '{field}', '{error_msg}', '{error_class}', '{description}', '{field_id}'],
-                [$label, $required_mark, $build_field, $error_msg, $error_class, $this->description, $field_id],
-                $template
-            );
-
+            $template = str_replace(['{label}', '{required}', '{field}', '{error_msg}', '{error_class}', '{description}', '{field_id}'], [$label, $required_mark, $build_field, $error_msg, $error_class, $this->description, $field_id], $template);
         }
         return $template;
     }
-
     /**
      * Alias for $this->fieldset->validation->input() for this field
      *
@@ -651,7 +534,6 @@ class Fieldset_Field implements \Stringable
     {
         return $this->fieldset()->validation()->input($this->name);
     }
-
     /**
      * Alias for $this->fieldset->validation->validated() for this field
      *
@@ -661,7 +543,6 @@ class Fieldset_Field implements \Stringable
     {
         return $this->fieldset()->validation()->validated($this->name);
     }
-
     /**
      * Alias for $this->fieldset->validation->error() for this field
      *

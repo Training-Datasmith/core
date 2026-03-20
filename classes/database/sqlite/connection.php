@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -12,10 +12,9 @@ declare(strict_types=1);
  * @copyright  2008 - 2009 Kohana Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
-class Database_SQLite_Connection extends \Database_PDO_Connection
+class Database_sq_Lite_connection extends \Database_PDO_Connection
 {
     /**
      * Create a new [Database_Query_Builder_Update].
@@ -28,10 +27,9 @@ class Database_SQLite_Connection extends \Database_PDO_Connection
      */
     public function update($table = null)
     {
-        $instance = new Database_SQLite_Builder_Update($table);
+        $instance = new Database_sq_Lite_builder_update($table);
         return $instance->set_connection($this);
     }
-
     /**
      * Create a new [Database_Query_Builder_Delete].
      *
@@ -43,10 +41,9 @@ class Database_SQLite_Connection extends \Database_PDO_Connection
      */
     public function delete($table = null)
     {
-        $instance = new Database_SQLite_Builder_Delete($table);
+        $instance = new Database_sq_Lite_builder_delete($table);
         return $instance->set_connection($this);
     }
-
     /**
      * List tables
      *
@@ -56,28 +53,20 @@ class Database_SQLite_Connection extends \Database_PDO_Connection
      */
     public function list_tables($like = null)
     {
-        $query = 'SELECT name FROM sqlite_master WHERE type = "table" AND name != "sqlite_sequence" AND name != "geometry_columns" AND name != "spatial_ref_sys"'
-             . 'UNION ALL SELECT name FROM sqlite_temp_master '
-             . 'WHERE type = "table"';
-
+        $query = 'SELECT name FROM sqlite_master WHERE type = "table" AND name != "sqlite_sequence" AND name != "geometry_columns" AND name != "spatial_ref_sys"' . 'UNION ALL SELECT name FROM sqlite_temp_master ' . 'WHERE type = "table"';
         if (is_string($like)) {
             $query .= ' AND name LIKE ' . $this->quote($like);
         }
-
         $query .= ' ORDER BY name';
-
         $q = $this->_connection->prepare($query);
         $q->execute();
-        $result = $q->fetchAll();
-
+        $result = $q->fetch_all();
         $tables = [];
         foreach ($result as $row) {
             $tables[] = reset($row);
         }
-
         return $tables;
     }
-
     /**
      * List table columns
      *
@@ -90,29 +79,24 @@ class Database_SQLite_Connection extends \Database_PDO_Connection
         $query = "PRAGMA table_info('" . $this->quote_table($table) . "')";
         $q = $this->_connection->prepare($query);
         $q->execute();
-        $result = $q->fetchAll();
-
+        $result = $q->fetch_all();
         $count = 0;
         $columns = [];
         foreach ($result as $row) {
             $column = $this->datatype($row['type']);
-
-            $column['name']             = $row['name'];
-            $column['default']          = $row['dflt_value'];
-            $column['data_type']        = $row['type'];
-            $column['null']             = $row['notnull'];
+            $column['name'] = $row['name'];
+            $column['default'] = $row['dflt_value'];
+            $column['data_type'] = $row['type'];
+            $column['null'] = $row['notnull'];
             $column['ordinal_position'] = ++$count;
-            $column['comment']          = '';
-            $column['extra']            = $row['cid'];
-            $column['key']              = $row['pk'];
-            $column['privileges']       = '';
-
+            $column['comment'] = '';
+            $column['extra'] = $row['cid'];
+            $column['key'] = $row['pk'];
+            $column['privileges'] = '';
             $columns[$row['name']] = $column;
         }
-
         return $columns;
     }
-
     /**
      * Set the charset
      *
@@ -122,7 +106,6 @@ class Database_SQLite_Connection extends \Database_PDO_Connection
     {
         // Make sure the database is connected
         $this->_connection or $this->connect();
-
         if ($charset) {
             $this->_connection->exec('PRAGMA encoding = ' . $this->quote($charset));
         }

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -20,7 +19,6 @@ namespace Fuel\Core;
 class Lang_Ini extends \Lang_File
 {
     protected $ext = '.ini';
-
     /**
      * Loads in the given file and parses it.
      *
@@ -32,7 +30,6 @@ class Lang_Ini extends \Lang_File
         $contents = $this->parse_vars(file_get_contents($file));
         return parse_ini_string($contents, true);
     }
-
     /**
      * Returns the formatted language file contents.
      *
@@ -42,6 +39,6 @@ class Lang_Ini extends \Lang_File
      */
     protected function export_format($contents)
     {
-        throw new \LangException('Saving lang to ini is not supported at this time');
+        throw new \Lang_Exception('Saving lang to ini is not supported at this time');
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -22,18 +21,11 @@ class Config_Memcached implements Config_Interface
     /**
      * @var array of driver config defaults
      */
-    protected static $config = [
-        'identifier' => 'config',
-        'servers' => [
-            ['host' => '127.0.0.1', 'port' => 11211, 'weight' => 100],
-        ],
-    ];
-
+    protected static $config = ['identifier' => 'config', 'servers' => [['host' => '127.0.0.1', 'port' => 11211, 'weight' => 100]]];
     /**
      * @var \Memcached	storage for the memcached object
      */
     protected static $memcached = false;
-
     /**
      * driver initialisation
      *
@@ -42,34 +34,27 @@ class Config_Memcached implements Config_Interface
     public static function _init(): void
     {
         static::$config = array_merge(static::$config, \Config::get('config.memcached', []));
-
         if (static::$memcached === false) {
             // do we have the PHP memcached extension available
-            if (! class_exists('Memcached')) {
-                throw new \FuelException('Memcached config storage is required, but your PHP installation doesn\'t have the Memcached extension loaded.');
+            if (!class_exists('Memcached')) {
+                throw new \Fuel_Exception('Memcached config storage is required, but your PHP installation doesn\'t have the Memcached extension loaded.');
             }
-
             // instantiate the memcached object
             static::$memcached = new \Memcached();
-
             // add the configured servers
-            static::$memcached->addServers(static::$config['servers']);
-
+            static::$memcached->add_servers(static::$config['servers']);
             // check if we can connect to all the server(s)
-            $added = static::$memcached->getStats();
+            $added = static::$memcached->get_stats();
             foreach (static::$config['servers'] as $server) {
-                $server = $server['host'].':'.$server['port'];
-                if (! isset($added[$server]) or $added[$server]['pid'] == -1) {
-                    throw new \FuelException('Memcached config storage is required, but there is no connection possible. Check your configuration.');
+                $server = $server['host'] . ':' . $server['port'];
+                if (!isset($added[$server]) or $added[$server]['pid'] == -1) {
+                    throw new \Fuel_Exception('Memcached config storage is required, but there is no connection possible. Check your configuration.');
                 }
             }
         }
     }
-
     protected $ext = '.mem';
-
     protected array $vars;
-
     /**
      * Sets up the file to be parsed and variables
      *
@@ -78,14 +63,8 @@ class Config_Memcached implements Config_Interface
      */
     public function __construct(protected $identifier = null, $vars = [])
     {
-        $this->vars = [
-            'APPPATH' => APPPATH,
-            'COREPATH' => COREPATH,
-            'PKGPATH' => PKGPATH,
-            'DOCROOT' => DOCROOT,
-        ] + $vars;
+        $this->vars = ['APPPATH' => APPPATH, 'COREPATH' => COREPATH, 'PKGPATH' => PKGPATH, 'DOCROOT' => DOCROOT] + $vars;
     }
-
     /**
      * Loads the config file(s).
      *
@@ -96,11 +75,9 @@ class Config_Memcached implements Config_Interface
     public function load($overwrite = false, $cache = true)
     {
         // fetch the config data from the Memcached server
-        $result = static::$memcached->get(static::$config['identifier'].'_'.$this->identifier);
-
+        $result = static::$memcached->get(static::$config['identifier'] . '_' . $this->identifier);
         return $result === false ? [] : $result;
     }
-
     /**
      * Gets the default group name.
      *
@@ -110,7 +87,6 @@ class Config_Memcached implements Config_Interface
     {
         return $this->identifier;
     }
-
     /**
      * Parses a string using all of the previously set variables.  Allows you to
      * use something like %APPPATH% in non-PHP files.
@@ -121,12 +97,10 @@ class Config_Memcached implements Config_Interface
     protected function parse_vars($string)
     {
         foreach ($this->vars as $var => $val) {
-            $string = str_replace("%$var%", $val, $string);
+            $string = str_replace("%{$var}%", $val, $string);
         }
-
         return $string;
     }
-
     /**
      * Replaces FuelPHP's path constants to their string counterparts.
      *
@@ -136,13 +110,11 @@ class Config_Memcached implements Config_Interface
     protected function prep_vars(array &$array)
     {
         static $replacements = false;
-
         if ($replacements === false) {
             foreach ($this->vars as $i => $v) {
-                $replacements['#^('.preg_quote((string) $v).'){1}(.*)?#'] = '%'.$i.'%$2';
+                $replacements['#^(' . preg_quote((string) $v) . '){1}(.*)?#'] = '%' . $i . '%$2';
             }
         }
-
         foreach ($array as $i => $value) {
             if (is_string($value)) {
                 $array[$i] = preg_replace(array_keys($replacements), array_values($replacements), $value);
@@ -151,7 +123,6 @@ class Config_Memcached implements Config_Interface
             }
         }
     }
-
     /**
      * Formats the output and saved it to disc.
      *
@@ -161,8 +132,8 @@ class Config_Memcached implements Config_Interface
     public function save($contents): void
     {
         // write it to the memcached server
-        if (static::$memcached->set(static::$config['identifier'].'_'.$this->identifier, $contents, 0) === false) {
-            throw new \FuelException('Memcached returned error code "'.static::$memcached->getResultCode().'" on write. Check your configuration.');
+        if (static::$memcached->set(static::$config['identifier'] . '_' . $this->identifier, $contents, 0) === false) {
+            throw new \Fuel_Exception('Memcached returned error code "' . static::$memcached->get_result_code() . '" on write. Check your configuration.');
         }
     }
 }

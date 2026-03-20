@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -20,7 +19,6 @@ namespace Fuel\Core;
 abstract class Lang_File implements Lang_Interface
 {
     protected array $vars;
-
     /**
      * Sets up the file to be parsed and variables
      *
@@ -30,14 +28,8 @@ abstract class Lang_File implements Lang_Interface
      */
     public function __construct(protected $file = null, protected $languages = [], $vars = [])
     {
-        $this->vars = [
-            'APPPATH' => APPPATH,
-            'COREPATH' => COREPATH,
-            'PKGPATH' => PKGPATH,
-            'DOCROOT' => DOCROOT,
-        ] + $vars;
+        $this->vars = ['APPPATH' => APPPATH, 'COREPATH' => COREPATH, 'PKGPATH' => PKGPATH, 'DOCROOT' => DOCROOT] + $vars;
     }
-
     /**
      * Loads the language file(s).
      *
@@ -47,18 +39,12 @@ abstract class Lang_File implements Lang_Interface
     public function load($overwrite = false)
     {
         $paths = $this->find_file();
-
         $lang = [];
-
         foreach ($paths as $path) {
-            $lang = $overwrite ?
-                array_merge($lang, $this->load_file($path)) :
-                \Arr::merge($lang, $this->load_file($path));
+            $lang = $overwrite ? array_merge($lang, $this->load_file($path)) : \Arr::merge($lang, $this->load_file($path));
         }
-
         return $lang;
     }
-
     /**
      * Gets the default group name.
      *
@@ -68,7 +54,6 @@ abstract class Lang_File implements Lang_Interface
     {
         return $this->file;
     }
-
     /**
      * Parses a string using all of the previously set variables.  Allows you to
      * use something like %APPPATH% in non-PHP files.
@@ -79,12 +64,10 @@ abstract class Lang_File implements Lang_Interface
     protected function parse_vars($string)
     {
         foreach ($this->vars as $var => $val) {
-            $string = str_replace("%$var%", $val, $string);
+            $string = str_replace("%{$var}%", $val, $string);
         }
-
         return $string;
     }
-
     /**
      * Replaces FuelPHP's path constants to their string counterparts.
      *
@@ -94,13 +77,11 @@ abstract class Lang_File implements Lang_Interface
     protected function prep_vars(array &$array)
     {
         static $replacements = false;
-
         if ($replacements === false) {
             foreach ($this->vars as $i => $v) {
-                $replacements['#^('.preg_quote((string) $v).'){1}(.*)?#'] = '%'.$i.'%$2';
+                $replacements['#^(' . preg_quote((string) $v) . '){1}(.*)?#'] = '%' . $i . '%$2';
             }
         }
-
         foreach ($array as $i => $value) {
             if (is_string($value)) {
                 $array[$i] = preg_replace(array_keys($replacements), array_values($replacements), $value);
@@ -109,7 +90,6 @@ abstract class Lang_File implements Lang_Interface
             }
         }
     }
-
     /**
      * Finds the given language files
      *
@@ -120,16 +100,13 @@ abstract class Lang_File implements Lang_Interface
     {
         $paths = [];
         foreach ($this->languages as $lang) {
-            $paths = array_merge($paths, \Finder::search('lang'.DS.$lang, $this->file, $this->ext, true));
+            $paths = array_merge($paths, \Finder::search('lang' . DS . $lang, $this->file, $this->ext, true));
         }
-
         if (empty($paths)) {
-            throw new \LangException(sprintf('File "%s" does not exist.', $this->file));
+            throw new \Lang_Exception(sprintf('File "%s" does not exist.', $this->file));
         }
-
         return array_reverse($paths);
     }
-
     /**
      * Formats the output and saved it to disc.
      *
@@ -141,43 +118,35 @@ abstract class Lang_File implements Lang_Interface
     {
         // get the formatted output
         $output = $this->export_format($contents);
-
-        if (! $output) {
+        if (!$output) {
             return false;
         }
-
-        if (! $path = \Finder::search('lang', $identifier)) {
+        if (!$path = \Finder::search('lang', $identifier)) {
             if ($pos = strripos($identifier, '::')) {
                 // get the namespace path
-                if ($path = \Autoloader::namespace_path('\\'.ucfirst(substr($identifier, 0, $pos)))) {
+                if ($path = \Autoloader::namespace_path('\\' . ucfirst(substr($identifier, 0, $pos)))) {
                     // strip the namespace from the filename
                     $identifier = substr($identifier, $pos + 2);
-
                     // strip the classes directory as we need the module root
-                    $path = substr($path, 0, -8).'lang'.DS.$identifier;
+                    $path = substr($path, 0, -8) . 'lang' . DS . $identifier;
                 } else {
                     // invalid namespace requested
                     return false;
                 }
             }
         }
-
         // absolute path requested?
-        if ($identifier[0] === '/' or (isset($identifier[1]) and $identifier[1] === ':')) {
+        if ($identifier[0] === '/' or isset($identifier[1]) and $identifier[1] === ':') {
             $path = $identifier;
         }
-
         // make sure we have a fallback
-        $path or $path = APPPATH.'lang'.DS.$identifier;
-
+        $path or $path = APPPATH . 'lang' . DS . $identifier;
         $path = pathinfo($path);
-        if (! is_dir($path['dirname'])) {
+        if (!is_dir($path['dirname'])) {
             mkdir($path['dirname'], 0777, true);
         }
-
         return \File::update($path['dirname'], $path['basename'], $output);
     }
-
     /**
      * Must be implemented by child class. Gets called for each file to load.
      *
@@ -185,7 +154,6 @@ abstract class Lang_File implements Lang_Interface
      * @return  array
      */
     abstract protected function load_file($file);
-
     /**
      * Must be impletmented by child class. Gets called when saving a language file.
      *

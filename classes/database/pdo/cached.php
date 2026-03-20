@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -12,10 +12,9 @@ declare(strict_types=1);
  * @copyright  2008 - 2009 Kohana Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
-class Database_PDO_Cached extends \Database_Result implements \SeekableIterator, \ArrayAccess
+class Database_PDO_Cached extends \Database_Result implements \Seekable_Iterator, \ArrayAccess
 {
     /**
      * @param  array   $result
@@ -26,28 +25,22 @@ class Database_PDO_Cached extends \Database_Result implements \SeekableIterator,
     {
         // go the generic construction processing
         parent::__construct($result, $sql, $as_object);
-
         // if an array is passed, use it
         if (is_array($result)) {
             $this->_results = $result;
-        }
-
-        // else we're getting a mysqli object. convert the result into an array
-        elseif ($result instanceof \PDOStatement) {
+        } elseif ($result instanceof \PDOStatement) {
             if ($this->_as_object === false) {
-                $this->_results = $this->_result->fetchAll(\PDO::FETCH_ASSOC);
+                $this->_results = $this->_result->fetch_all(\PDO::FETCH_ASSOC);
             } elseif (is_string($this->_as_object)) {
-                $this->_results = $this->_result->fetchAll(\PDO::FETCH_CLASS, $this->_as_object);
+                $this->_results = $this->_result->fetch_all(\PDO::FETCH_CLASS, $this->_as_object);
             } else {
-                $this->_results = $this->_result->fetchAll(\PDO::FETCH_CLASS, 'stdClass');
+                $this->_results = $this->_result->fetch_all(\PDO::FETCH_CLASS, 'stdClass');
             }
         } else {
-            throw new \FuelException('Database_Cached requires database results in either an array or a database object');
+            throw new \Fuel_Exception('Database_Cached requires database results in either an array or a database object');
         }
-
         $this->_total_rows = count($this->_results);
     }
-
     /**
      * Result destruction cleans up all open result sets.
      */
@@ -55,7 +48,6 @@ class Database_PDO_Cached extends \Database_Result implements \SeekableIterator,
     {
         // Cached results do not use driver resources
     }
-
     /**
      * @return $this
      */
@@ -63,11 +55,9 @@ class Database_PDO_Cached extends \Database_Result implements \SeekableIterator,
     {
         return $this;
     }
-
     /**************************
      * SeekableIterator methods
      *************************/
-
     /**
      * @param integer $offset
      *
@@ -75,19 +65,15 @@ class Database_PDO_Cached extends \Database_Result implements \SeekableIterator,
      */
     public function seek($offset)
     {
-        if (! $this->offsetExists($offset)) {
+        if (!$this->offsetExists($offset)) {
             return false;
         }
-
         $this->_current_row = $offset;
-
         return true;
     }
-
     /**************************
      * Iterable methods
      *************************/
-
     /**
      * Implements [Iterator::current], returns the current row.
      *
@@ -97,7 +83,6 @@ class Database_PDO_Cached extends \Database_Result implements \SeekableIterator,
     {
         if ($this->valid()) {
             $this->_row = $this->_results[$this->_current_row];
-
             // sanitize the data if needed
             if ($this->_sanitization_enabled) {
                 $this->_row = \Security::clean($this->_row, null, 'security.output_filter');
@@ -105,24 +90,19 @@ class Database_PDO_Cached extends \Database_Result implements \SeekableIterator,
         } else {
             $this->rewind();
         }
-
         return $this->_row;
     }
-
     /**
      * Implements [Iterator::next], returns the next row.
      */
     public function next(): void
     {
         parent::next();
-
         isset($this->_results[$this->_current_row]) and $this->_row = $this->_results[$this->_current_row];
     }
-
     /**************************
      * ArrayAccess methods
      *************************/
-
     /**
      * Implements [ArrayAccess::offsetExists], determines if row exists.
      *
@@ -139,7 +119,6 @@ class Database_PDO_Cached extends \Database_Result implements \SeekableIterator,
     {
         return isset($this->_results[$offset]);
     }
-
     /**
      * Implements [ArrayAccess::offsetGet], gets a given row.
      *
@@ -151,19 +130,16 @@ class Database_PDO_Cached extends \Database_Result implements \SeekableIterator,
      */
     public function offsetGet($offset)
     {
-        if (! $this->offsetExists($offset)) {
+        if (!$this->offsetExists($offset)) {
             return false;
         }
         $result = $this->_results[$offset];
-
         // sanitize the data if needed
         if ($this->_sanitization_enabled) {
             return \Security::clean($result, null, 'security.output_filter');
         }
-
         return $result;
     }
-
     /**
      * Implements [ArrayAccess::offsetSet], throws an error.
      * [!!] You cannot modify a database result.
@@ -175,9 +151,8 @@ class Database_PDO_Cached extends \Database_Result implements \SeekableIterator,
      */
     final public function offsetSet($offset, $value)
     {
-        throw new \FuelException('Database results are read-only');
+        throw new \Fuel_Exception('Database results are read-only');
     }
-
     /**
      * Implements [ArrayAccess::offsetUnset], throws an error.
      * [!!] You cannot modify a database result.
@@ -188,6 +163,6 @@ class Database_PDO_Cached extends \Database_Result implements \SeekableIterator,
      */
     final public function offsetUnset($offset)
     {
-        throw new \FuelException('Database results are read-only');
+        throw new \Fuel_Exception('Database results are read-only');
     }
 }

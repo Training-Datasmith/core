@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -26,19 +25,16 @@ class Markdown
      * @var  MarkdownExtra  The Markdown Extra parser instance
      */
     protected static $parser;
-
     /**
      * Load Markdown and get it setup.
      */
     public static function _init(): void
     {
-        if (! class_exists('Michelf\MarkdownExtra')) {
-            throw new \FuelException('The Markdown composer library isn\'t installed. Make sure it\'s in your "composer.json", then run "composer update" to install it!');
+        if (!class_exists('Michelf\MarkdownExtra')) {
+            throw new \Fuel_Exception('The Markdown composer library isn\'t installed. Make sure it\'s in your "composer.json", then run "composer update" to install it!');
         }
-
-        static::$parser = new \Michelf\MarkdownExtra();
+        static::$parser = new \Michelf\Markdown_Extra();
     }
-
     /**
      * Runs the Markdown parser instance, so you can pass custom configuration
      *
@@ -48,7 +44,6 @@ class Markdown
     {
         return static::$parser;
     }
-
     /**
      * Runs the given text through the Markdown parser.
      *

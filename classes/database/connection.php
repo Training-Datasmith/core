@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -12,7 +12,6 @@ declare(strict_types=1);
  * @copyright  2008 - 2009 Kohana Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 abstract class Database_Connection implements \Stringable
@@ -21,12 +20,10 @@ abstract class Database_Connection implements \Stringable
      * @var string Cache of the name of the readonly connection
      */
     protected static $_readonly = [];
-
     /**
      * @var  array  Database instances
      */
     public static $instances = [];
-
     /**
      * Get a singleton Database instance. If configuration is not specified,
      * it will be loaded from the database configuration file using the same
@@ -53,70 +50,56 @@ abstract class Database_Connection implements \Stringable
             // Use the default instance name
             $name = \Config::get('db.active');
         }
-
-        if (! $writable and ($readonly = \Config::get('db.'.$name.'.readonly', false))) {
-            ! isset(static::$_readonly[$name]) and static::$_readonly[$name] = \Arr::get($readonly, array_rand($readonly));
+        if (!$writable and $readonly = \Config::get('db.' . $name . '.readonly', false)) {
+            !isset(static::$_readonly[$name]) and static::$_readonly[$name] = \Arr::get($readonly, array_rand($readonly));
             $name = static::$_readonly[$name];
         }
-
-        if (! isset(static::$instances[$name])) {
+        if (!isset(static::$instances[$name])) {
             if ($config === null) {
                 // Load the configuration for this database
-                $config = \Config::get('db.'.$name);
+                $config = \Config::get('db.' . $name);
             }
-
-            if (! isset($config['type'])) {
-                throw new \FuelException('Database type not defined in "'.$name.'" configuration or "'.$name.'" configuration does not exist');
+            if (!isset($config['type'])) {
+                throw new \Fuel_Exception('Database type not defined in "' . $name . '" configuration or "' . $name . '" configuration does not exist');
             }
-
             // Set the driver class name
-            $driver = '\\Database_' . ucfirst($config['type']) . '_Connection';
-
+            $driver = '\Database_' . ucfirst($config['type']) . '_Connection';
             // Create the database connection instance
             static::$instances[$name] = new $driver($name, $config);
         }
-
         return static::$instances[$name];
     }
-
     /**
      * @var  string  the last query executed
      */
     public $last_query;
-
     /**
      * @var  string  Character that is used to quote identifiers
      */
     protected string $_identifier;
-
     /**
      *
      * @var bool $_in_transation allows transactions
      */
     protected $_in_transaction = false;
-
     /**
      *
      * @var int Transaction nesting depth counter.
      * Should be modified AFTER a driver has changed the level successfully
      */
     protected $_transaction_depth = 0;
-
     /**
      * @var  resource  Raw server connection
      */
     protected $_connection;
-
     /**
      * @var  array  Configuration array
      */
     protected $_config;
-
     /**
      * @var  Database_Schema  Instance of the database schema class
      */
     protected $_schema;
-
     /**
      * Stores the database configuration locally and name the instance.
      *
@@ -127,37 +110,16 @@ abstract class Database_Connection implements \Stringable
     protected function __construct(protected $_instance, array $config)
     {
         // make sure we have all connection parameters, add defaults for those missing
-        $this->_config = array_merge([
-            'connection'  => [
-                'dsn'        => '',
-                'hostname'   => '',
-                'username'   => null,
-                'password'   => null,
-                'database'   => '',
-                'persistent' => false,
-                'compress'   => false,
-            ],
-            'identifier'   => '',
-            'table_prefix' => '',
-            'charset'      => 'utf8',
-            'collation'    => false,
-            'enable_cache' => true,
-            'profiling'    => false,
-            'readonly'     => false,
-        ], $config);
-
+        $this->_config = array_merge(['connection' => ['dsn' => '', 'hostname' => '', 'username' => null, 'password' => null, 'database' => '', 'persistent' => false, 'compress' => false], 'identifier' => '', 'table_prefix' => '', 'charset' => 'utf8', 'collation' => false, 'enable_cache' => true, 'profiling' => false, 'readonly' => false], $config);
         // Set up a generic schema processor if needed
-        if (! $this->_schema) {
+        if (!$this->_schema) {
             $this->_schema = new \Database_Schema($this->_instance, $this);
         }
-
         // Allow the identifier to be overloaded per-connection
         $this->_identifier = (string) $this->_config['identifier'];
-
         // Store the database instance
         static::$instances[$this->_instance] = $this;
     }
-
     /**
      * Disconnect from the database when the object is destroyed.
      *
@@ -171,7 +133,6 @@ abstract class Database_Connection implements \Stringable
     {
         $this->disconnect();
     }
-
     /**
      * Returns the database instance name.
      *
@@ -181,7 +142,6 @@ abstract class Database_Connection implements \Stringable
     {
         return $this->_instance;
     }
-
     /**
      * Connect to the database. This is called automatically when the first
      * query is executed.
@@ -192,7 +152,6 @@ abstract class Database_Connection implements \Stringable
      * @return  void
      */
     abstract public function connect();
-
     /**
      * Disconnect from the database. This is called automatically by [static::__destruct].
      *
@@ -201,7 +160,6 @@ abstract class Database_Connection implements \Stringable
      * @return  boolean
      */
     abstract public function disconnect();
-
     /**
      * Set the connection character set. This is called automatically by [static::connect].
      *
@@ -212,7 +170,6 @@ abstract class Database_Connection implements \Stringable
      * @return  void
      */
     abstract public function set_charset($charset);
-
     /**
      * Returns a database cache object
      *
@@ -225,7 +182,6 @@ abstract class Database_Connection implements \Stringable
      * @return  Database_Cached
      */
     abstract public function cache($result, $sql, $as_object = null);
-
     /**
      * Perform an SQL query of the given type.
      *
@@ -247,7 +203,6 @@ abstract class Database_Connection implements \Stringable
      * @throws \Database_Exception
      */
     abstract public function query($type, $sql, $as_object, $caching);
-
     /**
      * Create a new [Database_Query_Builder_Select]. Each argument will be
      * treated as a column. To generate a `foo AS bar` alias, use an array.
@@ -267,7 +222,6 @@ abstract class Database_Connection implements \Stringable
         $instance = new \Database_Query_Builder_Select($args);
         return $instance->set_connection($this);
     }
-
     /**
      * Create a new [Database_Query_Builder_Insert].
      *
@@ -283,7 +237,6 @@ abstract class Database_Connection implements \Stringable
         $instance = new \Database_Query_Builder_Insert($table, $columns);
         return $instance->set_connection($this);
     }
-
     /**
      * Create a new [Database_Query_Builder_Update].
      *
@@ -298,7 +251,6 @@ abstract class Database_Connection implements \Stringable
         $instance = new \Database_Query_Builder_Update($table);
         return $instance->set_connection($this);
     }
-
     /**
      * Create a new [Database_Query_Builder_Delete].
      *
@@ -313,13 +265,11 @@ abstract class Database_Connection implements \Stringable
         $instance = new \Database_Query_Builder_Delete($table);
         return $instance->set_connection($this);
     }
-
     /**
      * Database schema operations
      *
      *     // CREATE DATABASE database CHARACTER SET utf-8 DEFAULT utf-8
      *     $query = $db->schema('create_database', array('database', 'utf-8'));
-
      * @param   string  table to delete from
      * @return  Database_Query_Builder_Delete
      */
@@ -327,7 +277,6 @@ abstract class Database_Connection implements \Stringable
     {
         return call_user_func_array([$this->_schema, $operation], $params);
     }
-
     /**
      * Count the number of records in the last query, without LIMIT or OFFSET applied.
      *
@@ -343,40 +292,27 @@ abstract class Database_Connection implements \Stringable
             if (stripos($sql, 'SELECT') !== 0) {
                 return false;
             }
-
             if (stripos($sql, 'LIMIT') !== false) {
                 // Remove LIMIT from the SQL
                 $sql = preg_replace('/\sLIMIT\s+[^a-z\)]+/i', ' ', $sql);
             }
-
             if (stripos((string) $sql, 'OFFSET') !== false) {
                 // Remove OFFSET from the SQL
                 $sql = preg_replace('/\sOFFSET\s+\d+/i', '', (string) $sql);
             }
-
             if (stripos((string) $sql, 'ORDER BY') !== false) {
                 // Remove ORDER BY clauses from the SQL to improve count query performance
                 $sql = preg_replace('/ORDER BY (.+?)(?=LIMIT|GROUP BY|PROCEDURE|INTO|FOR|LOCK|\)|$)/mi', '', (string) $sql);
             }
-
             // Get the total rows from the last query executed
-            $result = $this->query(
-                \DB::SELECT,
-                'SELECT COUNT(*) AS '.$this->quote_identifier('total_rows').' '.
-                'FROM ('.$sql.') AS '.$this->quote_table('counted_results'),
-                true
-            );
-
+            $result = $this->query(\DB::SELECT, 'SELECT COUNT(*) AS ' . $this->quote_identifier('total_rows') . ' ' . 'FROM (' . $sql . ') AS ' . $this->quote_table('counted_results'), true);
             // restore the previous query
             $this->last_query = $orgsql;
-
             // Return the total number of rows from the query
             return (int) $result->get('total_rows');
         }
-
         return false;
     }
-
     /**
      * Per connection cache controller setter/getter
      *
@@ -392,7 +328,6 @@ abstract class Database_Connection implements \Stringable
         }
         return \Arr::get($this->_config, 'enable_cache', true);
     }
-
     /**
      * Count the number of records in a table.
      *
@@ -407,11 +342,8 @@ abstract class Database_Connection implements \Stringable
     {
         // Quote the table name
         $table = $this->quote_table($table);
-
-        return $this->query(\DB::SELECT, 'SELECT COUNT(*) AS total_row_count FROM '.$table, false)
-            ->get('total_row_count');
+        return $this->query(\DB::SELECT, 'SELECT COUNT(*) AS total_row_count FROM ' . $table, false)->get('total_row_count');
     }
-
     /**
      * Returns a normalized array describing the SQL data type
      *
@@ -425,60 +357,55 @@ abstract class Database_Connection implements \Stringable
     {
         static $types = [
             // SQL-92
-            'bit'                           => ['type' => 'string', 'exact' => true],
-            'bit varying'                   => ['type' => 'string'],
-            'char'                          => ['type' => 'string', 'exact' => true],
-            'char varying'                  => ['type' => 'string'],
-            'character'                     => ['type' => 'string', 'exact' => true],
-            'character varying'             => ['type' => 'string'],
-            'date'                          => ['type' => 'string'],
-            'dec'                           => ['type' => 'float', 'exact' => true],
-            'decimal'                       => ['type' => 'float', 'exact' => true],
-            'double precision'              => ['type' => 'float'],
-            'float'                         => ['type' => 'float'],
-            'int'                           => ['type' => 'int', 'min' => '-2147483648', 'max' => '2147483647'],
-            'integer'                       => ['type' => 'int', 'min' => '-2147483648', 'max' => '2147483647'],
-            'interval'                      => ['type' => 'string'],
-            'national char'                 => ['type' => 'string', 'exact' => true],
-            'national char varying'         => ['type' => 'string'],
-            'national character'            => ['type' => 'string', 'exact' => true],
-            'national character varying'    => ['type' => 'string'],
-            'nchar'                         => ['type' => 'string', 'exact' => true],
-            'nchar varying'                 => ['type' => 'string'],
-            'numeric'                       => ['type' => 'float', 'exact' => true],
-            'real'                          => ['type' => 'float'],
-            'smallint'                      => ['type' => 'int', 'min' => '-32768', 'max' => '32767'],
-            'time'                          => ['type' => 'string'],
-            'time with time zone'           => ['type' => 'string'],
-            'timestamp'                     => ['type' => 'string'],
-            'timestamp with time zone'      => ['type' => 'string'],
-            'varchar'                       => ['type' => 'string'],
-
+            'bit' => ['type' => 'string', 'exact' => true],
+            'bit varying' => ['type' => 'string'],
+            'char' => ['type' => 'string', 'exact' => true],
+            'char varying' => ['type' => 'string'],
+            'character' => ['type' => 'string', 'exact' => true],
+            'character varying' => ['type' => 'string'],
+            'date' => ['type' => 'string'],
+            'dec' => ['type' => 'float', 'exact' => true],
+            'decimal' => ['type' => 'float', 'exact' => true],
+            'double precision' => ['type' => 'float'],
+            'float' => ['type' => 'float'],
+            'int' => ['type' => 'int', 'min' => '-2147483648', 'max' => '2147483647'],
+            'integer' => ['type' => 'int', 'min' => '-2147483648', 'max' => '2147483647'],
+            'interval' => ['type' => 'string'],
+            'national char' => ['type' => 'string', 'exact' => true],
+            'national char varying' => ['type' => 'string'],
+            'national character' => ['type' => 'string', 'exact' => true],
+            'national character varying' => ['type' => 'string'],
+            'nchar' => ['type' => 'string', 'exact' => true],
+            'nchar varying' => ['type' => 'string'],
+            'numeric' => ['type' => 'float', 'exact' => true],
+            'real' => ['type' => 'float'],
+            'smallint' => ['type' => 'int', 'min' => '-32768', 'max' => '32767'],
+            'time' => ['type' => 'string'],
+            'time with time zone' => ['type' => 'string'],
+            'timestamp' => ['type' => 'string'],
+            'timestamp with time zone' => ['type' => 'string'],
+            'varchar' => ['type' => 'string'],
             // SQL:1999
-            'binary large object'               => ['type' => 'string', 'binary' => true],
-            'blob'                              => ['type' => 'string', 'binary' => true],
-            'boolean'                           => ['type' => 'bool'],
-            'char large object'                 => ['type' => 'string'],
-            'character large object'            => ['type' => 'string'],
-            'clob'                              => ['type' => 'string'],
-            'national character large object'   => ['type' => 'string'],
-            'nchar large object'                => ['type' => 'string'],
-            'nclob'                             => ['type' => 'string'],
-            'time without time zone'            => ['type' => 'string'],
-            'timestamp without time zone'       => ['type' => 'string'],
-
+            'binary large object' => ['type' => 'string', 'binary' => true],
+            'blob' => ['type' => 'string', 'binary' => true],
+            'boolean' => ['type' => 'bool'],
+            'char large object' => ['type' => 'string'],
+            'character large object' => ['type' => 'string'],
+            'clob' => ['type' => 'string'],
+            'national character large object' => ['type' => 'string'],
+            'nchar large object' => ['type' => 'string'],
+            'nclob' => ['type' => 'string'],
+            'time without time zone' => ['type' => 'string'],
+            'timestamp without time zone' => ['type' => 'string'],
             // SQL:2003
-            'bigint'    => ['type' => 'int', 'min' => '-9223372036854775808', 'max' => '9223372036854775807'],
-
+            'bigint' => ['type' => 'int', 'min' => '-9223372036854775808', 'max' => '9223372036854775807'],
             // SQL:2008
-            'binary'            => ['type' => 'string', 'binary' => true, 'exact' => true],
-            'binary varying'    => ['type' => 'string', 'binary' => true],
-            'varbinary'         => ['type' => 'string', 'binary' => true],
+            'binary' => ['type' => 'string', 'binary' => true, 'exact' => true],
+            'binary varying' => ['type' => 'string', 'binary' => true],
+            'varbinary' => ['type' => 'string', 'binary' => true],
         ];
-
         return $types[$type] ?? [];
     }
-
     /**
      * List all of the tables in the database. Optionally, a LIKE string can
      * be used to search for specific tables.
@@ -494,7 +421,6 @@ abstract class Database_Connection implements \Stringable
      * @return  array
      */
     abstract public function list_tables($like = null);
-
     /**
      * Lists all of the columns in a table. Optionally, a LIKE string can be
      * used to search for specific fields.
@@ -511,7 +437,6 @@ abstract class Database_Connection implements \Stringable
      * @return  array
      */
     abstract public function list_columns($table, $like = null);
-
     /**
      * Lists all of the indexes in a table. Optionally, a LIKE string can be
      * used to search for specific indexes by name.
@@ -528,7 +453,6 @@ abstract class Database_Connection implements \Stringable
      * @return  array
      */
     abstract public function list_indexes($table, $like = null);
-
     /**
      * Extracts the text between parentheses, if any.
      *
@@ -545,19 +469,14 @@ abstract class Database_Connection implements \Stringable
             // No length specified
             return [$type, null];
         }
-
         // Closing parenthesis
         $close = strpos($type, ')', $open);
-
         // Length without parentheses
         $length = substr($type, $open + 1, $close - 1 - $open);
-
         // Type without the length
-        $type = substr($type, 0, $open).substr($type, $close + 1);
-
+        $type = substr($type, 0, $open) . substr($type, $close + 1);
         return [$type, $length];
     }
-
     /**
      * Return the table prefix defined in the current configuration.
      *
@@ -570,12 +489,10 @@ abstract class Database_Connection implements \Stringable
     public function table_prefix($table = null)
     {
         if ($table !== null) {
-            return $this->_config['table_prefix'] .$table;
+            return $this->_config['table_prefix'] . $table;
         }
-
         return $this->_config['table_prefix'];
     }
-
     /**
      * Quote a value for an SQL query.
      *
@@ -608,7 +525,7 @@ abstract class Database_Connection implements \Stringable
         if (is_object($value)) {
             if ($value instanceof Database_Query) {
                 // Create a sub-query
-                return '('.$value->compile($this).')';
+                return '(' . $value->compile($this) . ')';
             }
             if ($value instanceof Database_Expression) {
                 // Use a raw expression
@@ -618,7 +535,7 @@ abstract class Database_Connection implements \Stringable
             return $this->quote((string) $value);
         }
         if (is_array($value)) {
-            return '('.implode(', ', array_map([$this, __FUNCTION__], $value)).')';
+            return '(' . implode(', ', array_map([$this, __FUNCTION__], $value)) . ')';
         }
         if (is_int($value)) {
             return $value;
@@ -628,10 +545,8 @@ abstract class Database_Connection implements \Stringable
             $value = str_replace($locale_info['thousands_sep'], '', strval($value));
             return str_replace($locale_info['decimal_point'], '.', $value);
         }
-
         return $this->escape($value);
     }
-
     /**
      * Quote a database table name and adds the table prefix if needed.
      *
@@ -648,26 +563,23 @@ abstract class Database_Connection implements \Stringable
     {
         // Assign the table by reference from the value
         if (is_array($value)) {
-            $table = & $value[0];
-
+            $table =& $value[0];
             // Attach table prefix to alias
-            $value[1] = $this->table_prefix().$value[1];
+            $value[1] = $this->table_prefix() . $value[1];
         } else {
-            $table = & $value;
+            $table =& $value;
         }
-
         // deal with the sub-query objects first
         if ($table instanceof Database_Query) {
             // Create a sub-query
-            $table = '('.$table->compile($this).')';
+            $table = '(' . $table->compile($this) . ')';
         } elseif (is_string($table)) {
             if (!str_contains($table, '.')) {
                 // Add the table prefix for tables
-                $table = $this->quote_identifier($this->table_prefix().$table);
+                $table = $this->quote_identifier($this->table_prefix() . $table);
             } else {
                 // Split the identifier into the individual parts
                 $parts = explode('.', $table);
-
                 if ($prefix = $this->table_prefix()) {
                     // Get the offset of the table name, 2nd-to-last part
                     // This works for databases that can have 3 identifiers (Postgre)
@@ -676,27 +588,22 @@ abstract class Database_Connection implements \Stringable
                     } else {
                         $offset = $offset - 2;
                     }
-
                     // Add the table prefix to the table name
-                    $parts[$offset] = $prefix.$parts[$offset];
+                    $parts[$offset] = $prefix . $parts[$offset];
                 }
-
                 // Quote each of the parts
                 $table = implode('.', array_map($this->quote_identifier(...), $parts));
             }
         }
-
         // process the alias if present
         if (is_array($value)) {
             // Separate the column and alias
             [$value, $alias] = $value;
-
-            return $value.' AS '.$this->quote_identifier($alias);
+            return $value . ' AS ' . $this->quote_identifier($alias);
         }
         // return the value
         return $value;
     }
-
     /**
      * Quote a database identifier, such as a column name. Adds the
      * table prefix to the identifier if a table name is present.
@@ -727,7 +634,7 @@ abstract class Database_Connection implements \Stringable
         if (is_object($value)) {
             if ($value instanceof Database_Query) {
                 // Create a sub-query
-                return '('.$value->compile($this).')';
+                return '(' . $value->compile($this) . ')';
             }
             if ($value instanceof Database_Expression) {
                 // Use a raw expression
@@ -739,39 +646,32 @@ abstract class Database_Connection implements \Stringable
         if (is_array($value)) {
             // Separate the column and alias
             [$value, $alias] = $value;
-            return $this->quote_identifier($value).' AS '.$this->quote_identifier($alias);
+            return $this->quote_identifier($value) . ' AS ' . $this->quote_identifier($alias);
         }
-
         if (preg_match('/^(["\']).*\1$/m', (string) $value)) {
             return $value;
         }
-
         if (str_contains((string) $value, '.')) {
             // Split the identifier into the individual parts
             // This is slightly broken, because a table or column name
             // (or user-defined alias!) might legitimately contain a period.
             $parts = explode('.', (string) $value);
-
             if ($prefix = $this->table_prefix()) {
                 // Get the offset of the table name, 2nd-to-last part
                 // This works for databases that can have 3 identifiers (Postgre)
                 $offset = count($parts) - 2;
-
                 // Add the table prefix to the table name
-                $parts[$offset] = $prefix.$parts[$offset];
+                $parts[$offset] = $prefix . $parts[$offset];
             }
-
             // Quote each of the parts
             return implode('.', array_map([$this, __FUNCTION__], $parts));
         }
-
         // That you can simply escape the identifier by doubling
         // it is a built-in assumption which may not be valid for
         // all connection types!  However, it's true for MySQL,
         // SQLite, Postgres and other ANSI SQL-compliant DBs.
-        return $this->_identifier.str_replace($this->_identifier, $this->_identifier.$this->_identifier, $value).$this->_identifier;
+        return $this->_identifier . str_replace($this->_identifier, $this->_identifier . $this->_identifier, $value) . $this->_identifier;
     }
-
     /**
      * Sanitize a string by escaping characters that could cause an SQL
      * injection attack.
@@ -783,7 +683,6 @@ abstract class Database_Connection implements \Stringable
      * @return  string
      */
     abstract public function escape($value);
-
     /**
      * Whether or not the connection is in transaction mode
      *
@@ -795,7 +694,6 @@ abstract class Database_Connection implements \Stringable
     {
         return $this->_in_transaction;
     }
-
     /**
      * Begins a nested transaction on instance
      *
@@ -806,7 +704,6 @@ abstract class Database_Connection implements \Stringable
     public function start_transaction()
     {
         $result = true;
-
         if ($this->_transaction_depth == 0) {
             if ($this->driver_start_transaction()) {
                 $this->_in_transaction = true;
@@ -818,12 +715,9 @@ abstract class Database_Connection implements \Stringable
             // If savepoint is not supported it is not an error
             isset($result) or $result = true;
         }
-
         $result and $this->_transaction_depth++;
-
         return $result;
     }
-
     /**
      * Commits nested transaction
      *
@@ -837,21 +731,17 @@ abstract class Database_Connection implements \Stringable
         if ($this->_transaction_depth <= 0) {
             return false;
         }
-
         if ($this->_transaction_depth - 1) {
             $result = $this->release_savepoint($this->_transaction_depth - 1);
             // If savepoint is not supported it is not an error
-            ! isset($result) and $result = true;
+            !isset($result) and $result = true;
         } else {
             $this->_in_transaction = false;
             $result = $this->driver_commit();
         }
-
         $result and $this->_transaction_depth--;
-
         return $result;
     }
-
     /**
      * Rollsback nested pending transaction queries.
      * Rollback to the current level uses SAVEPOINT,
@@ -878,37 +768,31 @@ abstract class Database_Connection implements \Stringable
                 $result = $this->rollback_savepoint($this->_transaction_depth - 1);
                 // If savepoint is not supported it is not an error
                 isset($result) or $result = true;
-
-                $result and $this->_transaction_depth-- ;
+                $result and $this->_transaction_depth--;
             }
         } else {
             $result = false;
         }
-
         return $result;
     }
-
     /**
      * Begins a transaction on the driver level
      *
      * @return bool
      */
     abstract protected function driver_start_transaction();
-
     /**
      * Commits all pending transactional queries on the driver level
      *
      * @return bool
-    */
+     */
     abstract protected function driver_commit();
-
     /**
      * Rollback all pending transactional queries on the driver level
      *
      * @return bool
-    */
+     */
     abstract protected function driver_rollback();
-
     /**
      * Sets savepoint of the transaction
      *
@@ -921,7 +805,6 @@ abstract class Database_Connection implements \Stringable
     {
         return null;
     }
-
     /**
      * Release savepoint of the transaction
      *
@@ -934,7 +817,6 @@ abstract class Database_Connection implements \Stringable
     {
         return null;
     }
-
     /**
      * Rollback savepoint of the transaction
      *
@@ -947,7 +829,6 @@ abstract class Database_Connection implements \Stringable
     {
         return null;
     }
-
     /**
      * Returns the raw connection object for custom method access
      *
@@ -961,7 +842,6 @@ abstract class Database_Connection implements \Stringable
         $this->_connection or $this->connect();
         return $this->_connection;
     }
-
     /**
      * Returns whether or not we have a valid database connection object
      *

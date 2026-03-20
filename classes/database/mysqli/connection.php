@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -12,41 +12,34 @@ declare(strict_types=1);
  * @copyright  2008 - 2009 Kohana Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
-class Database_MySQLi_Connection extends \Database_Connection
+class Database_my_Sq_Li_connection extends \Database_Connection
 {
     /**
      * @var  \MySQLi  Raw server connection
      */
     protected $_connection;
-
     /**
      * @var  array  Database in use by each connection
      */
     protected static $_current_databases = [];
-
     /**
      * @var  bool  Use SET NAMES to set the character set
      */
     protected static $_set_names;
-
     /**
      * @var  string  Identifier for this connection within the PHP driver
      */
     protected $_connection_id;
-
     /**
      * @var  string  MySQL uses a backtick for identifiers
      */
     protected $_identifier = '`';
-
     /**
      * @var  string  Which kind of DB is used
      */
     public $_db_type = 'mysql';
-
     /**
      * @param string $name
      */
@@ -54,58 +47,41 @@ class Database_MySQLi_Connection extends \Database_Connection
     {
         // construct a custom schema driver
         //		$this->_schema = new \Database_Drivername_Schema($name, $this);
-
         // call the parent consructor
         parent::__construct($name, $config);
-
         // make sure we have all connection parameters, add defaults for those missing
-        $this->_config = \Arr::merge([
-            'connection'  => [
-                'socket'     => '',
-                'port'       => '',
-                'compress'   => false,
-            ],
-            'enable_cache'   => true,
-        ], $this->_config);
+        $this->_config = \Arr::merge(['connection' => ['socket' => '', 'port' => '', 'compress' => false], 'enable_cache' => true], $this->_config);
     }
-
     public function connect(): void
     {
         if ($this->_connection) {
             return;
         }
-
         if (static::$_set_names === null) {
             // Determine if we can use mysqli_set_charset(), which is only
             // available on PHP 5.2.3+ when compiled against MySQL 5.0+
-            static::$_set_names = ! function_exists('mysqli_set_charset');
+            static::$_set_names = !function_exists('mysqli_set_charset');
         }
-
         // Extract the connection parameters, adding required variables
         extract($this->_config['connection']);
-
         try {
             if ($socket != '') {
-                $port   = null;
+                $port = null;
             } elseif ($port != '') {
                 $socket = null;
             } else {
                 $socket = null;
-                $port   = null;
+                $port = null;
             }
-
-            $host = ($persistent) ? 'p:'.$hostname : $hostname;
-
+            $host = $persistent ? 'p:' . $hostname : $hostname;
             // Create a connection and force it to be a new link
             if ($compress) {
                 $mysqli = mysqli_init();
                 $mysqli->real_connect($host, $username, $password, $database, $port, $socket, MYSQLI_CLIENT_COMPRESS);
-
                 $this->_connection = $mysqli;
             } else {
-                $this->_connection = new \MySQLi($host, $username, $password, $database, $port, $socket);
+                $this->_connection = new \My_Sq_Li($host, $username, $password, $database, $port, $socket);
             }
-
             if ($this->_connection->error) {
                 // Unable to connect, select database, etc
                 throw new \Database_Exception(str_replace($password, str_repeat('*', 10), $this->_connection->error), $this->_connection->errno, null, $this->_connection->errno);
@@ -113,21 +89,16 @@ class Database_MySQLi_Connection extends \Database_Connection
         } catch (\ErrorException $e) {
             // No connection exists
             $this->_connection = null;
-
-            throw new \Database_Exception(str_replace($password, str_repeat('*', 10), $e->getMessage()), $e->getCode(), $e, $e->getCode());
+            throw new \Database_Exception(str_replace($password, str_repeat('*', 10), $e->get_message()), $e->get_code(), $e, $e->get_code());
         }
-
         // \xFF is a better delimiter, but the PHP driver uses underscore
-        $this->_connection_id = sha1($hostname.'_'.$username.'_'.$password);
-
-        if (! empty($this->_config['charset'])) {
+        $this->_connection_id = sha1($hostname . '_' . $username . '_' . $password);
+        if (!empty($this->_config['charset'])) {
             // Set the character set
             $this->set_charset($this->_config['charset']);
         }
-
         static::$_current_databases[$this->_connection_id] = $database;
     }
-
     /**
      * Select the database
      *
@@ -142,10 +113,8 @@ class Database_MySQLi_Connection extends \Database_Connection
                 throw new \Database_Exception($this->_connection->error, $this->_connection->errno, null, $this->_connection->errno);
             }
         }
-
         static::$_current_databases[$this->_connection_id] = $database;
     }
-
     /**
      * Disconnect from the database
      *
@@ -156,36 +125,29 @@ class Database_MySQLi_Connection extends \Database_Connection
         try {
             // Database is assumed disconnected
             $status = true;
-
-            if ($this->_connection instanceof \MySQLi) {
+            if ($this->_connection instanceof \My_Sq_Li) {
                 if ($status = $this->_connection->close()) {
                     // clear the connection
                     $this->_connection = null;
-
                     // and reset the savepoint depth
                     $this->_transaction_depth = 0;
                 }
-
             }
         } catch (\Exception) {
             // Database is probably not disconnected
-            $status = ! ($this->_connection instanceof \MySQLi);
+            $status = !$this->_connection instanceof \My_Sq_Li;
         }
-
         return $status;
     }
-
     public function set_charset($charset): void
     {
         // Make sure the database is connected
         $this->_connection or $this->connect();
         $status = $this->_connection->set_charset($charset);
-
         if ($status === false) {
             throw new \Database_Exception($this->_connection->error, $this->_connection->errno, null, $this->_connection->errno);
         }
     }
-
     /**
      * Perform an SQL query of the given type.
      *
@@ -210,24 +172,20 @@ class Database_MySQLi_Connection extends \Database_Connection
     {
         // If no custom caching is given, use the global setting
         is_null($caching) and $caching = $this->_config['enable_cache'];
-
         // Make sure the database is connected
         if ($this->_connection) {
             // Make sure the connection is still alive
-            if (! $this->_connection->ping()) {
-                throw new \Database_Exception($this->_connection->error.' [ '.$sql.' ]', $this->_connection->errno, null, $this->_connection->errno);
+            if (!$this->_connection->ping()) {
+                throw new \Database_Exception($this->_connection->error . ' [ ' . $sql . ' ]', $this->_connection->errno, null, $this->_connection->errno);
             }
         } else {
             $this->connect();
         }
-
-        if (\Fuel::$profiling and ! empty($this->_config['profiling'])) {
+        if (\Fuel::$profiling and !empty($this->_config['profiling'])) {
             // Get the paths defined in config
             $paths = \Config::get('profiling_paths');
-
             // Storage for the trace information
             $stacktrace = [];
-
             // Get the execution trace of this query
             $include = false;
             foreach (debug_backtrace() as $index => $page) {
@@ -240,69 +198,55 @@ class Database_MySQLi_Connection extends \Database_Connection
                             break;
                         }
                     }
-
                     // Only log if no paths we defined, or we have a path match
                     if ($include or empty($paths)) {
                         $stacktrace[] = ['file' => \Fuel::clean_path($page['file']), 'line' => $page['line']];
                     }
                 }
             }
-
             $benchmark = \Profiler::start($this->_instance, $sql, $stacktrace);
         }
-
-        if (! empty($this->_config['connection']['persistent']) and $this->_config['connection']['database'] !== static::$_current_databases[$this->_connection_id]) {
+        if (!empty($this->_config['connection']['persistent']) and $this->_config['connection']['database'] !== static::$_current_databases[$this->_connection_id]) {
             // Select database on persistent connections
             $this->_select_db($this->_config['connection']['database']);
         }
-
         // Execute the query
         if (($result = $this->_connection->query($sql, $caching ? MYSQLI_STORE_RESULT : MYSQLI_USE_RESULT)) === false) {
             if (isset($benchmark)) {
                 // This benchmark is worthless
                 \Profiler::delete($benchmark);
             }
-
-            throw new \Database_Exception($this->_connection->error.' [ '.$sql.' ]', $this->_connection->errno, null, $this->_connection->errno);
+            throw new \Database_Exception($this->_connection->error . ' [ ' . $sql . ' ]', $this->_connection->errno, null, $this->_connection->errno);
         }
-
         // check for multiresults, we don't support those at the moment
         while ($this->_connection->more_results() and $this->_connection->next_result()) {
             if ($more_result = $this->_connection->use_result()) {
                 throw new \Database_Exception('The MySQLi driver does not support multiple resultsets', 0);
             }
         }
-
         if (isset($benchmark)) {
             \Profiler::stop($benchmark);
         }
-
         // Set the last query
         $this->last_query = $sql;
         if ($type === \DB::SELECT) {
             if ($caching) {
                 // Return an iterator of results
-                return new \Database_MySQLi_Cached($result, $sql, $as_object);
+                return new \Database_my_Sq_Li_cached($result, $sql, $as_object);
             }
             // Return an iterator of results
-            return new \Database_MySQLi_Result($result, $sql, $as_object);
+            return new \Database_my_Sq_Li_result($result, $sql, $as_object);
         }
         if ($type === \DB::INSERT) {
             // Return a list of insert id and rows created
-            return [
-                $this->_connection->insert_id,
-                $this->_connection->affected_rows,
-            ];
+            return [$this->_connection->insert_id, $this->_connection->affected_rows];
         }
-
         if ($type === \DB::UPDATE or $type === \DB::DELETE) {
             // Return the number of rows affected
             return $this->_connection->affected_rows;
         }
-
         return $result;
     }
-
     /**
      * Returns a database cache object
      *
@@ -316,9 +260,8 @@ class Database_MySQLi_Connection extends \Database_Connection
      */
     public function cache($result, $sql, $as_object = null)
     {
-        return new \Database_MySQLi_Cached($result, $sql, $as_object);
+        return new \Database_my_Sq_Li_cached($result, $sql, $as_object);
     }
-
     /**
      * Resolve a datatype
      *
@@ -328,48 +271,10 @@ class Database_MySQLi_Connection extends \Database_Connection
      */
     public function datatype($type)
     {
-        static $types = [
-            'blob'                      => ['type' => 'string', 'binary' => true, 'character_maximum_length' => '65535'],
-            'bool'                      => ['type' => 'bool'],
-            'bigint unsigned'           => ['type' => 'int', 'min' => '0', 'max' => '18446744073709551615'],
-            'datetime'                  => ['type' => 'string'],
-            'decimal unsigned'          => ['type' => 'float', 'exact' => true, 'min' => '0'],
-            'double'                    => ['type' => 'float'],
-            'double precision unsigned' => ['type' => 'float', 'min' => '0'],
-            'double unsigned'           => ['type' => 'float', 'min' => '0'],
-            'enum'                      => ['type' => 'string'],
-            'fixed'                     => ['type' => 'float', 'exact' => true],
-            'fixed unsigned'            => ['type' => 'float', 'exact' => true, 'min' => '0'],
-            'float unsigned'            => ['type' => 'float', 'min' => '0'],
-            'int unsigned'              => ['type' => 'int', 'min' => '0', 'max' => '4294967295'],
-            'integer unsigned'          => ['type' => 'int', 'min' => '0', 'max' => '4294967295'],
-            'longblob'                  => ['type' => 'string', 'binary' => true, 'character_maximum_length' => '4294967295'],
-            'longtext'                  => ['type' => 'string', 'character_maximum_length' => '4294967295'],
-            'mediumblob'                => ['type' => 'string', 'binary' => true, 'character_maximum_length' => '16777215'],
-            'mediumint'                 => ['type' => 'int', 'min' => '-8388608', 'max' => '8388607'],
-            'mediumint unsigned'        => ['type' => 'int', 'min' => '0', 'max' => '16777215'],
-            'mediumtext'                => ['type' => 'string', 'character_maximum_length' => '16777215'],
-            'national varchar'          => ['type' => 'string'],
-            'numeric unsigned'          => ['type' => 'float', 'exact' => true, 'min' => '0'],
-            'nvarchar'                  => ['type' => 'string'],
-            'point'                     => ['type' => 'string', 'binary' => true],
-            'real unsigned'             => ['type' => 'float', 'min' => '0'],
-            'set'                       => ['type' => 'string'],
-            'smallint unsigned'         => ['type' => 'int', 'min' => '0', 'max' => '65535'],
-            'text'                      => ['type' => 'string', 'character_maximum_length' => '65535'],
-            'tinyblob'                  => ['type' => 'string', 'binary' => true, 'character_maximum_length' => '255'],
-            'tinyint'                   => ['type' => 'int', 'min' => '-128', 'max' => '127'],
-            'tinyint unsigned'          => ['type' => 'int', 'min' => '0', 'max' => '255'],
-            'tinytext'                  => ['type' => 'string', 'character_maximum_length' => '255'],
-            'varchar'                   => ['type' => 'string', 'exact' => true],
-            'year'                      => ['type' => 'string'],
-        ];
-
+        static $types = ['blob' => ['type' => 'string', 'binary' => true, 'character_maximum_length' => '65535'], 'bool' => ['type' => 'bool'], 'bigint unsigned' => ['type' => 'int', 'min' => '0', 'max' => '18446744073709551615'], 'datetime' => ['type' => 'string'], 'decimal unsigned' => ['type' => 'float', 'exact' => true, 'min' => '0'], 'double' => ['type' => 'float'], 'double precision unsigned' => ['type' => 'float', 'min' => '0'], 'double unsigned' => ['type' => 'float', 'min' => '0'], 'enum' => ['type' => 'string'], 'fixed' => ['type' => 'float', 'exact' => true], 'fixed unsigned' => ['type' => 'float', 'exact' => true, 'min' => '0'], 'float unsigned' => ['type' => 'float', 'min' => '0'], 'int unsigned' => ['type' => 'int', 'min' => '0', 'max' => '4294967295'], 'integer unsigned' => ['type' => 'int', 'min' => '0', 'max' => '4294967295'], 'longblob' => ['type' => 'string', 'binary' => true, 'character_maximum_length' => '4294967295'], 'longtext' => ['type' => 'string', 'character_maximum_length' => '4294967295'], 'mediumblob' => ['type' => 'string', 'binary' => true, 'character_maximum_length' => '16777215'], 'mediumint' => ['type' => 'int', 'min' => '-8388608', 'max' => '8388607'], 'mediumint unsigned' => ['type' => 'int', 'min' => '0', 'max' => '16777215'], 'mediumtext' => ['type' => 'string', 'character_maximum_length' => '16777215'], 'national varchar' => ['type' => 'string'], 'numeric unsigned' => ['type' => 'float', 'exact' => true, 'min' => '0'], 'nvarchar' => ['type' => 'string'], 'point' => ['type' => 'string', 'binary' => true], 'real unsigned' => ['type' => 'float', 'min' => '0'], 'set' => ['type' => 'string'], 'smallint unsigned' => ['type' => 'int', 'min' => '0', 'max' => '65535'], 'text' => ['type' => 'string', 'character_maximum_length' => '65535'], 'tinyblob' => ['type' => 'string', 'binary' => true, 'character_maximum_length' => '255'], 'tinyint' => ['type' => 'int', 'min' => '-128', 'max' => '127'], 'tinyint unsigned' => ['type' => 'int', 'min' => '0', 'max' => '255'], 'tinytext' => ['type' => 'string', 'character_maximum_length' => '255'], 'varchar' => ['type' => 'string', 'exact' => true], 'year' => ['type' => 'string']];
         $type = str_replace(' zerofill', '', $type);
-
         return $types[$type] ?? parent::datatype($type);
     }
-
     /**
      * List tables
      *
@@ -380,20 +285,17 @@ class Database_MySQLi_Connection extends \Database_Connection
     {
         if (is_string($like)) {
             // Search for table names
-            $result = $this->query(\DB::SELECT, 'SHOW TABLES LIKE '.$this->quote($like), false);
+            $result = $this->query(\DB::SELECT, 'SHOW TABLES LIKE ' . $this->quote($like), false);
         } else {
             // Find all table names
             $result = $this->query(\DB::SELECT, 'SHOW TABLES', false);
         }
-
         $tables = [];
         foreach ($result as $row) {
             $tables[] = reset($row);
         }
-
         return $tables;
     }
-
     /**
      * List table columns
      *
@@ -405,28 +307,23 @@ class Database_MySQLi_Connection extends \Database_Connection
     {
         // Quote the table name
         $table = $this->quote_table($table);
-
         if (is_string($like)) {
             // Search for column names
-            $result = $this->query(\DB::SELECT, 'SHOW FULL COLUMNS FROM '.$table.' LIKE '.$this->quote($like), false);
+            $result = $this->query(\DB::SELECT, 'SHOW FULL COLUMNS FROM ' . $table . ' LIKE ' . $this->quote($like), false);
         } else {
             // Find all column names
-            $result = $this->query(\DB::SELECT, 'SHOW FULL COLUMNS FROM '.$table, false);
+            $result = $this->query(\DB::SELECT, 'SHOW FULL COLUMNS FROM ' . $table, false);
         }
-
         $count = 0;
         $columns = [];
         foreach ($result as $row) {
             [$type, $length] = $this->_parse_type($row['Type']);
-
             $column = $this->datatype($type);
-
-            $column['name']             = $row['Field'];
-            $column['default']          = $row['Default'];
-            $column['data_type']        = $type;
-            $column['null']             = ($row['Null'] == 'YES');
+            $column['name'] = $row['Field'];
+            $column['default'] = $row['Default'];
+            $column['data_type'] = $type;
+            $column['null'] = $row['Null'] == 'YES';
             $column['ordinal_position'] = ++$count;
-
             switch ($column['type']) {
                 case 'float':
                     if (isset($length)) {
@@ -445,18 +342,16 @@ class Database_MySQLi_Connection extends \Database_Connection
                         case 'varbinary':
                             $column['character_maximum_length'] = $length;
                             break;
-
                         case 'char':
                         case 'varchar':
                             $column['character_maximum_length'] = $length;
-                            // no break
+                        // no break
                         case 'text':
                         case 'tinytext':
                         case 'mediumtext':
                         case 'longtext':
                             $column['collation_name'] = $row['Collation'];
                             break;
-
                         case 'enum':
                         case 'set':
                             $column['collation_name'] = $row['Collation'];
@@ -465,19 +360,15 @@ class Database_MySQLi_Connection extends \Database_Connection
                     }
                     break;
             }
-
             // MySQL attributes
-            $column['comment']      = $row['Comment'];
-            $column['extra']        = $row['Extra'];
-            $column['key']          = $row['Key'];
-            $column['privileges']   = $row['Privileges'];
-
+            $column['comment'] = $row['Comment'];
+            $column['extra'] = $row['Extra'];
+            $column['key'] = $row['Key'];
+            $column['privileges'] = $row['Privileges'];
             $columns[$row['Field']] = $column;
         }
-
         return $columns;
     }
-
     /**
      * List indexes
      *
@@ -489,35 +380,21 @@ class Database_MySQLi_Connection extends \Database_Connection
     {
         // Quote the table name
         $table = $this->quote_table($table);
-
         if (is_string($like)) {
             // Search for index names
-            $result = $this->query(\DB::SELECT, 'SHOW INDEX FROM '.$table.' WHERE '.$this->quote_identifier('Key_name').' LIKE '.$this->quote($like), false);
+            $result = $this->query(\DB::SELECT, 'SHOW INDEX FROM ' . $table . ' WHERE ' . $this->quote_identifier('Key_name') . ' LIKE ' . $this->quote($like), false);
         } else {
             // Find all index names
-            $result = $this->query(\DB::SELECT, 'SHOW INDEX FROM '.$table, false);
+            $result = $this->query(\DB::SELECT, 'SHOW INDEX FROM ' . $table, false);
         }
-
         // unify the result
         $indexes = [];
         foreach ($result as $row) {
-            $index = [
-                'name' => $row['Key_name'],
-                'column' => $row['Column_name'],
-                'order' => $row['Seq_in_index'],
-                'type' => $row['Index_type'],
-                'primary' => $row['Key_name'] == 'PRIMARY' ? true : false,
-                'unique' => $row['Non_unique'] == 0 ? true : false,
-                'null' => $row['Null'] == 'YES' ? true : false,
-                'ascending' => $row['Collation'] == 'A' ? true : false,
-            ];
-
+            $index = ['name' => $row['Key_name'], 'column' => $row['Column_name'], 'order' => $row['Seq_in_index'], 'type' => $row['Index_type'], 'primary' => $row['Key_name'] == 'PRIMARY' ? true : false, 'unique' => $row['Non_unique'] == 0 ? true : false, 'null' => $row['Null'] == 'YES' ? true : false, 'ascending' => $row['Collation'] == 'A' ? true : false];
             $indexes[] = $index;
         }
-
         return $indexes;
     }
-
     /**
      * Escape query for sql
      *
@@ -528,39 +405,32 @@ class Database_MySQLi_Connection extends \Database_Connection
     {
         // Make sure the database is connected
         $this->_connection or $this->connect();
-
         if (($value = $this->_connection->real_escape_string((string) $value)) === false) {
             throw new \Database_Exception($this->_connection->error, $this->_connection->errno, null, $this->_connection->errno);
         }
-
         // SQL standard is to use single-quotes for all values
-        return "'$value'";
+        return "'{$value}'";
     }
-
     public function error_info()
     {
         $errno = $this->_connection->errno;
         return [$errno, empty($errno) ? null : $errno, empty($errno) ? null : $this->_connection->error];
     }
-
     protected function driver_start_transaction()
     {
         $this->query(0, 'START TRANSACTION', false);
         return true;
     }
-
     protected function driver_commit()
     {
         $this->query(0, 'COMMIT', false);
         return true;
     }
-
     protected function driver_rollback()
     {
         $this->query(0, 'ROLLBACK', false);
         return true;
     }
-
     /**
      * Sets savepoint of the transaction
      *
@@ -570,10 +440,9 @@ class Database_MySQLi_Connection extends \Database_Connection
      */
     protected function set_savepoint($name)
     {
-        $this->query(0, 'SAVEPOINT LEVEL'.$name, false);
+        $this->query(0, 'SAVEPOINT LEVEL' . $name, false);
         return true;
     }
-
     /**
      * Release savepoint of the transaction
      *
@@ -583,10 +452,9 @@ class Database_MySQLi_Connection extends \Database_Connection
      */
     protected function release_savepoint($name)
     {
-        $this->query(0, 'RELEASE SAVEPOINT LEVEL'.$name, false);
+        $this->query(0, 'RELEASE SAVEPOINT LEVEL' . $name, false);
         return true;
     }
-
     /**
      * Rollback savepoint of the transaction
      *
@@ -596,8 +464,7 @@ class Database_MySQLi_Connection extends \Database_Connection
      */
     protected function rollback_savepoint($name)
     {
-        $this->query(0, 'ROLLBACK TO SAVEPOINT LEVEL'.$name, false);
+        $this->query(0, 'ROLLBACK TO SAVEPOINT LEVEL' . $name, false);
         return true;
     }
-
 }

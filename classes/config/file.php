@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -20,7 +19,6 @@ namespace Fuel\Core;
 abstract class Config_File implements Config_Interface
 {
     protected array $vars;
-
     /**
      * Sets up the file to be parsed and variables
      *
@@ -29,14 +27,8 @@ abstract class Config_File implements Config_Interface
      */
     public function __construct(protected $file = null, $vars = [])
     {
-        $this->vars = [
-            'APPPATH' => APPPATH,
-            'COREPATH' => COREPATH,
-            'PKGPATH' => PKGPATH,
-            'DOCROOT' => DOCROOT,
-        ] + $vars;
+        $this->vars = ['APPPATH' => APPPATH, 'COREPATH' => COREPATH, 'PKGPATH' => PKGPATH, 'DOCROOT' => DOCROOT] + $vars;
     }
-
     /**
      * Loads the config file(s).
      *
@@ -48,16 +40,11 @@ abstract class Config_File implements Config_Interface
     {
         $paths = $this->find_file($cache);
         $config = [];
-
         foreach ($paths as $path) {
-            $config = $overwrite ?
-                array_merge($config, $this->load_file($path)) :
-                \Arr::merge($config, $this->load_file($path));
+            $config = $overwrite ? array_merge($config, $this->load_file($path)) : \Arr::merge($config, $this->load_file($path));
         }
-
         return $config;
     }
-
     /**
      * Gets the default group name.
      *
@@ -67,7 +54,6 @@ abstract class Config_File implements Config_Interface
     {
         return $this->file;
     }
-
     /**
      * Parses a string using all of the previously set variables.  Allows you to
      * use something like %APPPATH% in non-PHP files.
@@ -78,12 +64,10 @@ abstract class Config_File implements Config_Interface
     protected function parse_vars($string)
     {
         foreach ($this->vars as $var => $val) {
-            $string = str_replace("%$var%", $val, $string);
+            $string = str_replace("%{$var}%", $val, $string);
         }
-
         return $string;
     }
-
     /**
      * Replaces FuelPHP's path constants to their string counterparts.
      *
@@ -93,13 +77,11 @@ abstract class Config_File implements Config_Interface
     protected function prep_vars(array &$array)
     {
         static $replacements = false;
-
         if ($replacements === false) {
             foreach ($this->vars as $i => $v) {
-                $replacements['#^('.preg_quote((string) $v).'){1}(.*)?#'] = '%'.$i.'%$2';
+                $replacements['#^(' . preg_quote((string) $v) . '){1}(.*)?#'] = '%' . $i . '%$2';
             }
         }
-
         foreach ($array as $i => $value) {
             if (is_string($value)) {
                 $array[$i] = preg_replace(array_keys($replacements), array_values($replacements), $value);
@@ -108,7 +90,6 @@ abstract class Config_File implements Config_Interface
             }
         }
     }
-
     /**
      * Finds the given config files
      *
@@ -118,22 +99,16 @@ abstract class Config_File implements Config_Interface
      */
     protected function find_file($cache = true)
     {
-        if (($this->file[0] === '/' or (isset($this->file[1]) and $this->file[1] === ':')) and is_file($this->file)) {
+        if (($this->file[0] === '/' or isset($this->file[1]) and $this->file[1] === ':') and is_file($this->file)) {
             $paths = [$this->file];
         } else {
-            $paths = array_merge(
-                \Finder::search('config/'.\Fuel::$env, $this->file, $this->ext, true, $cache),
-                \Finder::search('config', $this->file, $this->ext, true, $cache)
-            );
+            $paths = array_merge(\Finder::search('config/' . \Fuel::$env, $this->file, $this->ext, true, $cache), \Finder::search('config', $this->file, $this->ext, true, $cache));
         }
-
         if (empty($paths)) {
-            throw new \ConfigException(sprintf('File "%s" does not exist.', $this->file));
+            throw new \Config_Exception(sprintf('File "%s" does not exist.', $this->file));
         }
-
         return array_reverse($paths);
     }
-
     /**
      * Formats the output and saved it to disc.
      *
@@ -144,62 +119,53 @@ abstract class Config_File implements Config_Interface
     {
         // get the formatted output
         $output = $this->export_format($contents);
-
-        if (! $output) {
+        if (!$output) {
             return false;
         }
-
-        if (! $path = \Finder::search('config', $this->file, $this->ext)) {
+        if (!$path = \Finder::search('config', $this->file, $this->ext)) {
             if ($pos = strripos((string) $this->file, '::')) {
                 // get the namespace path
-                if ($path = \Autoloader::namespace_path('\\'.ucfirst(substr((string) $this->file, 0, $pos)))) {
+                if ($path = \Autoloader::namespace_path('\\' . ucfirst(substr((string) $this->file, 0, $pos)))) {
                     // strip the namespace from the filename
                     $this->file = substr((string) $this->file, $pos + 2);
-
                     // strip the classes directory as we need the module root
-                    $path = substr($path, 0, -8).'config'.DS.$this->file.$this->ext;
+                    $path = substr($path, 0, -8) . 'config' . DS . $this->file . $this->ext;
                 } else {
                     // invalid namespace requested
                     return false;
                 }
             }
         }
-
         // absolute path requested?
-        if ($this->file[0] === '/' or (isset($this->file[1]) and $this->file[1] === ':')) {
+        if ($this->file[0] === '/' or isset($this->file[1]) and $this->file[1] === ':') {
             $path = $this->file;
         }
-
         // make sure we have a fallback
-        $path or $path = APPPATH.'config'.DS.$this->file.$this->ext;
-
+        $path or $path = APPPATH . 'config' . DS . $this->file . $this->ext;
         $path = pathinfo($path);
-        if (! is_dir($path['dirname'])) {
+        if (!is_dir($path['dirname'])) {
             mkdir($path['dirname'], 0777, true);
         }
-
         $return = \File::update($path['dirname'], $path['basename'], $output);
         if ($return) {
             try {
                 \Config::load('file', true);
-                chmod($path['dirname'].DS.$path['basename'], \Config::get('file.chmod.files', 0666));
-            } catch (\PhpErrorException $e) {
+                chmod($path['dirname'] . DS . $path['basename'], \Config::get('file.chmod.files', 0666));
+            } catch (\Php_Error_Exception $e) {
                 // if we get something else then a chmod error, bail out
-                if (!str_starts_with($e->getMessage(), 'chmod():')) {
+                if (!str_starts_with($e->get_message(), 'chmod():')) {
                     throw new $e();
                 }
             }
         }
         return $return;
     }
-
     /**
      * Must be implemented by child class. Gets called for each file to load.
      *
      * @param string  $file  the path to the file
      */
     abstract protected function load_file($file);
-
     /**
      * Must be implemented by child class. Gets called when saving a config file.
      *

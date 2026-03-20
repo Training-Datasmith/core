@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -20,10 +19,9 @@ namespace Fuel\Core;
  * @package     Core
  * @subpackage  Packages
  */
-class PackageNotFoundException extends \FuelException
+class Package_Not_Found_Exception extends \Fuel_Exception
 {
 }
-
 /**
  * Handles all the loading, unloading and management of packages.
  *
@@ -36,7 +34,6 @@ class Package
      * @var  array  $packages  Holds all the loaded package information.
      */
     protected static $packages = [];
-
     /**
      * Loads the given package.  If a path is not given, if will search through
      * the defined package_paths. If not defined, then PKGPATH is used.
@@ -60,37 +57,29 @@ class Package
             }
             return $result;
         }
-
         if (static::loaded($package)) {
             return false;
         }
-
         // if no path is given, try to locate the package
         if ($path === null) {
             $paths = \Config::get('package_paths', []);
             empty($paths) and $paths = [PKGPATH];
-
-            if (! empty($paths)) {
+            if (!empty($paths)) {
                 foreach ($paths as $modpath) {
-                    if (is_dir($path = $modpath.strtolower($package).DS)) {
+                    if (is_dir($path = $modpath . strtolower($package) . DS)) {
                         break;
                     }
                 }
             }
-
         }
-
-        if (! is_dir($path)) {
-            throw new \PackageNotFoundException("Package '$package' could not be found at '".\Fuel::clean_path($path)."'");
+        if (!is_dir($path)) {
+            throw new \Package_Not_Found_Exception("Package '{$package}' could not be found at '" . \Fuel::clean_path($path) . "'");
         }
-
         \Finder::instance()->add_path($path, 1);
-        \Fuel::load($path.'bootstrap.php');
+        \Fuel::load($path . 'bootstrap.php');
         static::$packages[$package] = $path;
-
         return true;
     }
-
     /**
      * Unloads a package from the stack.
      *
@@ -101,7 +90,6 @@ class Package
         \Finder::instance()->remove_path(static::$packages[$package]);
         unset(static::$packages[$package]);
     }
-
     /**
      * Checks if the given package is loaded, if no package is given then
      * all loaded packages are returned.
@@ -114,10 +102,8 @@ class Package
         if ($package === null) {
             return static::$packages;
         }
-
         return array_key_exists($package, static::$packages);
     }
-
     /**
      * Checks if the given package exists.
      *
@@ -133,11 +119,10 @@ class Package
         empty($paths) and $paths = [PKGPATH];
         $package = strtolower($package);
         foreach ($paths as $path) {
-            if (is_dir($path.$package)) {
-                return $path.$package.DS;
+            if (is_dir($path . $package)) {
+                return $path . $package . DS;
             }
         }
-
         return false;
     }
 }

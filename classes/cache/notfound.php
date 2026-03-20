@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,10 +11,9 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 // Exception thrown when the Cache wasn't found
-class CacheNotFoundException extends \OutOfBoundsException
+class Cache_Not_Found_Exception extends \OutOfBoundsException
 {
 }

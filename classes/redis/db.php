@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 /**
  * This code is based on Redisent, a Redis interface for the modest.
  *
@@ -21,13 +20,11 @@ declare(strict_types=1);
  * @copyright 2009-2012 Justin Poliey <justin@getglue.com>
  * @license http://www.opensource.org/licenses/ISC The ISC License
  */
-
 namespace Fuel\Core;
 
-class RedisException extends \FuelException
+class Redis_Exception extends \Fuel_Exception
 {
 }
-
 /**
  * Redisent, a Redis interface for the modest among us
  */
@@ -37,7 +34,6 @@ class Redis_Db
      * Multiton pattern, keep track of all created instances
      */
     protected static $instances = [];
-
     /**
      * Get an instance of the Redis class
      *
@@ -47,15 +43,13 @@ class Redis_Db
      */
     public static function instance($name = 'default')
     {
-        if (! array_key_exists($name, static::$instances)) {
+        if (!array_key_exists($name, static::$instances)) {
             // @deprecated since 1.4
             // call forge() if a new instance needs to be created, this should throw an error
             return static::forge($name);
         }
-
         return static::$instances[$name];
     }
-
     /**
      * create an instance of the Redis class
      *
@@ -65,36 +59,29 @@ class Redis_Db
     public static function forge(string $name = 'default', $config = []): static
     {
         empty(static::$instances) and \Config::load('db', true);
-
-        if (! ($conf = \Config::get('db.redis.'.$name))) {
-            throw new \RedisException('Invalid instance name given.');
+        if (!$conf = \Config::get('db.redis.' . $name)) {
+            throw new \Redis_Exception('Invalid instance name given.');
         }
         $config = \Arr::merge($conf, $config);
-
         static::$instances[$name] = new static($config);
-
         return static::$instances[$name];
     }
-
     /**
      * @var	resource
      */
     protected $connection = false;
-
     /**
      * Flag indicating whether or not commands are being pipelined
      *
      * @var	boolean
      */
     protected $pipelined = false;
-
     /**
      * The queue of commands to be sent to the Redis server
      *
      * @var	array
      */
     protected $queue = [];
-
     /**
      * Create a new Redis instance using the configuration values supplied
      *
@@ -103,18 +90,15 @@ class Redis_Db
     public function __construct(array $config = [])
     {
         empty($config['timeout']) and $config['timeout'] = ini_get('default_socket_timeout');
-
         $this->connection = @fsockopen($config['hostname'], $config['port'], $errno, $errstr, $config['timeout']);
-
-        if (! $this->connection) {
-            throw new \RedisException($errstr, $errno);
+        if (!$this->connection) {
+            throw new \Redis_Exception($errstr, $errno);
         }
         // execute the auth command if a password is present in config
         empty($config['password']) or $this->auth($config['password']);
         // Select database using zero-based numeric index
         empty($config['database']) or $this->select($config['database']);
     }
-
     /**
      * Close the open connection on class destruction
      */
@@ -122,7 +106,6 @@ class Redis_Db
     {
         $this->connection and fclose($this->connection);
     }
-
     /**
      * Returns the Redisent instance ready for pipelining.
      *
@@ -134,10 +117,8 @@ class Redis_Db
     public function pipeline(): static
     {
         $this->pipelined = true;
-
         return $this;
     }
-
     /**
      * Flushes the commands in the pipeline queue to Redis and returns the responses.
      * @see pipeline
@@ -149,27 +130,23 @@ class Redis_Db
             for ($written = 0; $written < strlen((string) $command); $written += $fwrite) {
                 $fwrite = fwrite($this->connection, substr((string) $command, $written));
                 if ($fwrite === false || $fwrite <= 0) {
-                    throw new \RedisException('Failed to write entire command to stream');
+                    throw new \Redis_Exception('Failed to write entire command to stream');
                 }
             }
         }
-
         // Read in the results from the pipelined commands
         $responses = [];
         for ($i = 0; $i < count($this->queue); $i++) {
-            $responses[] = $this->readResponse();
+            $responses[] = $this->read_response();
         }
-
         // Clear the queue and return the response
         $this->queue = [];
-
         if ($this->pipelined) {
             $this->pipelined = false;
             return $responses;
         }
         return $responses[0];
     }
-
     /**
      * Alias for the redis PSUBSCRIBE command. It allows you to listen, and
      * have the callback called for every response.
@@ -181,26 +158,22 @@ class Redis_Db
     public function psubscribe($pattern, $callback): void
     {
         $args = ['PSUBSCRIBE', $pattern];
-
-        $command = sprintf('*%d%s%s%s', 2, CRLF, implode(CRLF, array_map(fn (string $arg) => sprintf('$%d%s%s', strlen($arg), CRLF, $arg), $args)), CRLF);
-
+        $command = sprintf('*%d%s%s%s', 2, CRLF, implode(CRLF, array_map(fn(string $arg) => sprintf('$%d%s%s', strlen($arg), CRLF, $arg), $args)), CRLF);
         for ($written = 0; $written < strlen($command); $written += $fwrite) {
             $fwrite = fwrite($this->connection, substr($command, $written));
             if ($fwrite === false) {
-                throw new \RedisException('Failed to write entire command to stream');
+                throw new \Redis_Exception('Failed to write entire command to stream');
             }
         }
-
-        while (! feof($this->connection)) {
+        while (!feof($this->connection)) {
             try {
-                $response = $this->readResponse();
+                $response = $this->read_response();
                 $callback($response);
-            } catch (\RedisException $e) {
-                \Log::warning($e->getMessage(), 'Redis_Db::readResponse');
+            } catch (\Redis_Exception $e) {
+                \Log::warning($e->get_message(), 'Redis_Db::readResponse');
             }
         }
     }
-
     /**
      * @param   $name
      * @param   $args
@@ -211,40 +184,33 @@ class Redis_Db
     {
         // build the Redis unified protocol command
         array_unshift($args, strtoupper($name));
-
         $command = '*' . count($args) . CRLF;
         foreach ($args as $arg) {
             $command .= '$' . strlen($arg) . CRLF . $arg . CRLF;
         }
-
         // add it to the pipeline queue
         $this->queue[] = $command;
-
         if ($this->pipelined) {
             return $this;
         }
         return $this->execute();
     }
-
-    protected function readResponse()
+    protected function read_response()
     {
         //  parse the response based on the reply identifier
         $reply = trim(fgets($this->connection, 512));
-
         switch (substr($reply, 0, 1)) {
             // error reply
             case '-':
-                throw new \RedisException(trim(substr($reply, 1)));
-
-                // inline reply
+                throw new \Redis_Exception(trim(substr($reply, 1)));
+            // inline reply
             case '+':
                 $response = substr(trim($reply), 1);
                 if ($response === 'OK') {
                     $response = true;
                 }
                 break;
-
-                // bulk reply
+            // bulk reply
             case '$':
                 $response = null;
                 if ($reply == '$-1') {
@@ -254,21 +220,19 @@ class Redis_Db
                 $size = intval(substr($reply, 1));
                 if ($size > 0) {
                     do {
-                        $block_size = ($size - $read) > 1024 ? 1024 : ($size - $read);
+                        $block_size = $size - $read > 1024 ? 1024 : $size - $read;
                         $r = fread($this->connection, $block_size);
                         if ($r === false) {
-                            throw new \RedisException('Failed to read response from stream');
+                            throw new \Redis_Exception('Failed to read response from stream');
                         }
                         $read += strlen($r);
                         $response .= $r;
                     } while ($read < $size);
                 }
-
                 // discard the crlf
                 fread($this->connection, 2);
                 break;
-
-                // multi-bulk reply
+            // multi-bulk reply
             case '*':
                 $count = intval(substr($reply, 1));
                 if ($count == '-1') {
@@ -276,21 +240,17 @@ class Redis_Db
                 }
                 $response = [];
                 for ($i = 0; $i < $count; $i++) {
-                    $response[] = $this->readResponse();
+                    $response[] = $this->read_response();
                 }
                 break;
-
-                // integer reply
+            // integer reply
             case ':':
                 $response = intval(substr(trim($reply), 1));
                 break;
-
             default:
-                throw new \RedisException("Unknown response: {$reply}");
+                throw new \Redis_Exception("Unknown response: {$reply}");
         }
-
         // party on...
         return $response;
     }
-
 }

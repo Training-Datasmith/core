@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 class Router
@@ -20,12 +19,10 @@ class Router
      *
      */
     public static $routes = [];
-
     /**
      * Defines the controller class prefix. This allows you to namespace controllers
      */
     protected static $prefix = '';
-
     /**
      * Fetch the controller prefix to be used, or set a default if not defined
      */
@@ -33,7 +30,6 @@ class Router
     {
         static::$prefix = ltrim(\Config::get('controller_prefix', 'Controller_'), '\\');
     }
-
     /**
      * Add one or multiple routes
      *
@@ -56,24 +52,20 @@ class Router
             static::$routes[$path] = $options;
             return;
         }
-
         $name = $path;
         if (is_array($options) and array_key_exists('name', $options)) {
             $name = $options['name'];
             unset($options['name']);
-            if (count($options) == 1 and ! is_array($options[0])) {
+            if (count($options) == 1 and !is_array($options[0])) {
                 $options = $options[0];
             }
         }
-
         if ($prepend) {
             \Arr::prepend(static::$routes, $name, new \Route($path, $options, $case_sensitive, null, $name));
             return;
         }
-
         static::$routes[$name] = new \Route($path, $options, $case_sensitive, null, $name);
     }
-
     /**
      * Does reverse routing for a named route.  This will return the FULL url
      * (including the base url and index.php).
@@ -95,38 +87,31 @@ class Router
         if (array_key_exists($name, static::$routes)) {
             // fetch the url this route defines
             $url = static::$routes[$name]->path;
-
             // get named parameters regex's out of the way first
             foreach ($named_params as $name => $value) {
-                if (is_string($name) and ($pos = strpos((string) $url, '(:'.$name.')')) !== false) {
+                if (is_string($name) and ($pos = strpos((string) $url, '(:' . $name . ')')) !== false) {
                     $url = substr_replace($url, $value, $pos, strlen($name) + 3);
                 }
             }
-
             // deal with regex's groups
             if (preg_match_all('#\((?:\?P<(\w+?)>)?.*?\)#', (string) $url, $matches) !== false) {
                 if (count($matches) == 2) {
                     $indexed_group_count = 0;
                     foreach ($matches[0] as $index => $target) {
                         $replace = '';
-                        if (array_key_exists($key = $matches[1][$index], $named_params) ||
-                            array_key_exists($key = '$'.($index + 1), $named_params) ||
-                            array_key_exists($key = $indexed_group_count++, $named_params)) {
+                        if (array_key_exists($key = $matches[1][$index], $named_params) || array_key_exists($key = '$' . ($index + 1), $named_params) || array_key_exists($key = $indexed_group_count++, $named_params)) {
                             $replace = $named_params[$key];
                         }
-
                         if (($pos = strpos((string) $url, $target)) !== false) {
                             $url = substr_replace($url, $replace, $pos, strlen($target));
                         }
                     }
                 }
             }
-
             // return the created URI, replace any named parameters not in a regex
             return \Uri::create($url, $named_params);
         }
     }
-
     /**
      * Delete one or multiple routes
      *
@@ -142,38 +127,19 @@ class Router
             }
         } else {
             $case_sensitive ?: \Config::get('routing.case_sensitive', true);
-
             // support the usual route path placeholders
-            $path = str_replace([
-                ':any',
-                ':everything',
-                ':alnum',
-                ':num',
-                ':alpha',
-                ':segment',
-            ], [
-                '.+',
-                '.*',
-                '[[:alnum:]]+',
-                '[[:digit:]]+',
-                '[[:alpha:]]+',
-                '[^/]*',
-            ], $path);
-
+            $path = str_replace([':any', ':everything', ':alnum', ':num', ':alpha', ':segment'], ['.+', '.*', '[[:alnum:]]+', '[[:digit:]]+', '[[:alpha:]]+', '[^/]*'], $path);
             foreach (static::$routes as $name => $route) {
                 if ($case_sensitive) {
-                    if (preg_match('#^'.$path.'$#uD', (string) $name)) {
+                    if (preg_match('#^' . $path . '$#uD', (string) $name)) {
                         unset(static::$routes[$name]);
                     }
-                } else {
-                    if (preg_match('#^'.$path.'$#uiD', (string) $name)) {
-                        unset(static::$routes[$name]);
-                    }
+                } else if (preg_match('#^' . $path . '$#uiD', (string) $name)) {
+                    unset(static::$routes[$name]);
                 }
             }
         }
     }
-
     /**
      * Processes the given request using the defined routes
      *
@@ -184,7 +150,6 @@ class Router
     public static function process(\Request $request, $route = true)
     {
         $match = false;
-
         if ($route) {
             foreach (static::$routes as $route) {
                 if ($match = $route->parse($request)) {
@@ -192,20 +157,16 @@ class Router
                 }
             }
         }
-
-        if (! $match) {
+        if (!$match) {
             // Since we didn't find a match, we will create a new route.
             $match = new \Route(preg_quote((string) $request->uri->get(), '#'), $request->uri->get());
             $match->parse($request);
         }
-
         if ($match->callable !== null) {
             return $match;
         }
-
         return static::parse_match($match);
     }
-
     /**
      * Find the controller that matches the route requested
      *
@@ -217,16 +178,14 @@ class Router
         $namespace = '';
         $segments = $match->segments;
         $module = false;
-
         // First port of call: request for a module?
         if (\Module::exists($segments[0])) {
             // make the module known to the autoloader
             \Module::load($segments[0]);
             $match->module = array_shift($segments);
-            $namespace .= ucfirst($match->module).'\\';
+            $namespace .= ucfirst($match->module) . '\\';
             $module = $match->module;
         }
-
         if ($info = static::parse_segments($segments, $namespace, $module)) {
             $match->controller = $info['controller'];
             $match->controller_path = $info['controller_path'];
@@ -236,51 +195,31 @@ class Router
         }
         return null;
     }
-
     protected static function parse_segments($segments, string $namespace = '', $module = false): array|false
     {
         $temp_segments = $segments;
         $prefix = static::get_prefix();
-
         foreach (array_reverse($segments, true) as $key => $segment) {
             // determine which classes to check. First, all underscores, or all namespaced
-            $classes = [
-                $namespace.$prefix.\Inflector::words_to_upper(implode(substr($prefix, -1, 1), $temp_segments), substr($prefix, -1, 1)),
-            ];
-
+            $classes = [$namespace . $prefix . \Inflector::words_to_upper(implode(substr($prefix, -1, 1), $temp_segments), substr($prefix, -1, 1))];
             // if we're namespacing, check a hybrid version too
-            $classes[] = $namespace.$prefix.\Inflector::words_to_upper(implode('_', $temp_segments));
-
+            $classes[] = $namespace . $prefix . \Inflector::words_to_upper(implode('_', $temp_segments));
             array_pop($temp_segments);
-
             foreach ($classes as $class) {
                 if (static::check_class($class)) {
-                    return [
-                        'controller'       => $class,
-                        'controller_path'  => implode('/', array_slice($segments, 0, $key + 1)),
-                        'action'           => $segments[$key + 1] ?? null,
-                        'method_params'    => array_slice($segments, $key + 2),
-                    ];
+                    return ['controller' => $class, 'controller_path' => implode('/', array_slice($segments, 0, $key + 1)), 'action' => $segments[$key + 1] ?? null, 'method_params' => array_slice($segments, $key + 2)];
                 }
             }
         }
-
         // Fall back for default module controllers
         if ($module) {
-            $class = $namespace.$prefix.ucfirst((string) $module);
+            $class = $namespace . $prefix . ucfirst((string) $module);
             if (static::check_class($class)) {
-                return [
-                    'controller'       => $class,
-                    'controller_path'  => isset($key) ? implode('/', array_slice($segments, 0, $key + 1)) : '',
-                    'action'           => $segments[0] ?? null,
-                    'method_params'    => array_slice($segments, 1),
-                ];
+                return ['controller' => $class, 'controller_path' => isset($key) ? implode('/', array_slice($segments, 0, $key + 1)) : '', 'action' => $segments[0] ?? null, 'method_params' => array_slice($segments, 1)];
             }
         }
-
         return false;
     }
-
     /**
      * Checks whether class exists.
      *
@@ -294,13 +233,12 @@ class Router
             return class_exists($class);
         } catch (\Exception $e) {
             // capture autoloader failures
-            if (str_contains($e->getFile(), '/core/classes/autoloader.php')) {
+            if (str_contains($e->get_file(), '/core/classes/autoloader.php')) {
                 return false;
             }
             throw $e;
         }
     }
-
     /**
      * Get prefix.
      *

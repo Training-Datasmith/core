@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -21,13 +20,12 @@ namespace Fuel\Core;
  * @category	Core
  * @author		Dan Horrigan
  */
-class DBUtil
+class Db_Util
 {
     /**
      * @var  string  $connection  the database connection (identifier)
      */
     protected static $connection;
-
     /*
      * Load the db config, the Database_Connection might not have fired jet.
      *
@@ -36,7 +34,6 @@ class DBUtil
     {
         \Config::load('db', true);
     }
-
     /**
      * Sets the database connection to use for following DBUtil calls.
      *
@@ -45,13 +42,11 @@ class DBUtil
      */
     public static function set_connection($connection): void
     {
-        if ($connection !== null and ! is_string($connection)) {
-            throw new \FuelException('A connection must be supplied as a string.');
+        if ($connection !== null and !is_string($connection)) {
+            throw new \Fuel_Exception('A connection must be supplied as a string.');
         }
-
         static::$connection = $connection;
     }
-
     /**
      * Creates a database.  Will throw a Database_Exception if it cannot.
      *
@@ -64,16 +59,8 @@ class DBUtil
      */
     public static function create_database($database, $charset = null, $if_not_exists = true, $db = null)
     {
-        return \Database_Connection::instance($db ?: static::$connection)->schema(
-            'create_database',
-            [
-                $database,
-                $charset,
-                $if_not_exists,
-            ]
-        );
+        return \Database_Connection::instance($db ?: static::$connection)->schema('create_database', [$database, $charset, $if_not_exists]);
     }
-
     /**
      * Drops a database.  Will throw a Database_Exception if it cannot.
      *
@@ -84,14 +71,8 @@ class DBUtil
      */
     public static function drop_database($database, $db = null)
     {
-        return \Database_Connection::instance($db ?: static::$connection)->schema(
-            'drop_database',
-            [
-                $database,
-            ]
-        );
+        return \Database_Connection::instance($db ?: static::$connection)->schema('drop_database', [$database]);
     }
-
     /**
      * Drops a table.  Will throw a Database_Exception if it cannot.
      *
@@ -102,14 +83,8 @@ class DBUtil
      */
     public static function drop_table($table, $db = null)
     {
-        return \Database_Connection::instance($db ?: static::$connection)->schema(
-            'drop_table',
-            [
-                $table,
-            ]
-        );
+        return \Database_Connection::instance($db ?: static::$connection)->schema('drop_table', [$table]);
     }
-
     /**
      * Renames a table.  Will throw a Database_Exception if it cannot.
      *
@@ -121,15 +96,8 @@ class DBUtil
      */
     public static function rename_table($table, $new_table_name, $db = null)
     {
-        return \Database_Connection::instance($db ?: static::$connection)->schema(
-            'rename_table',
-            [
-                $table,
-                $new_table_name,
-            ]
-        );
+        return \Database_Connection::instance($db ?: static::$connection)->schema('rename_table', [$table, $new_table_name]);
     }
-
     /**
      * Creates a table.
      *
@@ -146,20 +114,8 @@ class DBUtil
      */
     public static function create_table($table, $fields, $primary_keys = [], $if_not_exists = true, $engine = false, $charset = null, $foreign_keys = [], $db = null)
     {
-        return \Database_Connection::instance($db ?: static::$connection)->schema(
-            'create_table',
-            [
-                $table,
-                $fields,
-                $primary_keys,
-                $if_not_exists,
-                $engine,
-                $charset,
-                $foreign_keys,
-            ]
-        );
+        return \Database_Connection::instance($db ?: static::$connection)->schema('create_table', [$table, $fields, $primary_keys, $if_not_exists, $engine, $charset, $foreign_keys]);
     }
-
     /**
      * Adds fields to a table a table.  Will throw a Database_Exception if it cannot.
      *
@@ -173,7 +129,6 @@ class DBUtil
     {
         return static::alter_fields('ADD', $table, $fields, $db);
     }
-
     /**
      * Modifies fields in a table.  Will throw a Database_Exception if it cannot.
      *
@@ -187,7 +142,6 @@ class DBUtil
     {
         return static::alter_fields('MODIFY', $table, $fields, $db);
     }
-
     /**
      * Drops fields from a table a table.  Will throw a Database_Exception if it cannot.
      *
@@ -201,7 +155,6 @@ class DBUtil
     {
         return static::alter_fields('DROP', $table, $fields, $db);
     }
-
     /**
      * Creates an index on that table.
      *
@@ -217,17 +170,8 @@ class DBUtil
      */
     public static function create_index($table, $index_columns, $index_name = '', $index = '', $db = null)
     {
-        return \Database_Connection::instance($db ?: static::$connection)->schema(
-            'create_index',
-            [
-                $table,
-                $index_columns,
-                $index_name,
-                $index,
-            ]
-        );
+        return \Database_Connection::instance($db ?: static::$connection)->schema('create_index', [$table, $index_columns, $index_name, $index]);
     }
-
     /**
      * Drop an index from a table.
      *
@@ -241,15 +185,8 @@ class DBUtil
      */
     public static function drop_index($table, $index_name, $db = null)
     {
-        return \Database_Connection::instance($db ?: static::$connection)->schema(
-            'drop_index',
-            [
-                $table,
-                $index_name,
-            ]
-        );
+        return \Database_Connection::instance($db ?: static::$connection)->schema('drop_index', [$table, $index_name]);
     }
-
     /**
      * Adds a single foreign key to a table
      *
@@ -260,15 +197,8 @@ class DBUtil
      */
     public static function add_foreign_key($table, $foreign_key, $db = null)
     {
-        return \Database_Connection::instance($db ?: static::$connection)->schema(
-            'add_foreign_key',
-            [
-                $table,
-                $foreign_key,
-            ]
-        );
+        return \Database_Connection::instance($db ?: static::$connection)->schema('add_foreign_key', [$table, $foreign_key]);
     }
-
     /**
      * Drops a foreign key from a table
      *
@@ -279,15 +209,8 @@ class DBUtil
      */
     public static function drop_foreign_key($table, $fk_name, $db = null)
     {
-        return \Database_Connection::instance($db ?: static::$connection)->schema(
-            'drop_foreign_key',
-            [
-                $table,
-                $fk_name,
-            ]
-        );
+        return \Database_Connection::instance($db ?: static::$connection)->schema('drop_foreign_key', [$table, $fk_name]);
     }
-
     /**
      * Returns string of foreign keys
      *
@@ -298,14 +221,8 @@ class DBUtil
      */
     public static function process_foreign_keys($foreign_keys, $db = null)
     {
-        return \Database_Connection::instance($db ?: static::$connection)->schema(
-            'process_foreign_keys',
-            [
-                $foreign_keys,
-            ]
-        );
+        return \Database_Connection::instance($db ?: static::$connection)->schema('process_foreign_keys', [$foreign_keys]);
     }
-
     /**
      * Truncates a table.
      *
@@ -316,14 +233,8 @@ class DBUtil
      */
     public static function truncate_table($table, $db = null)
     {
-        return \Database_Connection::instance($db ?: static::$connection)->schema(
-            'truncate_table',
-            [
-                $table,
-            ]
-        );
+        return \Database_Connection::instance($db ?: static::$connection)->schema('truncate_table', [$table]);
     }
-
     /**
      * Analyzes a table.
      *
@@ -335,7 +246,6 @@ class DBUtil
     {
         return static::table_maintenance('ANALYZE TABLE', $table, $db);
     }
-
     /**
      * Checks a table.
      *
@@ -347,7 +257,6 @@ class DBUtil
     {
         return static::table_maintenance('CHECK TABLE', $table, $db);
     }
-
     /**
      * Optimizes a table.
      *
@@ -359,7 +268,6 @@ class DBUtil
     {
         return static::table_maintenance('OPTIMIZE TABLE', $table, $db);
     }
-
     /**
      * Repairs a table.
      *
@@ -371,7 +279,6 @@ class DBUtil
     {
         return static::table_maintenance('REPAIR TABLE', $table, $db);
     }
-
     /**
      * Checks if a given table exists.
      *
@@ -382,14 +289,8 @@ class DBUtil
      */
     public static function table_exists($table, $db = null)
     {
-        return \Database_Connection::instance($db ?: static::$connection)->schema(
-            'table_exists',
-            [
-                $table,
-            ]
-        );
+        return \Database_Connection::instance($db ?: static::$connection)->schema('table_exists', [$table]);
     }
-
     /**
      * Checks if given field(s) in a given table exists.
      *
@@ -401,30 +302,15 @@ class DBUtil
      */
     public static function field_exists($table, $columns, $db = null)
     {
-        return \Database_Connection::instance($db ?: static::$connection)->schema(
-            'field_exists',
-            [
-                $table,
-                $columns,
-            ]
-        );
+        return \Database_Connection::instance($db ?: static::$connection)->schema('field_exists', [$table, $columns]);
     }
-
     /**
      *
      */
     protected static function alter_fields($type, $table, $fields, $db = null)
     {
-        return \Database_Connection::instance($db ?: static::$connection)->schema(
-            'alter_fields',
-            [
-                $type,
-                $table,
-                $fields,
-            ]
-        );
+        return \Database_Connection::instance($db ?: static::$connection)->schema('alter_fields', [$type, $table, $fields]);
     }
-
     /*
      * Executes table maintenance. Will throw FuelException when the operation is not supported.
      *
@@ -435,12 +321,6 @@ class DBUtil
      */
     protected static function table_maintenance($operation, $table, $db = null)
     {
-        return \Database_Connection::instance($db ?: static::$connection)->schema(
-            'table_maintenance',
-            [
-                $operation,
-                $table,
-            ]
-        );
+        return \Database_Connection::instance($db ?: static::$connection)->schema('table_maintenance', [$operation, $table]);
     }
 }

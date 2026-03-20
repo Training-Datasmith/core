@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -20,15 +19,10 @@ namespace Fuel\Core;
 class Lang_Db implements Lang_Interface
 {
     protected $ext = '.db';
-
     protected array $languages;
-
     protected array $vars;
-
     protected $database;
-
     protected $table;
-
     /**
      * Sets up the file to be parsed and variables
      *
@@ -40,18 +34,10 @@ class Lang_Db implements Lang_Interface
     {
         // we need the highest priority language last in the list
         $this->languages = array_reverse($languages);
-
-        $this->vars = [
-            'APPPATH' => APPPATH,
-            'COREPATH' => COREPATH,
-            'PKGPATH' => PKGPATH,
-            'DOCROOT' => DOCROOT,
-        ] + $vars;
-
+        $this->vars = ['APPPATH' => APPPATH, 'COREPATH' => COREPATH, 'PKGPATH' => PKGPATH, 'DOCROOT' => DOCROOT] + $vars;
         $this->database = \Config::get('lang.database');
         $this->table = \Config::get('lang.table_name', 'lang');
     }
-
     /**
      * Loads the language file(s).
      *
@@ -62,33 +48,26 @@ class Lang_Db implements Lang_Interface
     public function load($overwrite = false)
     {
         $lang = [];
-
         foreach ($this->languages as $language) {
             // try to retrieve the config from the database
             try {
                 $result = \DB::select('lang')->from($this->table)->where('identifier', '=', $this->identifier)->where('language', '=', $language)->execute($this->database);
             } catch (Database_Exception $e) {
                 // strip the actual query from the message
-                $msg = $e->getMessage();
-                $msg = substr($msg, 0, strlen($msg)  - strlen(strrchr($msg, ':')));
-
+                $msg = $e->get_message();
+                $msg = substr($msg, 0, strlen($msg) - strlen(strrchr($msg, ':')));
                 // and rethrow it
-                throw new \Database_Exception($msg, $e->getCode(), $e, $e->getDbCode());
+                throw new \Database_Exception($msg, $e->get_code(), $e, $e->get_db_code());
             }
-
             // did we succeed?
             if ($result->count()) {
-                if (! empty($result[0]['lang'])) {
-                    $lang = $overwrite ?
-                        array_merge($lang, unserialize($this->parse_vars($result[0]['lang']))) :
-                        \Arr::merge($lang, unserialize($this->parse_vars($result[0]['lang'])));
+                if (!empty($result[0]['lang'])) {
+                    $lang = $overwrite ? array_merge($lang, unserialize($this->parse_vars($result[0]['lang']))) : \Arr::merge($lang, unserialize($this->parse_vars($result[0]['lang'])));
                 }
             }
         }
-
         return $lang;
     }
-
     /**
      * Gets the default group name.
      *
@@ -98,7 +77,6 @@ class Lang_Db implements Lang_Interface
     {
         return $this->identifier;
     }
-
     /**
      * Parses a string using all of the previously set variables.  Allows you to
      * use something like %APPPATH% in non-PHP files.
@@ -109,12 +87,10 @@ class Lang_Db implements Lang_Interface
     protected function parse_vars($string)
     {
         foreach ($this->vars as $var => $val) {
-            $string = str_replace("%$var%", $val, $string);
+            $string = str_replace("%{$var}%", $val, $string);
         }
-
         return $string;
     }
-
     /**
      * Replaces FuelPHP's path constants to their string counterparts.
      *
@@ -124,13 +100,11 @@ class Lang_Db implements Lang_Interface
     protected function prep_vars(array &$array)
     {
         static $replacements = false;
-
         if ($replacements === false) {
             foreach ($this->vars as $i => $v) {
-                $replacements['#^('.preg_quote((string) $v).'){1}(.*)?#'] = '%'.$i.'%$2';
+                $replacements['#^(' . preg_quote((string) $v) . '){1}(.*)?#'] = '%' . $i . '%$2';
             }
         }
-
         foreach ($array as $i => $value) {
             if (is_string($value)) {
                 $array[$i] = preg_replace(array_keys($replacements), array_values($replacements), $value);
@@ -139,7 +113,6 @@ class Lang_Db implements Lang_Interface
             }
         }
     }
-
     /**
      * Formats the output and saved it to the database.
      *
@@ -152,19 +125,15 @@ class Lang_Db implements Lang_Interface
         // get the language and the identifier
         [$language, $identifier] = explode(DS, $identifier, 2);
         $identifier = basename($identifier, '.db');
-
         // prep the contents
         $this->prep_vars($contents);
         $contents = serialize($contents);
-
         // update the config in the database
         $result = \DB::update($this->table)->set(['lang' => $contents, 'hash' => uniqid()])->where('identifier', '=', $identifier)->where('language', '=', $language)->execute($this->database);
-
         // if there wasn't an update, do an insert
         if ($result === 0) {
             [$notused, $result] = \DB::insert($this->table)->set(['identifier' => $identifier, 'language' => $language, 'lang' => $contents, 'hash' => uniqid()])->execute($this->database);
         }
-
         return $result === 1;
     }
 }

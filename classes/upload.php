@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -26,31 +25,28 @@ class Upload
     /* ---------------------------------------------------------------------------
      * ERROR CODE CONSTANTS
      * --------------------------------------------------------------------------- */
-
     // duplicate the PHP standard error codes for consistency
-    public const UPLOAD_ERR_OK         = UPLOAD_ERR_OK;
-    public const UPLOAD_ERR_INI_SIZE   = UPLOAD_ERR_INI_SIZE;
-    public const UPLOAD_ERR_FORM_SIZE  = UPLOAD_ERR_FORM_SIZE;
-    public const UPLOAD_ERR_PARTIAL    = UPLOAD_ERR_PARTIAL;
-    public const UPLOAD_ERR_NO_FILE    = UPLOAD_ERR_NO_FILE;
+    public const UPLOAD_ERR_OK = UPLOAD_ERR_OK;
+    public const UPLOAD_ERR_INI_SIZE = UPLOAD_ERR_INI_SIZE;
+    public const UPLOAD_ERR_FORM_SIZE = UPLOAD_ERR_FORM_SIZE;
+    public const UPLOAD_ERR_PARTIAL = UPLOAD_ERR_PARTIAL;
+    public const UPLOAD_ERR_NO_FILE = UPLOAD_ERR_NO_FILE;
     public const UPLOAD_ERR_NO_TMP_DIR = UPLOAD_ERR_NO_TMP_DIR;
     public const UPLOAD_ERR_CANT_WRITE = UPLOAD_ERR_CANT_WRITE;
-    public const UPLOAD_ERR_EXTENSION  = UPLOAD_ERR_EXTENSION;
-
+    public const UPLOAD_ERR_EXTENSION = UPLOAD_ERR_EXTENSION;
     // and add our own error codes
-    public const UPLOAD_ERR_MAX_SIZE             = 101;
-    public const UPLOAD_ERR_EXT_BLACKLISTED      = 102;
-    public const UPLOAD_ERR_EXT_NOT_WHITELISTED  = 103;
-    public const UPLOAD_ERR_TYPE_BLACKLISTED     = 104;
+    public const UPLOAD_ERR_MAX_SIZE = 101;
+    public const UPLOAD_ERR_EXT_BLACKLISTED = 102;
+    public const UPLOAD_ERR_EXT_NOT_WHITELISTED = 103;
+    public const UPLOAD_ERR_TYPE_BLACKLISTED = 104;
     public const UPLOAD_ERR_TYPE_NOT_WHITELISTED = 105;
-    public const UPLOAD_ERR_MIME_BLACKLISTED     = 106;
+    public const UPLOAD_ERR_MIME_BLACKLISTED = 106;
     public const UPLOAD_ERR_MIME_NOT_WHITELISTED = 107;
-    public const UPLOAD_ERR_MAX_FILENAME_LENGTH  = 108;
-    public const UPLOAD_ERR_MOVE_FAILED          = 109;
-    public const UPLOAD_ERR_DUPLICATE_FILE       = 110;
-    public const UPLOAD_ERR_MKDIR_FAILED         = 111;
-    public const UPLOAD_ERR_FTP_FAILED           = 112;
-
+    public const UPLOAD_ERR_MAX_FILENAME_LENGTH = 108;
+    public const UPLOAD_ERR_MOVE_FAILED = 109;
+    public const UPLOAD_ERR_DUPLICATE_FILE = 110;
+    public const UPLOAD_ERR_MKDIR_FAILED = 111;
+    public const UPLOAD_ERR_FTP_FAILED = 112;
     /* ---------------------------------------------------------------------------
      * STATIC PROPERTIES
      * --------------------------------------------------------------------------- */
@@ -58,16 +54,13 @@ class Upload
      * @var object FuelPHP\Upload\Upload object
      */
     protected static $upload;
-
     /**
      * @var object Ftp object
      */
     protected static $with_ftp = false;
-
     /* ---------------------------------------------------------------------------
      * STATIC METHODS
      * --------------------------------------------------------------------------- */
-
     /**
      * class initialisation, load the config and process $_FILES if needed
      */
@@ -75,36 +68,26 @@ class Upload
     {
         // get the language file for this upload
         \Lang::load('upload', true);
-
         // get the config for this upload
         \Config::load('upload', true);
-
         // fetch the config
         $config = \Config::get('upload', []);
-
         // add the language callback to link into Fuel's Lang class
-        $config['langCallback'] = '\\Upload::lang_callback';
-
+        $config['langCallback'] = '\Upload::lang_callback';
         // get an upload instance
         if (class_exists('Fuel\Upload\Upload')) {
             static::$upload = new \Fuel\Upload\Upload($config);
-        }
-
-        // 1.6.1 fallback
-        elseif (class_exists('FuelPHP\Upload\Upload')) {
-            static::$upload = new \FuelPHP\Upload\Upload($config);
+        } elseif (class_exists('FuelPHP\Upload\Upload')) {
+            static::$upload = new \Fuel_Php\Upload\Upload($config);
         } else {
-            throw new \FuelException('Can not load \Fuel\Upload\Upload. Did you run composer to install it?');
+            throw new \Fuel_Exception('Can not load \Fuel\Upload\Upload. Did you run composer to install it?');
         }
-
         // if auto-process is not enabled, load the uploaded files
-        if (! $config['auto_process']) {
-            static::$upload->processFiles();
+        if (!$config['auto_process']) {
+            static::$upload->process_files();
         }
     }
-
     // ---------------------------------------------------------------------------
-
     /**
      * return the Upload instance
      *
@@ -114,9 +97,7 @@ class Upload
     {
         return static::$upload;
     }
-
     // ---------------------------------------------------------------------------
-
     /**
      * Lang callback function, translates Upload error messages
      *
@@ -126,11 +107,9 @@ class Upload
      */
     public static function lang_callback($error)
     {
-        return \Lang::get('upload.error_'.$error, [], '');
+        return \Lang::get('upload.error_' . $error, [], '');
     }
-
     // ---------------------------------------------------------------------------
-
     /**
      * Move callback function, custom method to move an uploaded file. In Fuel 1.x
      * this method is used for FTP uploads only
@@ -145,12 +124,9 @@ class Upload
         if (static::$with_ftp) {
             return static::$with_ftp->upload($from, $to, \Config::get('upload.ftp_mode'), \Config::get('upload.ftp_permissions'));
         }
-
         return false;
     }
-
     // ---------------------------------------------------------------------------
-
     /**
      * Check if we have valid files
      *
@@ -158,11 +134,9 @@ class Upload
      */
     public static function is_valid(): bool
     {
-        return static::$upload->getValidFiles() == [] ? false : true;
+        return static::$upload->get_valid_files() == [] ? false : true;
     }
-
     // ---------------------------------------------------------------------------
-
     /**
      * Get the list of validated files
      *
@@ -173,12 +147,9 @@ class Upload
     {
         // convert element name formats
         is_string($index) and $index = str_replace(':', '.', $index);
-
-        $files = static::$upload->getValidFiles($index);
-
+        $files = static::$upload->get_valid_files($index);
         // convert the file object to 1.x compatible data
         $result = [];
-
         foreach ($files as $file) {
             $data = [];
             foreach ($file as $item => $value) {
@@ -189,20 +160,17 @@ class Upload
                 $data[$item] = $value;
             }
             $data['field'] = str_replace('.', ':', $data['field']);
-            $data['error'] = ! $file->isValid();
+            $data['error'] = !$file->is_valid();
             $data['errors'] = [];
             $result[] = $data;
         }
-
         // compatibility with < 1.5, return the single entry if only one was found
         if (func_num_args() and count($result) == 1) {
             return reset($result);
         }
         return $result;
     }
-
     // ---------------------------------------------------------------------------
-
     /**
      * Get the list of non-validated files
      *
@@ -213,12 +181,9 @@ class Upload
     {
         // convert element name formats
         is_string($index) and $index = str_replace(':', '.', $index);
-
-        $files = static::$upload->getInvalidFiles($index);
-
+        $files = static::$upload->get_invalid_files($index);
         // convert the file object to 1.x compatible data
         $result = [];
-
         foreach ($files as $file) {
             $data = [];
             foreach ($file as $item => $value) {
@@ -230,21 +195,19 @@ class Upload
                 $data[$item] = $value;
             }
             $data['field'] = str_replace('.', ':', $data['field']);
-            $data['error'] = ! $file->isValid();
+            $data['error'] = !$file->is_valid();
             $data['errors'] = [];
-            foreach ($file->getErrors() as $error) {
-                $data['errors'][] = ['error' => $error->getError(), 'message' => $error->getMessage()];
+            foreach ($file->get_errors() as $error) {
+                $data['errors'][] = ['error' => $error->get_error(), 'message' => $error->get_message()];
             }
             $result[] = $data;
         }
-
         // compatibility with < 1.5, return the single entry if only one was found
         if (func_num_args() and count($result) == 1) {
             return reset($result);
         }
         return $result;
     }
-
     // --------------------------------------------------------------------
     /**
      * Register
@@ -258,10 +221,8 @@ class Upload
     {
         // make sure we're setting the correct events
         $event = str_replace(['before', 'after', 'validate'], ['before_save', 'after_save', 'after_validation'], $event);
-
         static::$upload->register($event, $callback);
     }
-
     // ---------------------------------------------------------------------------
     /**
      * Process the uploaded files, and run the validation
@@ -270,14 +231,12 @@ class Upload
      */
     public static function process($config = []): void
     {
-        foreach (static::$upload->getAllFiles() as $file) {
-            $file->setConfig($config);
+        foreach (static::$upload->get_all_files() as $file) {
+            $file->set_config($config);
             $file->validate();
         }
     }
-
     // ---------------------------------------------------------------------------
-
     /**
      * Upload files with FTP
      *
@@ -288,13 +247,12 @@ class Upload
     {
         if (static::$with_ftp = \Ftp::forge($config, $connect)) {
             // if we have an ftp object, activate the move callback
-            static::$upload->setConfig('moveCallback', '\\Upload\\move_callback');
+            static::$upload->set_config('moveCallback', '\Upload\move_callback');
         } else {
             // creating the ftp object failed, disable the callback
-            static::$upload->setConfig('moveCallback', null);
+            static::$upload->set_config('moveCallback', null);
         }
     }
-
     // ---------------------------------------------------------------------------
     /**
      * save uploaded file(s)
@@ -304,7 +262,6 @@ class Upload
         // storage for arguments
         $path = null;
         $ids = [];
-
         // do we have any arguments
         if (func_num_args()) {
             // process them
@@ -318,19 +275,16 @@ class Upload
                 }
             }
         }
-
         // now process the files
         $counter = 0;
-        foreach (static::$upload->getValidFiles() as $file) {
+        foreach (static::$upload->get_valid_files() as $file) {
             // do we want to process this file?
-            if (! empty($ids) and ! in_array($counter++, $ids)) {
+            if (!empty($ids) and !in_array($counter++, $ids)) {
                 // nope
                 continue;
             }
-
             // was a custom path defined?
-            $path and $file->setConfig('path', $path);
-
+            $path and $file->set_config('path', $path);
             // save the file
             $file->save();
         }

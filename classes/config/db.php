@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types=1);
 /**
  * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
@@ -11,7 +11,6 @@ declare(strict_types=1);
  * @copyright  2010 - 2019 Fuel Development Team
  * @link       https://fuelphp.com
  */
-
 namespace Fuel\Core;
 
 /**
@@ -20,13 +19,9 @@ namespace Fuel\Core;
 class Config_Db implements Config_Interface
 {
     protected $ext = '.db';
-
     protected array $vars;
-
     protected $database;
-
     protected $table;
-
     /**
      * Sets up the file to be parsed and variables
      *
@@ -35,17 +30,10 @@ class Config_Db implements Config_Interface
      */
     public function __construct(protected $identifier = null, $vars = [])
     {
-        $this->vars = [
-            'APPPATH' => APPPATH,
-            'COREPATH' => COREPATH,
-            'PKGPATH' => PKGPATH,
-            'DOCROOT' => DOCROOT,
-        ] + $vars;
-
+        $this->vars = ['APPPATH' => APPPATH, 'COREPATH' => COREPATH, 'PKGPATH' => PKGPATH, 'DOCROOT' => DOCROOT] + $vars;
         $this->database = \Config::get('config.database');
         $this->table = \Config::get('config.table_name', 'config');
     }
-
     /**
      * Loads the config file(s).
      *
@@ -57,27 +45,22 @@ class Config_Db implements Config_Interface
     public function load($overwrite = false, $cache = true)
     {
         $config = [];
-
         // try to retrieve the config from the database
         try {
             $result = \DB::select('config')->from($this->table)->where('identifier', '=', $this->identifier)->execute($this->database);
         } catch (Database_Exception $e) {
             // strip the actual query from the message
-            $msg = $e->getMessage();
-            $msg = substr($msg, 0, strlen($msg)  - strlen(strrchr($msg, ':')));
-
+            $msg = $e->get_message();
+            $msg = substr($msg, 0, strlen($msg) - strlen(strrchr($msg, ':')));
             // and rethrow it
-            throw new \Database_Exception($msg, $e->getCode(), $e, $e->GetDbCode());
+            throw new \Database_Exception($msg, $e->get_code(), $e, $e->get_db_code());
         }
-
         // did we succeed?
         if ($result->count()) {
             empty($result[0]['config']) or $config = unserialize($this->parse_vars($result[0]['config']), ['allowed_classes' => false]);
         }
-
         return $config;
     }
-
     /**
      * Gets the default group name.
      *
@@ -87,7 +70,6 @@ class Config_Db implements Config_Interface
     {
         return $this->identifier;
     }
-
     /**
      * Parses a string using all of the previously set variables.  Allows you to
      * use something like %APPPATH% in non-PHP files.
@@ -98,12 +80,10 @@ class Config_Db implements Config_Interface
     protected function parse_vars($string)
     {
         foreach ($this->vars as $var => $val) {
-            $string = str_replace("%$var%", $val, $string);
+            $string = str_replace("%{$var}%", $val, $string);
         }
-
         return $string;
     }
-
     /**
      * Replaces FuelPHP's path constants to their string counterparts.
      *
@@ -113,13 +93,11 @@ class Config_Db implements Config_Interface
     protected function prep_vars(array &$array)
     {
         static $replacements = false;
-
         if ($replacements === false) {
             foreach ($this->vars as $i => $v) {
-                $replacements['#^('.preg_quote((string) $v).'){1}(.*)?#'] = '%'.$i.'%$2';
+                $replacements['#^(' . preg_quote((string) $v) . '){1}(.*)?#'] = '%' . $i . '%$2';
             }
         }
-
         foreach ($array as $i => $value) {
             if (is_string($value)) {
                 $array[$i] = preg_replace(array_keys($replacements), array_values($replacements), $value);
@@ -128,7 +106,6 @@ class Config_Db implements Config_Interface
             }
         }
     }
-
     /**
      * Formats the output and saved it to disc.
      *
@@ -140,15 +117,12 @@ class Config_Db implements Config_Interface
         // prep the contents
         $this->prep_vars($contents);
         $contents = serialize($contents);
-
         // update the config in the database
         $result = \DB::update($this->table)->set(['config' => $contents, 'hash' => uniqid()])->where('identifier', '=', $this->identifier)->execute($this->database);
-
         // if there wasn't an update, do an insert
         if ($result === 0) {
             [$notused, $result] = \DB::insert($this->table)->set(['identifier' => $this->identifier, 'config' => $contents, 'hash' => uniqid()])->execute($this->database);
         }
-
         return $result === 1;
     }
 }
