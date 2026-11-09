@@ -346,11 +346,18 @@ class Smoke_PDO_CaptureConnection extends \Database_PDO_Connection
 {
 	public static $pdo_password;
 
+	public static $pdo_probe_message;
+
 	public static $mask_probe_secret;
 
 	protected function _connect()
 	{
 		static::$pdo_password = $this->connection_password_for_pdo();
+
+		if (static::$pdo_probe_message !== null)
+		{
+			throw new \PDOException(static::$pdo_probe_message);
+		}
 
 		if (static::$mask_probe_secret !== null)
 		{
@@ -440,6 +447,7 @@ foreach ($pdo_cred_cases as $pdo_case)
 	try
 	{
 		Smoke_PDO_CaptureConnection::$pdo_password = 'UNSET';
+		Smoke_PDO_CaptureConnection::$pdo_probe_message = null;
 		Smoke_PDO_CaptureConnection::$mask_probe_secret = null;
 		$ref = new \ReflectionClass('Smoke_PDO_CaptureConnection');
 		$ctor = $ref->getConstructor();
@@ -462,6 +470,52 @@ foreach ($pdo_cred_cases as $pdo_case)
 		$pdo_iface_ok = false;
 	}
 }
+$pdo_catch_probe = 'iface-pdo-probe-driver-message';
+foreach (array(
+	array('absent', $pdo_base),
+	array('null', $pdo_base + array('password' => null)),
+) as $pdo_catch_case)
+{
+	list($pdo_catch_label, $pdo_catch_conn) = $pdo_catch_case;
+	try
+	{
+		Smoke_PDO_CaptureConnection::$pdo_password = 'UNSET';
+		Smoke_PDO_CaptureConnection::$pdo_probe_message = $pdo_catch_probe;
+		$ref = new \ReflectionClass('Smoke_PDO_CaptureConnection');
+		$ctor = $ref->getConstructor();
+		$ctor->setAccessible(true);
+		$db = $ref->newInstanceWithoutConstructor();
+		$ctor->invoke($db, 'iface_pdo_catch_smoke_'.$pdo_catch_label, array(
+			'type' => 'pdo',
+			'connection' => $pdo_catch_conn,
+		));
+		$db->connect();
+		smoke_fail('PDO '.$pdo_catch_label.' connect must throw Database_Exception');
+		$pdo_iface_ok = false;
+	}
+	catch (\Database_Exception $e)
+	{
+		if ($e->getMessage() !== $pdo_catch_probe)
+		{
+			$pdo_iface_ok = false;
+		}
+	}
+	catch (\PhpErrorException $e)
+	{
+		smoke_fail('PDO '.$pdo_catch_label.' connect surfaced PhpErrorException: '.$e->getMessage());
+		$pdo_iface_ok = false;
+	}
+	catch (\Throwable $e)
+	{
+		smoke_fail('PDO '.$pdo_catch_label.' connect path: '.$e->getMessage());
+		$pdo_iface_ok = false;
+	}
+	finally
+	{
+		Smoke_PDO_CaptureConnection::$pdo_probe_message = null;
+	}
+}
+
 $mask_secret = 'Sup3rSecret';
 try
 {
@@ -495,6 +549,7 @@ catch (\Throwable $e)
 }
 finally
 {
+	Smoke_PDO_CaptureConnection::$pdo_probe_message = null;
 	Smoke_PDO_CaptureConnection::$mask_probe_secret = null;
 }
 if ($pdo_iface_ok)

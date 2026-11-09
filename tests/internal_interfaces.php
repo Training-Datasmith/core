@@ -25,11 +25,18 @@ class InternalInterfaces_PDO_CaptureConnection extends Database_PDO_Connection
 {
 	public static $pdo_password;
 
+	public static $pdo_probe_message;
+
 	public static $mask_probe_secret;
 
 	protected function _connect()
 	{
 		static::$pdo_password = $this->connection_password_for_pdo();
+
+		if (static::$pdo_probe_message !== null)
+		{
+			throw new \PDOException(static::$pdo_probe_message);
+		}
 
 		if (static::$mask_probe_secret !== null)
 		{
@@ -163,6 +170,7 @@ class Test_Internal_Interfaces extends TestCase
 	protected function pdo_capture_connection($name, array $connection)
 	{
 		InternalInterfaces_PDO_CaptureConnection::$pdo_password = 'UNSET';
+		InternalInterfaces_PDO_CaptureConnection::$pdo_probe_message = null;
 		InternalInterfaces_PDO_CaptureConnection::$mask_probe_secret = null;
 
 		$config = array(
@@ -213,6 +221,53 @@ class Test_Internal_Interfaces extends TestCase
 				InternalInterfaces_PDO_CaptureConnection::$pdo_password,
 				'PDO password credential mismatch for '.$label
 			);
+		}
+	}
+
+	/**
+	 * @test
+	 */
+	public function test_pdo_connect_null_credentials_surface_database_exception_on_php8()
+	{
+		if (version_compare(PHP_VERSION, '8.0', '<'))
+		{
+			$this->assertTrue(true);
+
+			return;
+		}
+
+		$dsn = 'mysql:host=127.0.0.1;dbname=iface_missing';
+		$base = array('dsn' => $dsn, 'username' => 'iface');
+		$probe = 'iface-pdo-probe-driver-message';
+
+		$cases = array(
+			array('absent', $base),
+			array('null', $base + array('password' => null)),
+		);
+
+		foreach ($cases as $case)
+		{
+			list($label, $connection) = $case;
+			$db = $this->pdo_capture_connection('iface_pdo_catch_'.$label.'_'.md5($label), $connection);
+			InternalInterfaces_PDO_CaptureConnection::$pdo_probe_message = $probe;
+
+			try
+			{
+				$db->connect();
+				$this->fail('Expected Database_Exception for '.$label.' connect failure');
+			}
+			catch (\PhpErrorException $e)
+			{
+				$this->fail('Connect failure must not surface PhpErrorException for '.$label.': '.$e->getMessage());
+			}
+			catch (\Database_Exception $e)
+			{
+				$this->assertSame($probe, $e->getMessage(), 'Driver message must stay intact for '.$label);
+			}
+			finally
+			{
+				InternalInterfaces_PDO_CaptureConnection::$pdo_probe_message = null;
+			}
 		}
 	}
 
