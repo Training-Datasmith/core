@@ -124,4 +124,15 @@ class Test_Security extends TestCase
 		$this->assertEquals($expected, $output);
 	}
 
+	/**
+	* Tests Security::clean() resolves static method filters on the Security class
+	*
+	* @test
+	*/
+	public function test_clean_static_method_name_filter()
+	{
+		$output = Security::clean('"H&M"', array('htmlentities'));
+		$this->assertSame('&quot;H&amp;M&quot;', $output);
+	}
+
 }

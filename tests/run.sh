@@ -48,6 +48,10 @@ assert_smoke_log() {
 		echo "ERROR: smoke output contained Warning:" >&2
 		return 1
 	fi
+	if grep -q 'Deprecated:' "$log"; then
+		echo "ERROR: smoke output contained Deprecated:" >&2
+		return 1
+	fi
 	if ! grep -q '^SMOKE OK$' "$log"; then
 		echo "ERROR: smoke did not print SMOKE OK" >&2
 		return 1

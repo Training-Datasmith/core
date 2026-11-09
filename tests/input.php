@@ -20,5 +20,39 @@ namespace Fuel\Core;
  */
 class Test_Input extends TestCase
 {
- 	public function test_foo() {}
+	/**
+	 * Missing Content-Type must not be passed to string functions as null.
+	 *
+	 * @test
+	 */
+	public function test_hydrate_without_content_type_header()
+	{
+		unset($_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['CONTENT_TYPE']);
+
+		$request = (new \ReflectionClass('Request'))->newInstanceWithoutConstructor();
+
+		$ref = new \ReflectionClass('Input_Instance');
+		$dummy = $ref->newInstanceWithoutConstructor();
+		$instance = new Input_Instance($request, $dummy);
+
+		$method = $ref->getMethod('hydrate');
+		$method->setAccessible(true);
+
+		$threw = false;
+		set_error_handler(function ($errno, $errstr) use (&$threw) {
+			$threw = true;
+			return true;
+		});
+		try
+		{
+			$method->invoke($instance);
+		}
+		finally
+		{
+			restore_error_handler();
+		}
+
+		$this->assertFalse($threw, 'hydrate must not warn when Content-Type is missing');
+		$this->assertSame('', \Input::headers('Content-Type', ''));
+	}
 }

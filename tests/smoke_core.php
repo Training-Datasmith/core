@@ -162,6 +162,58 @@ else
 	}
 }
 
+unset($_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['CONTENT_TYPE']);
+$content_header = \Input::headers('Content-Type', '');
+$content_type = strstr($content_header, ';', true);
+if ($content_type === false)
+{
+	$content_type = $content_header;
+}
+if ($content_type === '')
+{
+	smoke_pass('missing Content-Type header is safe for strstr');
+}
+else
+{
+	smoke_fail('missing Content-Type header should default to empty string');
+}
+
+$cleaned = \Security::clean('"H&M"', array('htmlentities'));
+if ($cleaned === '&quot;H&amp;M&quot;')
+{
+	smoke_pass('Security::clean applies static method filter without deprecated callable');
+}
+else
+{
+	smoke_fail('Security::clean static method filter');
+}
+
+$req = (new \ReflectionClass('Fuel\\Core\\Request'))->newInstanceWithoutConstructor();
+$req->module = null;
+\Request::active($req);
+$presenter_ok = false;
+try
+{
+	\Presenter::forge('Php8CompatMissingPresenter');
+}
+catch (\OutOfBoundsException $e)
+{
+	$presenter_ok = true;
+}
+catch (\Throwable $e)
+{
+	smoke_fail('Presenter::forge with null module: '.$e->getMessage());
+}
+\Request::active(null);
+if ($presenter_ok)
+{
+	smoke_pass('Presenter::forge with null module reaches missing-class handling');
+}
+else
+{
+	smoke_fail('Presenter::forge with null module');
+}
+
 if ($failures > 0)
 {
 	fwrite(STDERR, "SMOKE FAILED ($failures check(s))".PHP_EOL);

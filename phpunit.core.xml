@@ -12,6 +12,8 @@
 			<file>tests/num.php</file>
 			<file>tests/inflector.php</file>
 			<file>tests/security.php</file>
+			<file>tests/input.php</file>
+			<file>tests/presenter.php</file>
 			<file>tests/format.php</file>
 			<file>tests/validation.php</file>
 			<file>tests/uri.php</file>
