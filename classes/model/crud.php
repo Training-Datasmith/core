@@ -727,11 +727,13 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	 * Implementation of the Iterator interface
 	 */
 
+	#[\ReturnTypeWillChange]
 	public function rewind()
 	{
 		reset($this->_data);
 	}
 
+	#[\ReturnTypeWillChange]
 	public function current()
 	{
 		if ($this->_sanitization_enabled)
@@ -741,11 +743,13 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 		return current($this->_data);
 	}
 
+	#[\ReturnTypeWillChange]
 	public function key()
 	{
 		return key($this->_data);
 	}
 
+	#[\ReturnTypeWillChange]
 	public function next()
 	{
 		if ($this->_sanitization_enabled)
@@ -755,6 +759,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 		return next($this->_data);
 	}
 
+	#[\ReturnTypeWillChange]
 	public function valid()
 	{
 		return key($this->_data) !== null;
@@ -767,6 +772,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	 * @param   string  $value   value
 	 * @return  void
 	 */
+	#[\ReturnTypeWillChange]
 	public function offsetSet($offset, $value)
 	{
 		$this->_data[$offset] = $value;
@@ -778,6 +784,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	 * @param   string  $offset  class property
 	 * @return  bool
 	 */
+	#[\ReturnTypeWillChange]
 	public function offsetExists($offset)
 	{
 		return array_key_exists($offset, $this->_data);
@@ -789,6 +796,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	 * @param   string  $offset  class property
 	 * @return  void
 	 */
+	#[\ReturnTypeWillChange]
 	public function offsetUnset($offset)
 	{
 		unset($this->_data[$offset]);
@@ -800,6 +808,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	 * @param   string  $offset  class property
 	 * @return  mixed
 	 */
+	#[\ReturnTypeWillChange]
 	public function offsetGet($offset)
 	{
 		if (array_key_exists($offset, $this->_data))
@@ -949,9 +958,27 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 	}
 
 	/**
+	 * PHP 7.4+ Serializable magic methods delegate to legacy serialize/unserialize.
+	 *
+	 * @return  array
+	 */
+	public function __serialize()
+	{
+		return unserialize($this->serialize());
+	}
+
+	/**
+	 * @param  array  $data
+	 */
+	public function __unserialize($data)
+	{
+		$this->unserialize(serialize($data));
+	}
+
+	/**
 	 * Serializable implementation: serialize
 	 *
-	 * @return  array  model data
+	 * @return  string  model data
 	 */
 	public function serialize()
 	{
@@ -975,7 +1002,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializabl
 
 		if (isset($data['_is_new']))
 		{
-			$this->is_new = $data['_is_new'];
+			$this->is_new($data['_is_new']);
 			unset($data['_is_new']);
 		}
 		else

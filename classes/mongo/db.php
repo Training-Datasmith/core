@@ -407,7 +407,7 @@ class Mongo_Db
 	 *	@return	$this
 	 *	@usage	$mongodb->where_gt('foo', 20);
 	 */
-	public function where_gt($field = '', $x)
+	public function where_gt($field, $x)
 	{
 		$this->_where_init($field);
 		$this->wheres[$field]['$gt'] = $x;
@@ -422,7 +422,7 @@ class Mongo_Db
 	 *	@return	Mongo_Db
 	 *	@usage	$mongodb->where_gte('foo', 20);
 	 */
-	public function where_gte($field = '', $x)
+	public function where_gte($field, $x)
 	{
 		$this->_where_init($field);
 		$this->wheres[$field]['$gte'] = $x;
@@ -437,7 +437,7 @@ class Mongo_Db
 	 *	@return	Mongo_Db
 	 *	@usage	$mongodb->where_lt('foo', 20);
 	 */
-	public function where_lt($field = '', $x)
+	public function where_lt($field, $x)
 	{
 		$this->_where_init($field);
 		$this->wheres[$field]['$lt'] = $x;
@@ -452,7 +452,7 @@ class Mongo_Db
 	 *	@return	$this
 	 *	@usage	$mongodb->where_lte('foo', 20);
 	 */
-	public function where_lte($field = '', $x)
+	public function where_lte($field, $x)
 	{
 		$this->_where_init($field);
 		$this->wheres[$field]['$lte'] = $x;
@@ -468,7 +468,7 @@ class Mongo_Db
 	 *	@return	$this
 	 *	@usage	$mongodb->where_between('foo', 20, 30);
 	 */
-	public function where_between($field = '', $x, $y)
+	public function where_between($field, $x, $y)
 	{
 		$this->_where_init($field);
 		$this->wheres[$field]['$gte'] = $x;
@@ -485,7 +485,7 @@ class Mongo_Db
 	 *	@return	$this
 	 *	@usage	$mongodb->where_between_ne('foo', 20, 30);
 	 */
-	public function where_between_ne($field = '', $x, $y)
+	public function where_between_ne($field, $x, $y)
 	{
 		$this->_where_init($field);
 		$this->wheres[$field]['$gt'] = $x;
@@ -501,7 +501,7 @@ class Mongo_Db
 	 *	@return	$this
 	 *	@usage	$mongodb->where_not_equal('foo', 1)->get('foobar');
 	 */
-	public function where_ne($field = '', $x)
+	public function where_ne($field, $x)
 	{
 		$this->_where_init($field);
 		$this->wheres[$field]['$ne'] = $x;

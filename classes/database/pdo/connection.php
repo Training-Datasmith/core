@@ -83,7 +83,8 @@ class Database_PDO_Connection extends \Database_Connection
 				$error_code = 0;
 			}
 
-			throw new \Database_Exception(str_replace($this->_config['connection']['password'], str_repeat('*', 10), $e->getMessage()), $e->getCode(), $e, $error_code);
+			$password = (string) \Arr::get($this->_config['connection'], 'password', '');
+			throw new \Database_Exception(str_replace($password, str_repeat('*', 10), $e->getMessage()), $e->getCode(), $e, $error_code);
 		}
 	}
 
@@ -498,7 +499,7 @@ class Database_PDO_Connection extends \Database_Connection
 		$this->_connection = new \PDO(
 			$this->_config['connection']['dsn'],
 			$this->_config['connection']['username'],
-			$this->_config['connection']['password'],
+			\Arr::get($this->_config['connection'], 'password', ''),
 			$this->_config['attrs']
 		);
 

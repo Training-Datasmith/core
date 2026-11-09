@@ -90,6 +90,7 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
 	 *
 	 * @return bool
 	 */
+	#[\ReturnTypeWillChange]
 	public function seek($offset)
 	{
 		if ( ! $this->offsetExists($offset))
@@ -111,6 +112,7 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
 	 *
 	 * @return  mixed
 	 */
+	#[\ReturnTypeWillChange]
 	public function current()
 	{
 		if ($this->valid())
@@ -136,6 +138,7 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
 	 *
 	 * @return  mixed
 	 */
+	#[\ReturnTypeWillChange]
 	public function next()
 	{
 		parent::next();
@@ -159,6 +162,7 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
 	 *
 	 * @return boolean
 	 */
+	#[\ReturnTypeWillChange]
 	public function offsetExists($offset)
 	{
 		return isset($this->_results[$offset]);
@@ -173,6 +177,7 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
 	 *
 	 * @return  mixed
 	 */
+	#[\ReturnTypeWillChange]
 	public function offsetGet($offset)
 	{
 		if ( ! $this->offsetExists($offset))
@@ -201,6 +206,7 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
 	 *
 	 * @throws  \FuelException
 	 */
+	#[\ReturnTypeWillChange]
 	final public function offsetSet($offset, $value)
 	{
 		throw new \FuelException('Database results are read-only');
@@ -214,6 +220,7 @@ class Database_MySQLi_Cached extends \Database_Result implements \SeekableIterat
 	 *
 	 * @throws  \FuelException
 	 */
+	#[\ReturnTypeWillChange]
 	final public function offsetUnset($offset)
 	{
 		throw new \FuelException('Database results are read-only');

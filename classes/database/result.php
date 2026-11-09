@@ -291,6 +291,7 @@ abstract class Database_Result implements \Countable, \Iterator, \Sanitization
 	 *
 	 * @return  integer
 	 */
+	#[\ReturnTypeWillChange]
 	public function count()
 	{
 		return $this->_total_rows;
@@ -305,6 +306,7 @@ abstract class Database_Result implements \Countable, \Iterator, \Sanitization
 	 *
 	 * @return  mixed
 	 */
+	#[\ReturnTypeWillChange]
 	public function current()
 	{
 		return $this->_row;
@@ -315,6 +317,7 @@ abstract class Database_Result implements \Countable, \Iterator, \Sanitization
 	 *
 	 * @return  integer
 	 */
+	#[\ReturnTypeWillChange]
 	public function key()
 	{
 		return $this->_current_row;
@@ -323,6 +326,7 @@ abstract class Database_Result implements \Countable, \Iterator, \Sanitization
 	/**
 	 * Implements [Iterator::next], moves to the next row.
 	 */
+	#[\ReturnTypeWillChange]
 	public function next()
 	{
 		++$this->_current_row;
@@ -331,6 +335,7 @@ abstract class Database_Result implements \Countable, \Iterator, \Sanitization
 	/**
 	 * Implements [Iterator::rewind], sets the current row to -1.
 	 */
+	#[\ReturnTypeWillChange]
 	public function rewind()
 	{
 		// first row is zero, not one!
@@ -345,6 +350,7 @@ abstract class Database_Result implements \Countable, \Iterator, \Sanitization
 	 *
 	 * @return  boolean
 	 */
+	#[\ReturnTypeWillChange]
 	public function valid()
 	{
 		return $this->_current_row >= 0 and $this->_current_row < $this->_total_rows;

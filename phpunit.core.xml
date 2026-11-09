@@ -19,6 +19,7 @@
 			<file>tests/uri.php</file>
 			<file>tests/html.php</file>
 			<file>tests/markdown.php</file>
+			<file>tests/internal_interfaces.php</file>
 		</testsuite>
 	</testsuites>
 </phpunit>
