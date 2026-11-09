@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<phpunit colors="false" stopOnFailure="false" bootstrap="tests/bootstrap.php">
+	<php>
+		<server name="FUEL_ENV" value="test"/>
+	</php>
+	<testsuites>
+		<testsuite name="core">
+			<file>tests/crypt.php</file>
+			<file>tests/log.php</file>
+			<file>tests/arr.php</file>
+			<file>tests/num.php</file>
+			<file>tests/inflector.php</file>
+			<file>tests/security.php</file>
+			<file>tests/format.php</file>
+			<file>tests/validation.php</file>
+			<file>tests/uri.php</file>
+			<file>tests/html.php</file>
+		</testsuite>
+	</testsuites>
+</phpunit>

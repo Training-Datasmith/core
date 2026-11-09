@@ -13,3 +13,7 @@ nbproject/
 *.tmproj
 *.sublime-project
 *.sublime-workspace
+/vendor/
+composer.lock
+*.phar
+tests/fixture_app/logs/

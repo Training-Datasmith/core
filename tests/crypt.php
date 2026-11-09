@@ -55,6 +55,35 @@ class Test_Crypt extends TestCase
 		$this->assertEquals(static::$clear_text, $test);
 	}
 
+	public function test_legacy_tampered_returns_false()
+	{
+		$tampered = substr_replace(static::$legacy_encrypted, 'X', 10, 1);
+		$this->assertFalse(\Crypt::legacy_decode($tampered));
+	}
+
+	public function test_legacy_wrong_key_returns_false()
+	{
+		$this->assertFalse(\Crypt::legacy_decode(static::$legacy_encrypted, '0123456789abcdefXX'));
+	}
+
+	/**
+	 * @expectedException \FuelException
+	 */
+	public function test_legacy_missing_key_throws()
+	{
+		$crypt = new \Crypt(array(
+			'legacy' => array(
+				'crypto_key' => '',
+				'crypto_iv' => 'PuMQGc0vA-ykX_QShEKRg3B4',
+				'crypto_hmac' => 'Pfk4CY2qc_okomcUH8MuIG1M',
+			),
+			'sodium' => array(
+				'cipherkey' => static::$cipherkey,
+			),
+		));
+		$crypt->__call('legacy_decode', array(static::$legacy_encrypted));
+	}
+
 	public function test_encode_decode()
 	{
 		$encoded = \Crypt::encode(static::$clear_text);

@@ -12,8 +12,8 @@
 
 namespace Fuel\Core;
 
-use \phpseclib\Crypt\AES;
-use \phpseclib\Crypt\Hash;
+use phpseclib3\Crypt\AES;
+use phpseclib3\Crypt\Hash;
 
 use \ParagonIE\Fuel\Binary;
 use \ParagonIE\Fuel\Base64UrlSafe;
@@ -177,11 +177,20 @@ class Crypt
 	protected static function safe_b64decode($value)
 	{
 		$data = str_replace(array('-', '_'), array('+', '/'), $value);
+
+		// URL-safe payloads are often stored without padding; accept that first.
+		$decoded = base64_decode($data, true);
+		if ($decoded !== false)
+		{
+			return $decoded;
+		}
+
 		$mod4 = strlen($data) % 4;
 		if ($mod4)
 		{
 			$data .= substr('====', $mod4);
 		}
+
 		return base64_decode($data);
 	}
 
@@ -417,6 +426,20 @@ class Crypt
 	protected $hasher = null;
 
 	/**
+	 * Legacy phpseclib AES instance for pre-sodium encrypted payloads
+	 *
+	 * @var	AES
+	 */
+	protected $legacy_crypter = null;
+
+	/**
+	 * Legacy phpseclib HMAC instance for pre-sodium encrypted payloads
+	 *
+	 * @var	Hash
+	 */
+	protected $legacy_hasher = null;
+
+	/**
 	 * Crypto configuration
 	 *
 	 * @var	array
@@ -435,10 +458,8 @@ class Crypt
 		// in case we need to decode legacy encrypted strings
 		if ( ! empty($this->config['legacy']))
 		{
-			$this->legacy_crypter = new AES();
+			$this->legacy_crypter = new AES('cbc');
 			$this->legacy_hasher = new Hash('sha256');
-
-			$this->legacy_crypter->enableContinuousBuffer();
 			$this->legacy_hasher->setKey(static::safe_b64decode($this->config['legacy']['crypto_hmac']));
 		}
 	}
@@ -602,23 +623,63 @@ class Crypt
 			$keylength = 128;
 		}
 
-		if ($keylength)
-		{
-			$this->legacy_crypter->setKeyLength($keylength);
-		}
-
-		$this->legacy_crypter->setKey($key);
-		$this->legacy_crypter->setIV(static::safe_b64decode($this->config['legacy']['crypto_iv']));
+		$this->legacy_apply_key_and_iv($key, $keylength);
 
 		$value = static::safe_b64decode($value);
 		if ($value = $this->validate_hmac($value))
 		{
-			return $this->legacy_crypter->decrypt($value);
+			try
+			{
+				return $this->legacy_crypter->decrypt($value);
+			}
+			catch (\phpseclib3\Exception\BadDecryptionException $e)
+			{
+				return false;
+			}
+			catch (\LengthException $e)
+			{
+				return false;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Apply legacy AES key and IV the way phpseclib 2.x did in _clearBuffers()
+	 *
+	 * @param	string		$key		raw binary key material
+	 * @param	int|bool	$keylength	optional key length in bits
+	 */
+	protected function legacy_apply_key_and_iv($key, $keylength = false)
+	{
+		$this->legacy_crypter = new AES('cbc');
+
+		$bits = $keylength ? (int) $keylength : (strlen($key) * 8);
+
+		if ($bits <= 128)
+		{
+			$bytes = 16;
+		}
+		elseif ($bits <= 192)
+		{
+			$bytes = 24;
 		}
 		else
 		{
-			return false;
+			$bytes = 32;
 		}
+
+		$key = str_pad(substr($key, 0, $bytes), $bytes, "\0");
+
+		$this->legacy_crypter->setKeyLength($bytes * 8);
+		$this->legacy_crypter->setKey($key);
+
+		$iv = static::safe_b64decode($this->config['legacy']['crypto_iv']);
+		$block = $this->legacy_crypter->getBlockLengthInBytes();
+		$iv = str_pad(substr($iv, 0, $block), $block, "\0");
+		$this->legacy_crypter->setIV($iv);
+		$this->legacy_crypter->enableContinuousBuffer();
 	}
 
 	protected function validate_hmac($value)
