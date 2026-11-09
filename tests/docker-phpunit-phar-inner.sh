@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 rm -rf /tmp/w && cp -a /work /tmp/w && cd /tmp/w
+tar -xf "$VENDOR_TAR" -C /tmp/w
 curl -fsSL -A fuel-core-tests -o /tmp/phpunit.phar "$PHPUNIT_URL"
 actual=$(php -r "echo hash_file('sha384', '/tmp/phpunit.phar');")
 if [ "$actual" != "$PHPUNIT_SHA384" ]; then

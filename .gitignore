@@ -16,4 +16,5 @@ nbproject/
 /vendor/
 composer.lock
 *.phar
-tests/fixture_app/logs/
+tests/fixture_app/logs/*
+!tests/fixture_app/logs/.gitkeep

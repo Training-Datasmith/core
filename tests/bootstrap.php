@@ -45,11 +45,14 @@ if ( ! is_array(\Config::get('routes')))
 
 \Fuel::$is_test = true;
 
-if (class_exists('\PHPUnit\Framework\TestCase'))
+if ( ! defined('FUEL_CORE_SMOKE'))
 {
-	import('testcase_ns');
-}
-else
-{
-	import('testcase');
+	if (class_exists('\PHPUnit\Framework\TestCase'))
+	{
+		import('testcase_ns');
+	}
+	else
+	{
+		import('testcase');
+	}
 }

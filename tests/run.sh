@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Core test runner: digest-pinned PHP CLI images, checksummed Composer installer.
-set -eu
+set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 USE_SUDO_DOCKER="${USE_SUDO_DOCKER:-0}"
@@ -30,12 +30,6 @@ curl -fsSL -A 'fuel-core-tests' \
 	exit 1
 }
 
-restore_bundled_vendor() {
-	git -C "$REPO_ROOT" ls-files vendor/ | while IFS= read -r f; do
-		git -C "$REPO_ROOT" checkout -f -- "$f"
-	done
-}
-
 assert_phpunit_log() {
 	local log="$1"
 	if grep -q 'Warning:' "$log"; then
@@ -44,6 +38,18 @@ assert_phpunit_log() {
 	fi
 	if ! grep -E '^OK \([0-9]+ tests?, [0-9]+ assertions?\)$' "$log" >/dev/null; then
 		echo "ERROR: missing full-line OK (N tests, M assertions)" >&2
+		return 1
+	fi
+}
+
+assert_smoke_log() {
+	local log="$1"
+	if grep -q 'Warning:' "$log"; then
+		echo "ERROR: smoke output contained Warning:" >&2
+		return 1
+	fi
+	if ! grep -q '^SMOKE OK$' "$log"; then
+		echo "ERROR: smoke did not print SMOKE OK" >&2
 		return 1
 	fi
 }
@@ -61,37 +67,27 @@ docker_composer_vendor() {
 		bash /inner.sh
 }
 
-run_phpunit_phar() {
-	local label="$1"
-	local image="$2"
-	local phar_url="$3"
-	local phar_sha="$4"
-	local log
-	log=$(mktemp)
-
-	echo "========== phpunit $label =========="
-
-	$DOCKER run --rm \
-		-v "$REPO_ROOT:/work:ro" \
-		-v "$REPO_ROOT/tests/docker-phpunit-phar-inner.sh:/inner.sh:ro" \
-		-e "PHPUNIT_URL=$phar_url" \
-		-e "PHPUNIT_SHA384=$phar_sha" \
-		"$image" \
-		bash /inner.sh 2>&1 | tee "$log"
-
-	assert_phpunit_log "$log"
-	rm -f "$log"
+build_vendor_tar() {
+	local platform_php="$1"
+	local run_audit="$2"
+	local out="$3"
+	docker_composer_vendor "$platform_php" "$run_audit" >"$out"
 }
 
 verify_monolog_installers() {
 	local expect_monolog_1="$1"
+	local vendor_tar="$2"
 	$DOCKER run --rm \
-		-v "$REPO_ROOT:/work:ro" \
+		-v "$vendor_tar:/vendor.tar:ro" \
 		-e "EXPECT_MONOLOG_1=$expect_monolog_1" \
 		"$BUILD_IMAGE" \
-		php -r '
+		bash -c '
+		set -eu
+		mkdir -p /tmp/v
+		tar -xf /vendor.tar -C /tmp/v
+		php -r '\''
 		$expect1 = (int) getenv("EXPECT_MONOLOG_1");
-		$j = json_decode(file_get_contents("/work/vendor/composer/installed.json"), true);
+		$j = json_decode(file_get_contents("/tmp/v/vendor/composer/installed.json"), true);
 		$packages = isset($j["packages"]) ? $j["packages"] : $j;
 		foreach ($packages as $p) {
 			if ($p["name"] === "monolog/monolog") {
@@ -117,42 +113,85 @@ verify_monolog_installers() {
 				}
 			}
 		}
+		'\''
 	'
+}
+
+run_phpunit_phar() {
+	local label="$1"
+	local image="$2"
+	local phar_url="$3"
+	local phar_sha="$4"
+	local vendor_tar="$5"
+	local log
+	log=$(mktemp)
+
+	echo "========== phpunit $label =========="
+
+	$DOCKER run --rm \
+		-v "$REPO_ROOT:/work:ro" \
+		-v "$vendor_tar:/vendor.tar:ro" \
+		-v "$REPO_ROOT/tests/docker-phpunit-phar-inner.sh:/inner.sh:ro" \
+		-e "PHPUNIT_URL=$phar_url" \
+		-e "PHPUNIT_SHA384=$phar_sha" \
+		-e "VENDOR_TAR=/vendor.tar" \
+		"$image" \
+		bash /inner.sh 2>&1 | tee "$log"
+
+	assert_phpunit_log "$log"
+	rm -f "$log"
+}
+
+run_smoke_php82() {
+	local vendor_tar="$1"
+	local log
+	log=$(mktemp)
+
+	echo "========== smoke php82 =========="
+
+	$DOCKER run --rm \
+		-v "$REPO_ROOT:/work:ro" \
+		-v "$vendor_tar:/vendor.tar:ro" \
+		-v "$REPO_ROOT/tests/docker-smoke-php82-inner.sh:/inner.sh:ro" \
+		-e "VENDOR_TAR=/vendor.tar" \
+		"$BUILD_IMAGE" \
+		bash /inner.sh 2>&1 | tee "$log"
+
+	assert_smoke_log "$log"
+	rm -f "$log"
 }
 
 main() {
 	echo "Official php:5.6-cli and php:7.2-cli images use EOL Debian without working apt; vendor is built on php:8.2-cli with composer platform.php, then PHPUnit runs on the target PHP version."
+	echo "Composer vendor tarballs stay in the container and on temp files; the repo vendor/ tree is not modified."
 
-	rm -rf "$REPO_ROOT/vendor"
+	VENDOR56=$(mktemp)
+	VENDOR72=$(mktemp)
+	VENDOR82=$(mktemp)
+	trap 'rm -f "$VENDOR56" "$VENDOR72" "$VENDOR82"' EXIT
+
 	echo "========== composer solve php56 =========="
-	docker_composer_vendor "5.6.40" "0" | tar -xf - -C "$REPO_ROOT"
-	restore_bundled_vendor
-	verify_monolog_installers 1
+	build_vendor_tar "5.6.40" "0" "$VENDOR56"
+	verify_monolog_installers 1 "$VENDOR56"
 	run_phpunit_phar php56 "$PHP56_IMAGE" \
 		"https://phar.phpunit.de/phpunit-5.7.27.phar" \
-		"$PHPUNIT_5727_SHA384"
+		"$PHPUNIT_5727_SHA384" \
+		"$VENDOR56"
 
-	rm -rf "$REPO_ROOT/vendor"
 	echo "========== composer solve php72 =========="
-	docker_composer_vendor "7.2.34" "1" | tar -xf - -C "$REPO_ROOT"
-	restore_bundled_vendor
-	verify_monolog_installers 0
+	build_vendor_tar "7.2.34" "1" "$VENDOR72"
+	verify_monolog_installers 0 "$VENDOR72"
 	run_phpunit_phar php72 "$PHP72_IMAGE" \
 		"https://phar.phpunit.de/phpunit-7.5.20.phar" \
-		"$PHPUNIT_7520_SHA384"
+		"$PHPUNIT_7520_SHA384" \
+		"$VENDOR72"
 
-	rm -rf "$REPO_ROOT/vendor"
 	echo "========== composer solve php82 =========="
-	docker_composer_vendor "" "1" | tar -xf - -C "$REPO_ROOT"
-	restore_bundled_vendor
-	verify_monolog_installers 0
-	echo "========== phpunit php82 =========="
-	echo "SKIPPED: PHPUnit releases that support PHP 8.2 require void-typed lifecycle hooks;"
-	echo "         Fuel 1.8 core tests use untyped setUp/setUpBeforeClass (PHPUnit 5.7/7.5 only)."
-	echo "         PHPUnit 6.5.x is blocked by Composer audit (PKSA-z3gr-8qht-p93v) as a dev dependency."
-	echo "         Dependency solve and composer audit on PHP 8.2 succeeded above."
+	build_vendor_tar "" "1" "$VENDOR82"
+	verify_monolog_installers 0 "$VENDOR82"
+	run_smoke_php82 "$VENDOR82"
 
-	echo "All matrix runs passed (PHP 5.6 and 7.2 PHPUnit; PHP 8.2 solve/audit only)."
+	echo "All matrix runs passed (PHP 5.6/7.2 PHPUnit; PHP 8.2 smoke)."
 }
 
 main "$@"
