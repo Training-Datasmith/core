@@ -18,6 +18,7 @@
 			<file>tests/validation.php</file>
 			<file>tests/uri.php</file>
 			<file>tests/html.php</file>
+			<file>tests/markdown.php</file>
 		</testsuite>
 	</testsuites>
 </phpunit>

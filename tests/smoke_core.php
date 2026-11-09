@@ -225,6 +225,67 @@ else
 	smoke_fail('Presenter::forge with null module');
 }
 
+$markdown_fixture = "| A | B |
+|---|---|
+| 1 | 2 |
+
+```
+code
+```
+
+## Title {#tid}
+";
+
+try
+{
+	\Markdown::_init();
+	$markdown_html = \Markdown::parse($markdown_fixture);
+}
+catch (\Throwable $e)
+{
+	smoke_fail('Markdown::parse threw: '.$e->getMessage());
+	$markdown_html = '';
+}
+
+if ($markdown_html !== '' && strpos($markdown_html, '<table>') !== false
+	&& strpos($markdown_html, '<th>A</th>') !== false
+	&& strpos($markdown_html, '<td>1</td>') !== false
+	&& strpos($markdown_html, '<pre><code>code') !== false
+	&& strpos($markdown_html, 'id="tid"') !== false)
+{
+	smoke_pass('Markdown::parse renders Extra table, fenced code, and header id');
+}
+else
+{
+	smoke_fail('Markdown::parse Extra output');
+}
+
+$installed_path = VENDORPATH.'composer'.DIRECTORY_SEPARATOR.'installed.json';
+$markdown_version = null;
+if (is_file($installed_path))
+{
+	$installed = json_decode(file_get_contents($installed_path), true);
+	$packages = isset($installed['packages']) ? $installed['packages'] : $installed;
+	foreach ($packages as $package)
+	{
+		if ($package['name'] === 'michelf/php-markdown')
+		{
+			$markdown_version = ltrim($package['version'], 'v');
+			break;
+		}
+	}
+}
+if ($markdown_version !== null
+	&& version_compare($markdown_version, '1.9.1', '>=')
+	&& version_compare($markdown_version, '2.0.0', '<'))
+{
+	smoke_pass('michelf/php-markdown >=1.9.1 <2.0.0 (got '.$markdown_version.')');
+}
+else
+{
+	smoke_fail('michelf/php-markdown version bound (got '.($markdown_version === null ? 'unknown' : $markdown_version).')');
+}
+
 if ($failures > 0)
 {
 	fwrite(STDERR, "SMOKE FAILED ($failures check(s))".PHP_EOL);
