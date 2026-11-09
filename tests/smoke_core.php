@@ -163,19 +163,30 @@ else
 }
 
 unset($_SERVER['HTTP_CONTENT_TYPE'], $_SERVER['CONTENT_TYPE']);
-$content_header = \Input::headers('Content-Type', '');
-$content_type = strstr($content_header, ';', true);
-if ($content_type === false)
+$hydrate_threw = false;
+$hydrate_error = null;
+try
 {
-	$content_type = $content_header;
+	$request = (new \ReflectionClass('Fuel\\Core\\Request'))->newInstanceWithoutConstructor();
+	$input_ref = new \ReflectionClass('Fuel\\Core\\Input_Instance');
+	$dummy = $input_ref->newInstanceWithoutConstructor();
+	$instance = new \Input_Instance($request, $dummy);
+	$hydrate = $input_ref->getMethod('hydrate');
+	$hydrate->setAccessible(true);
+	$hydrate->invoke($instance);
 }
-if ($content_type === '')
+catch (\Throwable $e)
 {
-	smoke_pass('missing Content-Type header is safe for strstr');
+	$hydrate_threw = true;
+	$hydrate_error = $e->getMessage();
+}
+if ( ! $hydrate_threw)
+{
+	smoke_pass('Input_Instance::hydrate() with no Content-Type header');
 }
 else
 {
-	smoke_fail('missing Content-Type header should default to empty string');
+	smoke_fail('Input_Instance::hydrate() with no Content-Type: '.$hydrate_error);
 }
 
 $cleaned = \Security::clean('"H&M"', array('htmlentities'));
