@@ -83,7 +83,7 @@ class Database_PDO_Connection extends \Database_Connection
 				$error_code = 0;
 			}
 
-			$password = (string) \Arr::get($this->_config['connection'], 'password', '');
+			$password = (string) $this->connection_password_for_pdo();
 			throw new \Database_Exception(str_replace($password, str_repeat('*', 10), $e->getMessage()), $e->getCode(), $e, $error_code);
 		}
 	}
@@ -490,6 +490,18 @@ class Database_PDO_Connection extends \Database_Connection
 	}
 
 	/**
+	 * Password value passed to the PDO constructor (null when the key is absent).
+	 *
+	 * @return  string|null
+	 */
+	protected function connection_password_for_pdo()
+	{
+		$connection = $this->_config['connection'];
+
+		return array_key_exists('password', $connection) ? $connection['password'] : null;
+	}
+
+	/**
 	 * Create a new PDO instance
 	 *
 	 * @return  PDO
@@ -499,7 +511,7 @@ class Database_PDO_Connection extends \Database_Connection
 		$this->_connection = new \PDO(
 			$this->_config['connection']['dsn'],
 			$this->_config['connection']['username'],
-			\Arr::get($this->_config['connection'], 'password', ''),
+			$this->connection_password_for_pdo(),
 			$this->_config['attrs']
 		);
 

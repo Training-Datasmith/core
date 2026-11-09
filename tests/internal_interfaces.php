@@ -19,6 +19,28 @@ class InternalInterfaces_TestModel extends Model_Crud
 }
 
 /**
+ * Test seam: records credentials and optional synthetic PDO failures (production unchanged).
+ */
+class InternalInterfaces_PDO_CaptureConnection extends Database_PDO_Connection
+{
+	public static $pdo_password;
+
+	public static $mask_probe_secret;
+
+	protected function _connect()
+	{
+		static::$pdo_password = $this->connection_password_for_pdo();
+
+		if (static::$mask_probe_secret !== null)
+		{
+			throw new \PDOException('SQLSTATE[HY000] auth failed password='.static::$mask_probe_secret);
+		}
+
+		parent::_connect();
+	}
+}
+
+/**
  * PHP internal interface compatibility tests
  *
  * @group Core
@@ -136,39 +158,114 @@ class Test_Internal_Interfaces extends TestCase
 	}
 
 	/**
+	 * @return  InternalInterfaces_PDO_CaptureConnection
+	 */
+	protected function pdo_capture_connection($name, array $connection)
+	{
+		InternalInterfaces_PDO_CaptureConnection::$pdo_password = 'UNSET';
+		InternalInterfaces_PDO_CaptureConnection::$mask_probe_secret = null;
+
+		$config = array(
+			'type' => 'pdo',
+			'connection' => $connection,
+		);
+
+		$ref = new \ReflectionClass('Fuel\Core\InternalInterfaces_PDO_CaptureConnection');
+		$ctor = $ref->getConstructor();
+		$ctor->setAccessible(true);
+		$conn = $ref->newInstanceWithoutConstructor();
+		$ctor->invoke($conn, $name, $config);
+
+		return $conn;
+	}
+
+	/**
 	 * @test
 	 */
-	public function test_pdo_connect_masks_null_password_without_deprecation()
+	public function test_pdo_connect_password_credentials_for_pdo()
 	{
-		$name = 'iface_pdo_'.md5(__METHOD__);
-		\Config::set('db.'.$name, array(
-			'type' => 'pdo',
-			'connection' => array(
-				'dsn' => 'mysql:host=127.0.0.1;dbname=iface_missing',
-				'username' => 'iface',
-			),
-		));
+		$dsn = 'mysql:host=127.0.0.1;dbname=iface_missing';
+		$base = array('dsn' => $dsn, 'username' => 'iface');
 
-		try
+		$cases = array(
+			array('absent', $base, null),
+			array('null', $base + array('password' => null), null),
+			array('empty', $base + array('password' => ''), ''),
+			array('secret', $base + array('password' => 'Sup3rSecret'), 'Sup3rSecret'),
+		);
+
+		foreach ($cases as $case)
 		{
-			\Database_Connection::instance($name)->connect();
-			$this->fail('Expected Database_Exception from failed PDO connect');
-		}
-		catch (\Database_Exception $e)
-		{
-			$this->assertNotSame('', $e->getMessage());
+			list($label, $connection, $expected) = $case;
+			$db = $this->pdo_capture_connection('iface_pdo_'.$label.'_'.md5($label), $connection);
+
+			try
+			{
+				$db->connect();
+				$this->fail('Expected Database_Exception for '.$label);
+			}
+			catch (\Database_Exception $e)
+			{
+			}
+
+			$this->assertSame(
+				$expected,
+				InternalInterfaces_PDO_CaptureConnection::$pdo_password,
+				'PDO password credential mismatch for '.$label
+			);
 		}
 	}
 
 	/**
 	 * @test
 	 */
-	public function test_mongo_db_class_loads_without_parameter_deprecation()
+	public function test_pdo_connect_masks_password_in_error_message()
 	{
-		$this->assertTrue(class_exists('Mongo_Db'));
-		$method = new \ReflectionMethod('Mongo_Db', 'where_gt');
-		$params = $method->getParameters();
-		$this->assertFalse($params[0]->isOptional());
-		$this->assertFalse($params[1]->isOptional());
+		$secret = 'Sup3rSecret';
+		$db = $this->pdo_capture_connection(
+			'iface_pdo_mask_'.md5(__METHOD__),
+			array(
+				'dsn' => 'mysql:host=127.0.0.1;dbname=iface_missing',
+				'username' => 'iface',
+				'password' => $secret,
+			)
+		);
+		InternalInterfaces_PDO_CaptureConnection::$mask_probe_secret = $secret;
+
+		try
+		{
+			$db->connect();
+			$this->fail('Expected Database_Exception from masking probe');
+		}
+		catch (\Database_Exception $e)
+		{
+			$this->assertNotContains($secret, $e->getMessage());
+			$this->assertContains(str_repeat('*', 10), $e->getMessage());
+		}
+	}
+
+	/**
+	 * @test
+	 */
+	public function test_mongo_db_where_positional_calls()
+	{
+		$ref = new \ReflectionClass('Mongo_Db');
+		$calls = array(
+			array('where_gt', array('age', 12), array('age' => array('$gt' => 12))),
+			array('where_gte', array('age', 18), array('age' => array('$gte' => 18))),
+			array('where_lt', array('age', 120), array('age' => array('$lt' => 120))),
+			array('where_lte', array('age', 65), array('age' => array('$lte' => 65))),
+			array('where_between', array('age', 10, 20), array('age' => array('$gte' => 10, '$lte' => 20))),
+			array('where_between_ne', array('age', 10, 20), array('age' => array('$gt' => 10, '$lt' => 20))),
+			array('where_ne', array('name', 'Allerd'), array('name' => array('$ne' => 'Allerd'))),
+		);
+
+		foreach ($calls as $call)
+		{
+			list($method, $args, $expected_wheres) = $call;
+			$db = $ref->newInstanceWithoutConstructor();
+			call_user_func_array(array($db, $method), $args);
+			$this->assertEquals($expected_wheres, $db->wheres, $method.' positional call');
+		}
 	}
 }

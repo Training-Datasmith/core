@@ -342,6 +342,25 @@ class SmokeInternalTestModel extends \Model_Crud
 	protected static $_primary_key = 'id';
 }
 
+class Smoke_PDO_CaptureConnection extends \Database_PDO_Connection
+{
+	public static $pdo_password;
+
+	public static $mask_probe_secret;
+
+	protected function _connect()
+	{
+		static::$pdo_password = $this->connection_password_for_pdo();
+
+		if (static::$mask_probe_secret !== null)
+		{
+			throw new \PDOException('SQLSTATE[HY000] auth failed password='.static::$mask_probe_secret);
+		}
+
+		parent::_connect();
+	}
+}
+
 $model_iface_ok = true;
 try
 {
@@ -406,43 +425,123 @@ else
 	smoke_fail('Model_Crud interface/serialize check');
 }
 
-$pdo_iface_ok = false;
+$pdo_iface_ok = true;
+$pdo_dsn = 'mysql:host=127.0.0.1;dbname=iface_missing';
+$pdo_base = array('dsn' => $pdo_dsn, 'username' => 'iface');
+$pdo_cred_cases = array(
+	array('absent', $pdo_base, null),
+	array('null', $pdo_base + array('password' => null), null),
+	array('empty', $pdo_base + array('password' => ''), ''),
+	array('secret', $pdo_base + array('password' => 'Sup3rSecret'), 'Sup3rSecret'),
+);
+foreach ($pdo_cred_cases as $pdo_case)
+{
+	list($pdo_label, $pdo_conn, $pdo_expected) = $pdo_case;
+	try
+	{
+		Smoke_PDO_CaptureConnection::$pdo_password = 'UNSET';
+		Smoke_PDO_CaptureConnection::$mask_probe_secret = null;
+		$ref = new \ReflectionClass('Smoke_PDO_CaptureConnection');
+		$ctor = $ref->getConstructor();
+		$ctor->setAccessible(true);
+		$db = $ref->newInstanceWithoutConstructor();
+		$ctor->invoke($db, 'iface_pdo_smoke_'.$pdo_label, array('type' => 'pdo', 'connection' => $pdo_conn));
+		$db->connect();
+		$pdo_iface_ok = false;
+	}
+	catch (\Database_Exception $e)
+	{
+		if (Smoke_PDO_CaptureConnection::$pdo_password !== $pdo_expected)
+		{
+			$pdo_iface_ok = false;
+		}
+	}
+	catch (\Throwable $e)
+	{
+		smoke_fail('PDO credential case '.$pdo_label.': '.$e->getMessage());
+		$pdo_iface_ok = false;
+	}
+}
+$mask_secret = 'Sup3rSecret';
 try
 {
-	$pdo_name = 'iface_pdo_smoke_'.mt_rand();
-	\Config::set('db.'.$pdo_name, array(
+	Smoke_PDO_CaptureConnection::$mask_probe_secret = $mask_secret;
+	$ref = new \ReflectionClass('Smoke_PDO_CaptureConnection');
+	$ctor = $ref->getConstructor();
+	$ctor->setAccessible(true);
+	$db = $ref->newInstanceWithoutConstructor();
+	$ctor->invoke($db, 'iface_pdo_mask_smoke', array(
 		'type' => 'pdo',
 		'connection' => array(
-			'dsn' => 'mysql:host=127.0.0.1;dbname=iface_missing',
+			'dsn' => $pdo_dsn,
 			'username' => 'iface',
+			'password' => $mask_secret,
 		),
 	));
-	\Database_Connection::instance($pdo_name)->connect();
+	$db->connect();
+	$pdo_iface_ok = false;
 }
 catch (\Database_Exception $e)
 {
-	$pdo_iface_ok = ($e->getMessage() !== '');
+	if (strpos($e->getMessage(), $mask_secret) !== false || strpos($e->getMessage(), str_repeat('*', 10)) === false)
+	{
+		$pdo_iface_ok = false;
+	}
 }
 catch (\Throwable $e)
 {
-	smoke_fail('PDO connect path: '.$e->getMessage());
+	smoke_fail('PDO masking smoke: '.$e->getMessage());
+	$pdo_iface_ok = false;
+}
+finally
+{
+	Smoke_PDO_CaptureConnection::$mask_probe_secret = null;
 }
 if ($pdo_iface_ok)
 {
-	smoke_pass('Database_PDO_Connection connect masks null password on failure');
+	smoke_pass('Database_PDO_Connection password credentials and error masking');
 }
 else
 {
-	smoke_fail('Database_PDO_Connection connect path');
+	smoke_fail('Database_PDO_Connection password credentials and masking');
 }
 
-if (class_exists('Mongo_Db'))
+$mongo_iface_ok = true;
+try
 {
-	smoke_pass('Mongo_Db class loads without optional-before-required signature');
+	$mongo_ref = new \ReflectionClass('Mongo_Db');
+	$mongo_calls = array(
+		array('where_gt', array('age', 12), array('age' => array('$gt' => 12))),
+		array('where_gte', array('age', 18), array('age' => array('$gte' => 18))),
+		array('where_lt', array('age', 120), array('age' => array('$lt' => 120))),
+		array('where_lte', array('age', 65), array('age' => array('$lte' => 65))),
+		array('where_between', array('age', 10, 20), array('age' => array('$gte' => 10, '$lte' => 20))),
+		array('where_between_ne', array('age', 10, 20), array('age' => array('$gt' => 10, '$lt' => 20))),
+		array('where_ne', array('name', 'Allerd'), array('name' => array('$ne' => 'Allerd'))),
+	);
+	foreach ($mongo_calls as $mongo_call)
+	{
+		list($method, $args, $expected) = $mongo_call;
+		$m = $mongo_ref->newInstanceWithoutConstructor();
+		call_user_func_array(array($m, $method), $args);
+		if ($m->wheres !== $expected)
+		{
+			$mongo_iface_ok = false;
+		}
+	}
+}
+catch (\Throwable $e)
+{
+	smoke_fail('Mongo_Db where positional checks: '.$e->getMessage());
+	$mongo_iface_ok = false;
+}
+if ($mongo_iface_ok)
+{
+	smoke_pass('Mongo_Db where_* positional operator shapes');
 }
 else
 {
-	smoke_fail('Mongo_Db class missing');
+	smoke_fail('Mongo_Db where_* positional operator checks');
 }
 
 if ($failures > 0)
